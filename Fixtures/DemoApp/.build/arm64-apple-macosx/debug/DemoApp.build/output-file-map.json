@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/DemoApp.build/primary.swiftdeps"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/Sources/DemoApp/DemoApp.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/DemoApp.build/DemoApp.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/DemoApp.build/DemoApp.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/DemoApp.build/DemoApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/DemoApp.build/DemoApp.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/DemoApp.build/DemoApp.dia"
+  }
+}

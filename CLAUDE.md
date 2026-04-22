@@ -20,15 +20,11 @@
 
 ## Current state
 
-**Phase:** pre-spike. Architecture locked. No source code yet.
+**Phase:** Phase 0 — spikes. `Fixtures/DemoApp` exists. Spike 2 scaffolded and compiling. Awaiting first execution.
 
-**Open blockers:** five spikes in [PROJECT-BIBLE §11](PROJECT-BIBLE.md#11-validated-assumptions) must return PASS/FAIL before any implementation. The branch decisions depend on their results.
+**Open blockers:** five spikes in [PROJECT-BIBLE §11](PROJECT-BIBLE.md#11-validated-assumptions) must return PASS/FAIL before Phase 1. Branch decisions depend on results.
 
-**Next single action:** run **Spike 2 — Synthetic CGEvent acceptance** first. It has the highest blast radius: if it fails, the entire event-injection strategy changes and §6 needs amending via a new ADR superseding ADR-005.
-
-**Not blockers:**
-- Repo scaffolding (`Package.swift`, source tree stubs) — can be done in parallel with spikes.
-- `Fixtures/DemoApp` — needed to run spikes 1, 2, 3. Build it minimal: one `Button`, one `TextField`, one `List` bound to a VM.
+**Next single action:** execute Spike 2 against the built DemoApp binary (requires Accessibility permission on the running Terminal / IDE). Record result in `spikes/02-cgevent-acceptance/README.md` and flip the checkbox in PROJECT-BIBLE §11.
 
 ---
 
@@ -84,3 +80,13 @@ Append one block per session. Keep each to ~15 lines. Don't rewrite previous ses
 **Open questions discovered:** None beyond PROJECT-BIBLE §16.
 **Blocked on:** Nothing — spike work can now begin.
 **Next single action:** Create `Fixtures/DemoApp` (minimal SwiftUI app: one Button, one TextField, one VM) to serve as the spike harness, then implement Spike 2 (synthetic CGEvent acceptance).
+
+## Session 2026-04-22 — Phase 0 kickoff
+
+**Worked on:** Scaffolded `Fixtures/DemoApp` (SwiftPM executable, SwiftUI, zero deps) and `spikes/02-cgevent-acceptance` (driver that launches DemoApp, resolves button via AX, injects CGEvent click, checks marker file).
+**Landed:** `Fixtures/DemoApp/{Package.swift, Sources/DemoApp/DemoApp.swift}`, `spikes/02-cgevent-acceptance/{Package.swift, Sources/Spike02/main.swift, README.md}`. Both `swift build` green.
+**Decisions:** Inter-process signal from DemoApp to spike runner via a marker file path passed through `PRY_MARKER_FILE` env var — simpler and more reliable than stdout parsing. DemoApp uses `accessibilityIdentifier("new_doc_button")` so Spike 2 and Spike 3 (AXIdentifier propagation) share the same fixture.
+**Spike updates:** Spike 2 ready to run; no PASS/FAIL yet. Still `[ ] PASS [ ] FAIL` in PROJECT-BIBLE §11.
+**Open questions discovered:** None new. Noted in Spike 2 README that an AX-identifier-not-found failure is really data for Spike 3, not a Spike 2 fail.
+**Blocked on:** Accessibility permission on the shell/IDE that runs the spike. One-time user grant.
+**Next single action:** `swift run spike02 ../../Fixtures/DemoApp/.build/debug/DemoApp` from `spikes/02-cgevent-acceptance/` after Accessibility is granted; record evidence in the spike README; update §11 checkbox.
