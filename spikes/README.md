@@ -31,5 +31,5 @@ Covered in [PROJECT-BIBLE §11](../PROJECT-BIBLE.md#branch-decisions). Once a sp
 - `01-ax-frames/` — ✅ PASS (2026-04-22, 6/6 view types)
 - `02-cgevent-acceptance/` — ✅ PASS (2026-04-22, macOS 26.4.1)
 - `03-ax-identifier/` — ✅ PASS (2026-04-22, covered by 01-ax-frames driver)
-- `04-oslog-streaming/` — ⏳ not started
+- `04-oslog-streaming/` — ❌ FAIL (2026-04-22, p50 ~1.2s; triggered ADR-006, `assert_logs`/`assert_no_errors` removed from v1)
 - `05-mirror-introspection/` — ✅ PASS (2026-04-22, no Sendable warnings, runtime values match)

@@ -80,7 +80,7 @@ Read registered ViewModel state.
 
 ### `pry_logs`
 
-Capture `OSLog` lines since a cursor.
+Capture `OSLog` lines since a cursor. **Best-effort latency (~1 s)** — backed by `OSLogStore`, suitable for post-hoc verdict attachments, not for race-sensitive assertions. See [ADR-006](../architecture/decisions/ADR-006-log-observation-strategy.md).
 
 **Input:** `{ "app": "fr.neimad.proof", "since": "2026-04-22T10:14:02Z"?, "subsystem": "fr.neimad.proof"? }`
 **Output:** `{ "lines": [{ "ts": "...", "level": "info", "msg": "..." }, ...], "cursor": "2026-04-22T10:14:05Z" }`

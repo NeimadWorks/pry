@@ -104,9 +104,9 @@ Every line inside a ` ```pry ` block is one step. Order matters: top-to-bottom e
 |---|---|
 | `assert_tree: <predicate>` | Fail if the AX tree does not satisfy the predicate. |
 | `assert_state: { viewmodel: <name>, path: <keypath>, equals: <value> }` | Fail if registered state mismatches. |
-| `assert_logs: { contains: "<substring>", since: <step_ref> }` | Fail if substring absent in logs captured since `<step_ref>`. |
-| `assert_no_errors` | Fail if any `ERROR` or `FAULT` log lines since the last assertion. |
 | `expect_change: { action: <step>, in: <observable>, to: <value> }` | Atomic do-and-verify: run `action`, assert `observable` now holds `value`. |
+
+> **Not in v1:** `assert_logs` and `assert_no_errors` were drafted for v1 but removed once [Spike 4](../../spikes/04-oslog-streaming/README.md) showed `OSLogStore` has ~1 s latency — too slow for race-free assertions. See [ADR-006](../architecture/decisions/ADR-006-log-observation-strategy.md). Logs are still available post-hoc in verdicts via `pry_logs`; real-time log assertions return in a future version behind a `PryLog` tee.
 
 ### Debug aids
 

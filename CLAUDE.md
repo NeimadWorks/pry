@@ -20,11 +20,13 @@
 
 ## Current state
 
-**Phase:** Phase 0 — spikes. 3/5 done: Spike 1, 2, 3 all **PASS**. Spikes 4 (OSLogStore latency) and 5 (Mirror introspection) remaining.
+**Phase:** Phase 0 — spikes — **COMPLETE** (2026-04-22). 4/5 PASS, 1 FAIL. Ready for Phase 1.
 
-**Open blockers:** two spikes. No architectural branches triggered — canonical architecture (PROJECT-BIBLE §6.1) ships as-is. ADR-005 is no longer pending validation.
+**Results:** Spikes 1, 2, 3, 5 PASS. Spike 4 FAIL (OSLogStore p50 ~1.2 s — triggered pre-committed branch: `assert_logs` / `assert_no_errors` removed from v1 grammar; `pry_logs` stays best-effort; Tier 2 real-time log tee deferred via [ADR-006](docs/architecture/decisions/ADR-006-log-observation-strategy.md)).
 
-**Next single action:** **Spike 5 (Mirror + `PryInspectable` under Swift 6 strict concurrency)** — has the most design uncertainty left. Spike 4 (OSLogStore latency) is a pure measurement and can be run any time.
+**Architectural branches triggered:** one — ADR-006 for log observation. Core PROJECT-BIBLE §6.1 ships as-is.
+
+**Next single action:** begin Phase 1 skeleton — create root `Package.swift` declaring three products (`PryHarness`, `PryWire`, `pry-mcp`), stub source files per [docs/architecture/overview.md](docs/architecture/overview.md) module map. Lift the DemoApp-local `PryInspectable` / `PryRegistry` prototype into the `PryHarness` target unchanged (Spike 5 validated the shape).
 
 ---
 
@@ -117,3 +119,17 @@ Append one block per session. Keep each to ~15 lines. Don't rewrite previous ses
 **Open questions discovered:** None new; role-map quirks captured as docs-todo, not blockers.
 **Blocked on:** Nothing.
 **Next single action:** write Spike 5 — `PryRegistry` prototype that registers a `DocumentListVM` instance and reads its snapshot from the socket server. Verify no `Sendable` warnings under Swift 6 strict concurrency. Can live at `spikes/05-mirror-introspection/`, using DemoApp's existing VM.
+
+## Session 2026-04-22 — Spikes 4 & 5; Phase 0 closed
+
+**Worked on:** Extended DemoApp with `PryInspectable` prototype, `PryRegistry`, and an OSLogStore latency harness. Wrote and ran Spike 5 (PASS) and Spike 4 (FAIL after fixing a measurement bug in the first run).
+**Landed:** Spike 5 evidence, Spike 4 evidence (with run history noting the discarded first measurement), ADR-006 (log observation strategy), removal of `assert_logs` / `assert_no_errors` from `docs/design/spec-format.md`, best-effort latency note on `pry_logs` in `docs/api/pry-mcp-tools.md`, new Q5 in PROJECT-BIBLE §16.
+**Decisions:**
+  - ADR-004 stands — `PryInspectable` + `[String: any Sendable]` compiles and round-trips correctly under Swift 6 strict concurrency.
+  - ADR-006 new — `OSLogStore` is not a real-time channel. Pry v1 uses it best-effort for post-hoc verdict attachments only. Assertion-grade log checks wait for a Tier 2 `PryLog` tee (not v1).
+**Spike updates:**
+  - Spike 5 — PASS. Runtime values from a `@MainActor ObservableObject` match exactly after a mutation; no Sendable warnings during compilation.
+  - Spike 4 — FAIL. First run had a measurement bug (`position(date:)` inside the timing window); second run with instrumented breakdown confirmed the 1.2 s floor is inside `getEntries()` itself, not in the bookkeeping. Product decision unchanged regardless of H1-vs-H2 root cause.
+**Open questions discovered:** Q5 in §16 — when to build the Tier 2 log tee.
+**Blocked on:** Nothing. Phase 0 is done.
+**Next single action:** begin Phase 1 skeleton. Create root `Package.swift` with three products and stub the module map from `docs/architecture/overview.md`. Lift `PryInspectable` / `PryRegistry` from DemoApp into the `PryHarness` target.

@@ -412,7 +412,7 @@ Each spike: one Swift file, one binary question, PASS/FAIL + evidence.
 Spike 1 — AX frames reliability:        [x] PASS [ ] FAIL — evidence: spikes/01-ax-frames/README.md (macOS 26.4.1, 6/6 view types, 1/1 run)
 Spike 2 — Synthetic CGEvent acceptance: [x] PASS [ ] FAIL — evidence: spikes/02-cgevent-acceptance/README.md (macOS 26.4.1, Swift 6.3.1, 1/1)
 Spike 3 — accessibilityIdentifier:      [x] PASS [ ] FAIL — evidence: spikes/01-ax-frames/README.md (combined driver; 6/6 view types, 1/1 run)
-Spike 4 — OSLogStore latency:           [ ] PASS [ ] FAIL — evidence:
+Spike 4 — OSLogStore latency:           [ ] PASS [x] FAIL — evidence: spikes/04-oslog-streaming/README.md (p50 ~1.2s; ADR-006 triggered; assert_logs / assert_no_errors removed from v1 grammar)
 Spike 5 — Mirror introspection:         [x] PASS [ ] FAIL — evidence: spikes/05-mirror-introspection/README.md (macOS 26.4.1, Swift 6.3.1, no Sendable warnings, snapshot round-trip correct)
 ```
 
@@ -423,6 +423,7 @@ Spike 5 — Mirror introspection:         [x] PASS [ ] FAIL — evidence: spikes
 - **If 1 FAILS on some SwiftUI views** → require `accessibilityIdentifier` as default resolution strategy; document the pattern as a best practice for Pry-friendly apps.
 - **If 3 FAILS** → require a PryHarness-side coordinate registry (views self-report their frames via a `.pryTagged("id")` modifier).
 - **If 4 or 5 FAIL** → corresponding capability is marked experimental and reduced in surface.
+  - Spike 4 FAILED (2026-04-22): activated. `pry_logs` stays best-effort (~1 s); `assert_logs` and `assert_no_errors` removed from v1 grammar. See [ADR-006](docs/architecture/decisions/ADR-006-log-observation-strategy.md).
 
 No spec beyond §11 is final until this block is filled.
 
@@ -498,6 +499,7 @@ See [docs/architecture/overview.md](docs/architecture/overview.md) for the fully
 - **Q2** — Should `pry_run_spec` stream partial verdict back, or only emit the final report? Leaning: final-only for v1.
 - **Q3** — How does Pry handle multi-window apps? Proposed: frontmatter `window: { title_matches: "..." }`.
 - **Q4** — Does `pry_run_spec` accept specs from stdin as well as file paths? Leaning: yes.
+- **Q5** — When does the Tier 2 real-time log tee ([ADR-006](docs/architecture/decisions/ADR-006-log-observation-strategy.md)) land? Blocks reintroducing `assert_logs` / `assert_no_errors`. Not v1.
 
 ---
 
