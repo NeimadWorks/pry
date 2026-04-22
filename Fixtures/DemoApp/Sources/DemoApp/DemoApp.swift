@@ -197,34 +197,42 @@ enum LogLatencyHarness {
             return
         }
 
-        var latenciesMs: [Double] = []
-        var timeouts: Int = 0
+        struct Sample {
+            let latencyMs: Double        // t0 → tag visible in store
+            let positionMs: Double       // cost of store.position(...) call
+            let pollCount: Int           // getEntries() iterations until found
+            let firstGetEntriesMs: Double // cost of the very first getEntries call
+            let timedOut: Bool
+        }
+        var samples: [Sample] = []
 
         for i in 0..<iterations {
             let tag = "spike4-\(i)-\(UUID().uuidString)"
 
-            // Capture a starting position BEFORE the timing window. position(timeIntervalSinceEnd:)
-            // is O(1) against the store's known-latest cursor — unlike position(date:), which
-            // walks the store and can cost hundreds of ms. Previous revision of this spike
-            // included position(date:) inside the t0→t1 window and reported bogus ~1.2s latencies.
+            // Measure cost of position() separately. Move it OUTSIDE the t0 window so its
+            // cost does not inflate the reported latency — prior revision had this bug.
+            let posStart = Date()
             let priorPos = store.position(timeIntervalSinceEnd: -0.05)
+            let positionMs = Date().timeIntervalSince(posStart) * 1000
 
             let t0 = Date()
             logger.info("\(tag, privacy: .public)")
-            let seen = await pollForTag(tag, in: store, from: priorPos, timeout: perIterationTimeout)
+            let result = await pollForTag(tag, in: store, from: priorPos, timeout: perIterationTimeout)
 
-            if let seen {
-                let ms = seen.timeIntervalSince(t0) * 1000
-                latenciesMs.append(ms)
-            } else {
-                timeouts += 1
-                latenciesMs.append(perIterationTimeout * 1000)
-            }
+            let latencyMs = (result.seen ?? Date()).timeIntervalSince(t0) * 1000
+            samples.append(Sample(
+                latencyMs: result.seen == nil ? perIterationTimeout * 1000 : latencyMs,
+                positionMs: positionMs,
+                pollCount: result.pollCount,
+                firstGetEntriesMs: result.firstGetEntriesMs,
+                timedOut: result.seen == nil
+            ))
 
             try? await Task.sleep(nanoseconds: 50_000_000) // 50ms between iterations
         }
 
-        let sorted = latenciesMs.sorted()
+        let latencies = samples.map(\.latencyMs)
+        let sorted = latencies.sorted()
         let p50 = sorted[sorted.count / 2]
         let p95Index = min(sorted.count - 1, Int(Double(sorted.count) * 0.95))
         let p95 = sorted[p95Index]
@@ -232,11 +240,14 @@ enum LogLatencyHarness {
 
         SpikeMarker.writeJSON(event: "log_latency_complete", object: [
             "iterations": iterations,
-            "timeouts": timeouts,
+            "timeouts": samples.filter(\.timedOut).count,
             "p50_ms": p50,
             "p95_ms": p95,
             "max_ms": maxV,
-            "samples_ms": latenciesMs,
+            "samples_ms": latencies,
+            "position_ms": samples.map(\.positionMs),
+            "first_get_entries_ms": samples.map(\.firstGetEntriesMs),
+            "poll_count": samples.map(\.pollCount),
         ])
 
         try? await Task.sleep(nanoseconds: 200_000_000)
@@ -245,17 +256,30 @@ enum LogLatencyHarness {
         }
     }
 
-    /// Polls the OSLogStore for an entry containing `tag`. Returns the observation timestamp if seen within `timeout`.
-    private static func pollForTag(_ tag: String, in store: OSLogStore, from position: OSLogPosition, timeout: TimeInterval) async -> Date? {
+    struct PollResult {
+        let seen: Date?
+        let pollCount: Int
+        let firstGetEntriesMs: Double
+    }
+
+    /// Polls the OSLogStore for an entry containing `tag`. Reports observation time,
+    /// number of polls, and cost of the first getEntries call (for diagnostics).
+    private static func pollForTag(_ tag: String, in store: OSLogStore, from position: OSLogPosition, timeout: TimeInterval) async -> PollResult {
         let deadline = Date().addingTimeInterval(timeout)
         let predicate = NSPredicate(format: "subsystem == %@ AND category == %@", subsystem, category)
+        var pollCount = 0
+        var firstGetEntriesMs: Double = 0
         while Date() < deadline {
+            pollCount += 1
+            let callStart = Date()
             do {
                 let entries = try store.getEntries(at: position, matching: predicate)
+                let callDurMs = Date().timeIntervalSince(callStart) * 1000
+                if pollCount == 1 { firstGetEntriesMs = callDurMs }
                 for entry in entries {
                     guard let logEntry = entry as? OSLogEntryLog else { continue }
                     if logEntry.composedMessage.contains(tag) {
-                        return Date()
+                        return PollResult(seen: Date(), pollCount: pollCount, firstGetEntriesMs: firstGetEntriesMs)
                     }
                 }
             } catch {
@@ -263,7 +287,7 @@ enum LogLatencyHarness {
             }
             try? await Task.sleep(nanoseconds: 5_000_000) // 5ms
         }
-        return nil
+        return PollResult(seen: nil, pollCount: pollCount, firstGetEntriesMs: firstGetEntriesMs)
     }
 }
 

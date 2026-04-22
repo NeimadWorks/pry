@@ -99,6 +99,9 @@ let maxV = dict["max_ms"] as? Double ?? -1
 let timeouts = dict["timeouts"] as? Int ?? -1
 let iterations = dict["iterations"] as? Int ?? -1
 let samples = dict["samples_ms"] as? [Double] ?? []
+let positionMs = dict["position_ms"] as? [Double] ?? []
+let firstGetEntriesMs = dict["first_get_entries_ms"] as? [Double] ?? []
+let pollCount = dict["poll_count"] as? [Int] ?? []
 
 log("")
 log("iterations: \(iterations)")
@@ -106,7 +109,16 @@ log("timeouts:   \(timeouts)")
 log(String(format: "p50:        %.1f ms", p50))
 log(String(format: "p95:        %.1f ms", p95))
 log(String(format: "max:        %.1f ms", maxV))
-log("samples_ms: \(samples.map { String(format: "%.0f", $0) }.joined(separator: " "))")
+log("")
+log("per-iteration breakdown:")
+log("  #    latency  position  1st-getEntries  polls")
+for i in 0..<samples.count {
+    let lat = samples[i]
+    let pos = i < positionMs.count ? positionMs[i] : 0
+    let gev = i < firstGetEntriesMs.count ? firstGetEntriesMs[i] : 0
+    let pc = i < pollCount.count ? pollCount[i] : 0
+    log(String(format: "  %-4d %7.1f %9.1f %15.1f %6d", i, lat, pos, gev, pc))
+}
 log("")
 
 let pass = timeouts == 0 && p95 >= 0 && p95 < threshold
