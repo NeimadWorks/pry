@@ -1,0 +1,13 @@
+flowchart LR
+    CC[Claude Code] <-- stdio JSON-RPC (MCP) --> MCP[pry-mcp<br/>out-of-process]
+    MCP -- CGEventPost --> OS[macOS<br/>event tap]
+    OS -- system events --> APP[Target app]
+    MCP <-- AX API --> APP
+    MCP <-- Unix socket<br/>JSON-RPC --> HARNESS
+    subgraph APP
+        HARNESS[PryHarness<br/>in-process, #if DEBUG]
+        VM[ViewModels]
+        LOGS[OSLog]
+        HARNESS -- Mirror / PryInspectable --> VM
+        HARNESS -- OSLogStore --> LOGS
+    end

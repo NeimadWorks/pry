@@ -1,0 +1,25 @@
+flowchart TD
+    START[target] --> ID{id specified?}
+    ID -- yes --> IDR[AXIdentifier match]
+    ID -- no --> RL{role+label?}
+    RL -- yes --> RLR[role+label match]
+    RL -- no --> L{label?}
+    L -- yes --> LR[exact label match]
+    L -- no --> LM{label_matches?}
+    LM -- yes --> LMR[regex label match]
+    LM -- no --> TP{tree_path?}
+    TP -- yes --> TPR[positional match]
+    TP -- no --> PT{point?}
+    PT -- yes --> PTR[screen coords]
+    PT -- no --> ERR[spec parse error]
+
+    IDR --> COUNT{matches}
+    RLR --> COUNT
+    LR --> COUNT
+    LMR --> COUNT
+    TPR --> COUNT
+    PTR --> OK
+
+    COUNT -- 0 --> RESOLVE_EMPTY[resolution_empty]
+    COUNT -- 1 --> OK[resolved]
+    COUNT -- >1 --> RESOLVE_AMBIG[resolution_ambiguous]

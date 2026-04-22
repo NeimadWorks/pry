@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant CC as Claude Code
+    participant MCP as pry-mcp
+    participant OS as macOS
+    participant APP as Target app (PryHarness)
+
+    CC->>MCP: pry_run_spec(path)
+    MCP->>MCP: parse spec
+    MCP->>OS: NSWorkspace.open(bundle)
+    OS->>APP: launch
+    APP->>APP: PryHarness.start() binds socket
+    MCP->>APP: connect /tmp/pry-<bundle>.sock
+    APP-->>MCP: hello OK
+
+    loop for each step
+        MCP->>OS: AX query (resolve target)
+        OS-->>MCP: frame / role / label
+        MCP->>OS: CGEventPost(click)
+        OS->>APP: deliver event
+        MCP->>APP: read_state / read_logs
+        APP-->>MCP: snapshot
+    end
+
+    MCP->>MCP: format verdict.md
+    MCP-->>CC: verdict (markdown + path)
