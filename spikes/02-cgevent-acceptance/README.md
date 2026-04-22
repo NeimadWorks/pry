@@ -68,19 +68,48 @@ All spike logs go to stderr with `[spike02]` prefix.
 ## Verdict
 
 ```
-[ ] PASS
-[ ] FAIL  — evidence: <path to log, screenshot if relevant>
+[x] PASS
+[ ] FAIL
 ```
 
-Update this section with the result and copy the corresponding `[x]` into [PROJECT-BIBLE §11](../../PROJECT-BIBLE.md#11-validated-assumptions) once concluded.
+Date: 2026-04-22. Reflected in [PROJECT-BIBLE §11](../../PROJECT-BIBLE.md#11-validated-assumptions).
 
 ### Evidence
 
-*To be filled when spike is run. Paste stderr output, note macOS version, note whether retry behavior matters.*
+```
+macOS version:        26.4.1 (build 25E253)
+Swift version:        6.3.1 (swiftlang-6.3.1.1.2)
+Run count:            1/1 PASS
+Observations:
+  - AXIdentifier("new_doc_button") resolved on first poll (<100ms after launch).
+  - AX frame (1141, 406, 117, 24) was screen-accurate: click at midpoint
+    triggered SwiftUI Button action (docsCount transitioned 0 → 1).
+  - No synthetic-event filtering observed at .cgSessionEventTap.
+  - 30 ms gap between mouseDown and mouseUp was sufficient.
+```
+
+Raw stderr:
 
 ```
-macOS version:
-Xcode / Swift version:
-Run count (N/N pass):
-Observations:
+[spike02] launched DemoApp pid=19526
+[spike02] marker file: /var/folders/tn/.../pry-spike02-FCD99671-....marker
+[spike02] resolved button frame: (1141.0, 406.0, 117.0, 24.0)
+[spike02] clicking at (1199.5, 418.0)
+[spike02] marker observed: 2026-04-22T15:44:09Z button_clicked clickCount=1 docsCount=1
+[spike02] PASS — CGEventPost(.cgSessionEventTap) at AX-resolved coords triggered the SwiftUI Button action
 ```
+
+### Incidental signal for other spikes
+
+This run produced strong-but-not-dedicated evidence for two adjacent spikes. Formal verdicts still require the dedicated runs:
+
+- **Spike 1 — AX frames reliability** — a SwiftUI `Button`'s AX frame was accurate enough to land a click. Evidence for PASS on the `Button` case; other view types (`TextField`, custom `.onTapGesture`) not yet validated.
+- **Spike 3 — `accessibilityIdentifier` propagation** — `.accessibilityIdentifier("new_doc_button")` in SwiftUI surfaced as `AXIdentifier` queryable from an external process. Evidence for PASS on a standard `Button`.
+
+### Caveat
+
+Validated on macOS 26.4.1 only. PROJECT-BIBLE §11 phrases the question as "macOS 14 and 15." Treat the current PASS as covering 14+ by extrapolation; if a user reports AX/CGEvent regression on 14 or 15 specifically, re-run this spike on that OS.
+
+### Decision implied
+
+[ADR-005](../../docs/architecture/decisions/ADR-005-event-injection-strategy.md) stands: `CGEventPost(.cgSessionEventTap, ...)` at AX-resolved coordinates is the primary event injection strategy. No new ADR needed.

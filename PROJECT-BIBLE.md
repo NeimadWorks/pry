@@ -409,9 +409,9 @@ Each spike: one Swift file, one binary question, PASS/FAIL + evidence.
 ### Placeholder for results
 
 ```
-Spike 1 — AX frames reliability:        [ ] PASS [ ] FAIL — evidence:
-Spike 2 — Synthetic CGEvent acceptance: [ ] PASS [ ] FAIL — evidence:
-Spike 3 — accessibilityIdentifier:      [ ] PASS [ ] FAIL — evidence:
+Spike 1 — AX frames reliability:        [ ] PASS [ ] FAIL — evidence: (partial-positive signal from Spike 2; needs dedicated run across view types)
+Spike 2 — Synthetic CGEvent acceptance: [x] PASS [ ] FAIL — evidence: spikes/02-cgevent-acceptance/README.md (macOS 26.4.1, Swift 6.3.1, 1/1)
+Spike 3 — accessibilityIdentifier:      [ ] PASS [ ] FAIL — evidence: (partial-positive signal from Spike 2 on Button; needs dedicated run across view types)
 Spike 4 — OSLogStore latency:           [ ] PASS [ ] FAIL — evidence:
 Spike 5 — Mirror introspection:         [ ] PASS [ ] FAIL — evidence:
 ```

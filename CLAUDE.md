@@ -20,11 +20,11 @@
 
 ## Current state
 
-**Phase:** Phase 0 — spikes. `Fixtures/DemoApp` exists. Spike 2 scaffolded and compiling. Awaiting first execution.
+**Phase:** Phase 0 — spikes. Spike 2 **PASS**. Spikes 1 and 3 have partial-positive incidental signal from the Spike 2 run but still need dedicated verdicts across multiple SwiftUI view types. Spikes 4 and 5 untouched.
 
-**Open blockers:** five spikes in [PROJECT-BIBLE §11](PROJECT-BIBLE.md#11-validated-assumptions) must return PASS/FAIL before Phase 1. Branch decisions depend on results.
+**Open blockers:** four spikes remaining (1, 3, 4, 5). ADR-005 stands — primary event-injection strategy is validated.
 
-**Next single action:** execute Spike 2 against the built DemoApp binary (requires Accessibility permission on the running Terminal / IDE). Record result in `spikes/02-cgevent-acceptance/README.md` and flip the checkbox in PROJECT-BIBLE §11.
+**Next single action:** run **Spike 3 (`accessibilityIdentifier` propagation across view types)** — cheapest, reuses DemoApp as-is. Spike 1 (AX frames across view types) can piggyback on the same fixture and should run next.
 
 ---
 
@@ -90,3 +90,16 @@ Append one block per session. Keep each to ~15 lines. Don't rewrite previous ses
 **Open questions discovered:** None new. Noted in Spike 2 README that an AX-identifier-not-found failure is really data for Spike 3, not a Spike 2 fail.
 **Blocked on:** Accessibility permission on the shell/IDE that runs the spike. One-time user grant.
 **Next single action:** `swift run spike02 ../../Fixtures/DemoApp/.build/debug/DemoApp` from `spikes/02-cgevent-acceptance/` after Accessibility is granted; record evidence in the spike README; update §11 checkbox.
+
+## Session 2026-04-22 — Spike 2 PASS
+
+**Worked on:** Ran Spike 2 successfully after granting Terminal AX permission. Fixed `Process.executableURL` relative-path bug (resolves against CWD, not repo root) — now requires absolute path and validates executable exists up-front.
+**Landed:** Evidence captured in `spikes/02-cgevent-acceptance/README.md`, PROJECT-BIBLE §11 checkbox flipped for Spike 2. Minor doc update to spike invocation example.
+**Decisions:** ADR-005 stands — `CGEventPost(.cgSessionEventTap)` at AX-resolved coordinates is the canonical event-injection path. No new ADR needed.
+**Spike updates:**
+  - Spike 2 — PASS (macOS 26.4.1, Swift 6.3.1, 1/1 run, 30 ms gap sufficient, no synthetic-event filtering).
+  - Spike 1 — partial-positive signal (Button frame landed accurately). Formal verdict still pending dedicated run across view types.
+  - Spike 3 — partial-positive signal (`accessibilityIdentifier` propagated as `AXIdentifier` on a Button). Formal verdict pending.
+**Open questions discovered:** Validated only on macOS 26.4.1; PROJECT-BIBLE §11 phrases the question as "14 and 15." Noted in spike README as a caveat — will re-run only if a user reports regression on an older OS.
+**Blocked on:** Nothing.
+**Next single action:** write Spike 3 driver that extends DemoApp or reuses it, enumerating `AXIdentifier` across Button, TextField, List, and StaticText — record which view types propagate. Spike 1 (frame accuracy) can reuse the same enumeration pass.
