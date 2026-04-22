@@ -54,6 +54,12 @@ Takes up to ~25 s (10 iterations × up-to-2 s each plus 50 ms gaps). Typically c
 [ ] FAIL
 ```
 
+### Prior run discarded (2026-04-22)
+
+First run reported p50 ~1.2 s and p95 ~3.7 s. **Measurement bug:** `store.position(date: t0 - 0.1s)` was called between `t0 = Date()` and `logger.info(tag)`. `position(date:)` walks the store and can cost several hundred ms, which fell inside the timing window. The latency number was dominated by that bookkeeping call, not by actual log flush latency.
+
+Fix: move position capture **outside** the `t0 → t1` window and use `position(timeIntervalSinceEnd:)` (O(1)) instead of `position(date:)`. Awaiting re-run.
+
 ### Evidence
 
 ```

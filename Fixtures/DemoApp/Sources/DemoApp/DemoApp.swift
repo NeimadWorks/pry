@@ -202,13 +202,19 @@ enum LogLatencyHarness {
 
         for i in 0..<iterations {
             let tag = "spike4-\(i)-\(UUID().uuidString)"
-            let t0Raw = Date()
-            let emittedAtBoot = store.position(date: t0Raw.addingTimeInterval(-0.1))
-            logger.info("\(tag, privacy: .public)")
 
-            let seen = await pollForTag(tag, in: store, from: emittedAtBoot, timeout: perIterationTimeout)
+            // Capture a starting position BEFORE the timing window. position(timeIntervalSinceEnd:)
+            // is O(1) against the store's known-latest cursor — unlike position(date:), which
+            // walks the store and can cost hundreds of ms. Previous revision of this spike
+            // included position(date:) inside the t0→t1 window and reported bogus ~1.2s latencies.
+            let priorPos = store.position(timeIntervalSinceEnd: -0.05)
+
+            let t0 = Date()
+            logger.info("\(tag, privacy: .public)")
+            let seen = await pollForTag(tag, in: store, from: priorPos, timeout: perIterationTimeout)
+
             if let seen {
-                let ms = seen.timeIntervalSince(t0Raw) * 1000
+                let ms = seen.timeIntervalSince(t0) * 1000
                 latenciesMs.append(ms)
             } else {
                 timeouts += 1
