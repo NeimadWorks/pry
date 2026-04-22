@@ -40,20 +40,48 @@ Exit code `0` = both spikes PASS. `1` = at least one FAIL. `2` = bad invocation.
 ## Verdict
 
 ```
-Spike 1 — AX frames reliability:     [ ] PASS [ ] FAIL
-Spike 3 — AXIdentifier propagation:  [ ] PASS [ ] FAIL
+Spike 1 — AX frames reliability:     [x] PASS [ ] FAIL
+Spike 3 — AXIdentifier propagation:  [x] PASS [ ] FAIL
 ```
 
-Once concluded, copy results into [PROJECT-BIBLE §11](../../PROJECT-BIBLE.md#11-validated-assumptions).
+Date: 2026-04-22. Reflected in [PROJECT-BIBLE §11](../../PROJECT-BIBLE.md#11-validated-assumptions).
 
 ### Evidence
 
 ```
-macOS version:
-Swift version:
-Run count (N/N):
-Observations:
+macOS version:  26.4.1 (build 25E253)
+Swift version:  6.3.1 (swiftlang-6.3.1.1.2)
+Run count:      1/1 PASS
 ```
+
+Result table (raw stderr):
+
+```
+identifier          present role              frame                       sane  click
+------------------------------------------------------------------------------------------
+new_doc_button      ✓       AXButton          (1531,179,117,24)           ✓     ✓
+verbose_toggle      ✓       AXCheckBox        (1194,215,71,16)            ✓     ✓
+tap_zone            ✓       AXButton          (812,244,836,32)            ✓     ✓
+doc_name_field      ✓       AXTextField       (812,179,711,24)            ✓     n/a
+click_counter       ✓       AXStaticText      (1210,509,40,13)            ✓     n/a
+doc_list            ✓       AXOutline         (796,288,868,210)           ✓     n/a
+```
+
+### Observations worth keeping
+
+- **SwiftUI role map (macOS 26):** Button → `AXButton`, Toggle → `AXCheckBox`, Text → `AXStaticText`, TextField → `AXTextField`, List → `AXOutline`. The `AXOutline` case is a noteworthy gotcha: predicate authors expecting `AXList` will miss. Document this in [docs/design/spec-format.md](../../docs/design/spec-format.md) when the role-constraint form is added.
+- **`.onTapGesture` on a `Rectangle` with `.accessibilityAddTraits(.isButton)`** surfaces as `AXButton`. Without `.isButton`, the role would be `AXGroup` and standard resolvers would miss it. Worth a best-practice note for the external-dev quickstart.
+- **AX frames are accurate enough for direct click injection** on every type we tried. No frame correction pass needed for v1.
+- Frame reads happen from the **external** process (not the target) — confirmed the approach from [ADR-002](../../docs/architecture/decisions/ADR-002-two-process-split.md) works cleanly.
+
+### Decision implied
+
+- Highest-precedence resolution strategy in [docs/design/spec-format.md §4](../../docs/design/spec-format.md#4-target-grammar) stays: `id` (AXIdentifier) first. No spec-format change.
+- No new ADR required. [ADR-005](../../docs/architecture/decisions/ADR-005-event-injection-strategy.md) now has all its prerequisites validated and loses its "pending Spike 2" qualifier.
+
+### Caveat
+
+Same as Spike 2: validated only on macOS 26.4.1. If regressions surface on macOS 14/15, re-run.
 
 ### Decision branches
 

@@ -14,4 +14,9 @@ See [`../01-ax-frames/README.md`](../01-ax-frames/README.md).
 
 ## Verdict
 
-Copied from the Spike 1 run. Update both checkboxes in [PROJECT-BIBLE §11](../../PROJECT-BIBLE.md#11-validated-assumptions) from the same evidence.
+```
+[x] PASS
+[ ] FAIL
+```
+
+Date: 2026-04-22. Evidence lives in [`../01-ax-frames/README.md`](../01-ax-frames/README.md). Full run: 6/6 view types propagated `.accessibilityIdentifier` as `AXIdentifier` (Button, Toggle, custom `.onTapGesture` view, TextField, Text, List).

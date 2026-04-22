@@ -20,11 +20,11 @@
 
 ## Current state
 
-**Phase:** Phase 0 — spikes. Spike 2 **PASS**. Spikes 1 and 3 have partial-positive incidental signal from the Spike 2 run but still need dedicated verdicts across multiple SwiftUI view types. Spikes 4 and 5 untouched.
+**Phase:** Phase 0 — spikes. 3/5 done: Spike 1, 2, 3 all **PASS**. Spikes 4 (OSLogStore latency) and 5 (Mirror introspection) remaining.
 
-**Open blockers:** four spikes remaining (1, 3, 4, 5). ADR-005 stands — primary event-injection strategy is validated.
+**Open blockers:** two spikes. No architectural branches triggered — canonical architecture (PROJECT-BIBLE §6.1) ships as-is. ADR-005 is no longer pending validation.
 
-**Next single action:** run **Spike 3 (`accessibilityIdentifier` propagation across view types)** — cheapest, reuses DemoApp as-is. Spike 1 (AX frames across view types) can piggyback on the same fixture and should run next.
+**Next single action:** **Spike 5 (Mirror + `PryInspectable` under Swift 6 strict concurrency)** — has the most design uncertainty left. Spike 4 (OSLogStore latency) is a pure measurement and can be run any time.
 
 ---
 
@@ -103,3 +103,17 @@ Append one block per session. Keep each to ~15 lines. Don't rewrite previous ses
 **Open questions discovered:** Validated only on macOS 26.4.1; PROJECT-BIBLE §11 phrases the question as "14 and 15." Noted in spike README as a caveat — will re-run only if a user reports regression on an older OS.
 **Blocked on:** Nothing.
 **Next single action:** write Spike 3 driver that extends DemoApp or reuses it, enumerating `AXIdentifier` across Button, TextField, List, and StaticText — record which view types propagate. Spike 1 (frame accuracy) can reuse the same enumeration pass.
+
+## Session 2026-04-22 — Spikes 1 + 3 PASS
+
+**Worked on:** Extended DemoApp with Toggle and custom `.onTapGesture` Rectangle. Built combined `spike01` driver that enumerates AX tree, verifies AXIdentifier presence + frame sanity + click-to-marker for 6 SwiftUI view types. Fixed one `String(format:"%s", ...)` crash — Swift `String(format:)` does not accept Swift strings via `%s`; replaced with manual padding helper.
+**Landed:** `Fixtures/DemoApp/Sources/DemoApp/DemoApp.swift` (Toggle + tap zone), `spikes/01-ax-frames/{Package.swift, Sources, README.md}`, `spikes/03-ax-identifier/README.md` (pointer), evidence captured, PROJECT-BIBLE §11 checkboxes flipped for Spikes 1 and 3, ADR-005 status updated (no longer "pending Spike 2").
+**Decisions:** Combined Spike 1 + Spike 3 into one driver in `01-ax-frames/`, with `03-ax-identifier/` reduced to a formal pointer. Justified by shared fixture + shared AX walk.
+**Spike updates:**
+  - Spike 1 — PASS. AX frames accurate for Button/Toggle/Text/TextField/List/custom onTap.
+  - Spike 3 — PASS. `.accessibilityIdentifier` propagates to `AXIdentifier` for all 6 types.
+  - Noted: `List` on macOS 26 surfaces as `AXOutline` (not `AXList`) — future spec-format doc will warn about this when role-constraint predicates are added.
+  - Noted: custom tap views need `.accessibilityAddTraits(.isButton)` + `.contentShape(Rectangle())` to surface as `AXButton` rather than `AXGroup` — worth including in the external-dev quickstart.
+**Open questions discovered:** None new; role-map quirks captured as docs-todo, not blockers.
+**Blocked on:** Nothing.
+**Next single action:** write Spike 5 — `PryRegistry` prototype that registers a `DocumentListVM` instance and reads its snapshot from the socket server. Verify no `Sendable` warnings under Swift 6 strict concurrency. Can live at `spikes/05-mirror-introspection/`, using DemoApp's existing VM.

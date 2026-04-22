@@ -1,6 +1,6 @@
 # ADR-005 — Event injection strategy
 
-**Status:** Accepted (pending Spike 2 validation)
+**Status:** Accepted (Spike 2 validated 2026-04-22)
 **Date:** 2026-04-22
 **Supersedes:** —
 **Superseded by:** —
