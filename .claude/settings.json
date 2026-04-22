@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"additionalContext\":\"Forged by Anvil. Read CLAUDE.md. Use /forge-status, /forge-phase.\"}'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && PHASE=$(grep -A1 \"🔄 In Progress\" CLAUDE.md 2>/dev/null | head -1 | grep -oE \"[0-9]+\" | head -1 || echo \"\") && PREFIX=${PHASE:+[P$PHASE] } && git add -A && git diff --cached --quiet || git commit -m \"${PREFIX}wip: auto-commit\" --no-verify"
+          }
+        ]
+      }
+    ]
+  }
+}
