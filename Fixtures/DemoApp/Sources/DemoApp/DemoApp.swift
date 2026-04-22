@@ -29,6 +29,13 @@ final class DocumentListVM: ObservableObject {
     @Published var documents: [String] = []
     @Published var draftName: String = ""
     @Published var clickCount: Int = 0
+    @Published var zoneTapCount: Int = 0
+    @Published var verbose: Bool = false {
+        didSet {
+            guard oldValue != verbose else { return }
+            SpikeMarker.write(event: "toggle_changed", payload: ["verbose": verbose])
+        }
+    }
 
     func createDocument() {
         clickCount += 1
@@ -36,6 +43,11 @@ final class DocumentListVM: ObservableObject {
         documents.append(name)
         draftName = ""
         SpikeMarker.write(event: "button_clicked", payload: ["clickCount": clickCount, "docsCount": documents.count])
+    }
+
+    func tapZone() {
+        zoneTapCount += 1
+        SpikeMarker.write(event: "zone_tapped", payload: ["count": zoneTapCount])
     }
 }
 
@@ -58,6 +70,20 @@ struct ContentView: View {
                 .keyboardShortcut(.defaultAction)
             }
             .padding(.horizontal)
+
+            Toggle("Verbose", isOn: $vm.verbose)
+                .accessibilityIdentifier("verbose_toggle")
+                .padding(.horizontal)
+
+            Rectangle()
+                .fill(Color.blue.opacity(0.15))
+                .frame(height: 32)
+                .overlay(Text("Tap zone (\(vm.zoneTapCount))").font(.caption))
+                .accessibilityIdentifier("tap_zone")
+                .accessibilityAddTraits(.isButton)
+                .contentShape(Rectangle())
+                .onTapGesture { vm.tapZone() }
+                .padding(.horizontal)
 
             List(vm.documents, id: \.self) { name in
                 Text(name).accessibilityIdentifier("doc_row")

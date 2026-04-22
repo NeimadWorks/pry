@@ -28,8 +28,8 @@ Covered in [PROJECT-BIBLE §11](../PROJECT-BIBLE.md#branch-decisions). Once a sp
 
 ## Status
 
-- `01-ax-frames/` — ⏳ not started
-- `02-cgevent-acceptance/` — ⏳ not started (recommended first; highest blast radius)
-- `03-ax-identifier/` — ⏳ not started
+- `01-ax-frames/` — 🟡 driver ready (combined with Spike 3), awaiting run
+- `02-cgevent-acceptance/` — ✅ PASS (2026-04-22, macOS 26.4.1)
+- `03-ax-identifier/` — 🟡 answered by `01-ax-frames/` driver, awaiting run
 - `04-oslog-streaming/` — ⏳ not started
 - `05-mirror-introspection/` — ⏳ not started
