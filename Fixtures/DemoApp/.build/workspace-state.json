@@ -4,7 +4,20 @@
 
     ],
     "dependencies" : [
-
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "pry",
+          "kind" : "fileSystem",
+          "location" : "/Users/Dom/Projects/NeimadWorks/pry",
+          "name" : "pry"
+        },
+        "state" : {
+          "name" : "fileSystem",
+          "path" : "/Users/Dom/Projects/NeimadWorks/pry"
+        },
+        "subpath" : "pry"
+      }
     ],
     "prebuilts" : [
 

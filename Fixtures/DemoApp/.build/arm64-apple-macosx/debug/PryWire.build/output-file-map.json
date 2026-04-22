@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/primary.swiftdeps"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryWire/Messages.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/Messages.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/Messages~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/Messages.dia"
+  }
+}

@@ -7,9 +7,15 @@ let package = Package(
     products: [
         .executable(name: "DemoApp", targets: ["DemoApp"])
     ],
+    dependencies: [
+        .package(path: "../..")
+    ],
     targets: [
         .executableTarget(
             name: "DemoApp",
+            dependencies: [
+                .product(name: "PryHarness", package: "pry")
+            ],
             swiftSettings: [.enableUpcomingFeature("StrictConcurrency")]
         )
     ]

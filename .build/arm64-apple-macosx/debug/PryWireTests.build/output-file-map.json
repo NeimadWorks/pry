@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/primary.swiftdeps"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Tests/PryWireTests/PryWireTests.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/PryWireTests.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/PryWireTests.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/PryWireTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/PryWireTests.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/PryWireTests.dia"
+  }
+}

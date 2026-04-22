@@ -1,0 +1,212 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "PackageStructure": ["<PackageStructure>"]
+  "PryHarness-arm64-apple-macosx-debug.module": ["<PryHarness-arm64-apple-macosx-debug.module>"]
+  "PryHarnessTests-arm64-apple-macosx-debug.module": ["<PryHarnessTests-arm64-apple-macosx-debug.module>"]
+  "PryWire-arm64-apple-macosx-debug.module": ["<PryWire-arm64-apple-macosx-debug.module>"]
+  "PryWireTests-arm64-apple-macosx-debug.module": ["<PryWireTests-arm64-apple-macosx-debug.module>"]
+  "main": ["<PryHarness-arm64-apple-macosx-debug.module>","<PryWire-arm64-apple-macosx-debug.module>","<pry-mcp-arm64-apple-macosx-debug.exe>","<pry-mcp-arm64-apple-macosx-debug.module>"]
+  "pry-mcp-arm64-apple-macosx-debug.exe": ["<pry-mcp-arm64-apple-macosx-debug.exe>"]
+  "pry-mcp-arm64-apple-macosx-debug.module": ["<pry-mcp-arm64-apple-macosx-debug.module>"]
+  "pryPackageTests-arm64-apple-macosx-debug.module": ["<pryPackageTests-arm64-apple-macosx-debug.module>"]
+  "pryPackageTests-arm64-apple-macosx-debug.test": ["<pryPackageTests-arm64-apple-macosx-debug.test>"]
+  "test": ["<PryHarness-arm64-apple-macosx-debug.module>","<PryHarnessTests-arm64-apple-macosx-debug.module>","<PryWire-arm64-apple-macosx-debug.module>","<PryWireTests-arm64-apple-macosx-debug.module>","<pry-mcp-arm64-apple-macosx-debug.exe>","<pry-mcp-arm64-apple-macosx-debug.module>","<pryPackageTests-arm64-apple-macosx-debug.test>"]
+default: "main"
+nodes:
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryWire/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/Dom/Projects/NeimadWorks/pry/Tests/PryHarnessTests/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/Dom/Projects/NeimadWorks/pry/Tests/PryWireTests/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp":
+    is-mutated: true
+commands:
+  "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift","/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspectable.swift","/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryRegistry.swift","/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PrySocketServer.swift"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/sources"]
+    description: "Write auxiliary file /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/sources"
+
+  "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarnessTests.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/Dom/Projects/NeimadWorks/pry/Tests/PryHarnessTests/PryHarnessTests.swift"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarnessTests.build/sources"]
+    description: "Write auxiliary file /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarnessTests.build/sources"
+
+  "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/Dom/Projects/NeimadWorks/pry/Sources/PryWire/Messages.swift"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/sources"]
+    description: "Write auxiliary file /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/sources"
+
+  "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/Dom/Projects/NeimadWorks/pry/Tests/PryWireTests/PryWireTests.swift"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/sources"]
+    description: "Write auxiliary file /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/sources"
+
+  "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp-entitlement.plist":
+    tool: write-auxiliary-file
+    inputs: ["<entitlement-plist>","<com.apple.security.get-task-allow>"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp-entitlement.plist"]
+    description: "Write auxiliary file /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp-entitlement.plist"
+
+  "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main.swift.o"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp.product/Objects.LinkFileList"
+
+  "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.derived/runner.swift"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.build/sources"]
+    description: "Write auxiliary file /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.build/sources"
+
+  "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.derived/runner.swift":
+    tool: test-entry-point-tool
+    inputs: []
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.derived/runner.swift"]
+
+  "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarnessTests.build/PryHarnessTests.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/PryWireTests.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.build/runner.swift.o"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.product/Objects.LinkFileList"
+
+  "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/main.swift"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/sources"]
+    description: "Write auxiliary file /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/sources"
+
+  "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+
+  "<PryHarness-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarness.swiftmodule"]
+    outputs: ["<PryHarness-arm64-apple-macosx-debug.module>"]
+
+  "<PryHarnessTests-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarnessTests.build/PryHarnessTests.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarnessTests.swiftmodule"]
+    outputs: ["<PryHarnessTests-arm64-apple-macosx-debug.module>"]
+
+  "<PryWire-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule"]
+    outputs: ["<PryWire-arm64-apple-macosx-debug.module>"]
+
+  "<PryWireTests-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/PryWireTests.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWireTests.swiftmodule"]
+    outputs: ["<PryWireTests-arm64-apple-macosx-debug.module>"]
+
+  "<pry-mcp-arm64-apple-macosx-debug.exe>":
+    tool: phony
+    inputs: ["<pry-mcp-arm64-apple-macosx-debug.exe-CodeSigning>"]
+    outputs: ["<pry-mcp-arm64-apple-macosx-debug.exe>"]
+
+  "<pry-mcp-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/pry_mcp.swiftmodule"]
+    outputs: ["<pry-mcp-arm64-apple-macosx-debug.module>"]
+
+  "<pryPackageTests-arm64-apple-macosx-debug.module>":
+    tool: phony
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.build/runner.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/pryPackageTests.swiftmodule"]
+    outputs: ["<pryPackageTests-arm64-apple-macosx-debug.module>"]
+
+  "<pryPackageTests-arm64-apple-macosx-debug.test>":
+    tool: phony
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.xctest/Contents/MacOS/pryPackageTests"]
+    outputs: ["<pryPackageTests-arm64-apple-macosx-debug.test>"]
+
+  "C.PryHarness-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift","/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspectable.swift","/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryRegistry.swift","/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PrySocketServer.swift","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/sources"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarness.swiftmodule"]
+    description: "Compiling Swift Module 'PryHarness' (4 sources)"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","PryHarness","-emit-dependencies","-emit-module","-emit-module-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarness.swiftmodule","-output-file-map","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/sources","-I","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx14.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j8","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/include/PryHarness-Swift.h","-swift-version","6","-enable-upcoming-feature","StrictConcurrency","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","pry"]
+
+  "C.PryHarnessTests-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/Tests/PryHarnessTests/PryHarnessTests.swift","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarness.swiftmodule","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarnessTests.build/sources"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarnessTests.build/PryHarnessTests.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarnessTests.swiftmodule"]
+    description: "Compiling Swift Module 'PryHarnessTests' (1 sources)"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","PryHarnessTests","-emit-dependencies","-emit-module","-emit-module-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarnessTests.swiftmodule","-output-file-map","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarnessTests.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarnessTests.build/sources","-I","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx14.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-Xfrontend","-enable-cross-import-overlays","-j8","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-swift-version","6","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","pry"]
+
+  "C.PryWire-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/Sources/PryWire/Messages.swift","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/sources"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule"]
+    description: "Compiling Swift Module 'PryWire' (1 sources)"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","PryWire","-emit-dependencies","-emit-module","-emit-module-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule","-output-file-map","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/sources","-I","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx14.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j8","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/include/PryWire-Swift.h","-swift-version","6","-enable-upcoming-feature","StrictConcurrency","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","pry"]
+
+  "C.PryWireTests-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/Tests/PryWireTests/PryWireTests.swift","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/sources"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/PryWireTests.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWireTests.swiftmodule"]
+    description: "Compiling Swift Module 'PryWireTests' (1 sources)"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","PryWireTests","-emit-dependencies","-emit-module","-emit-module-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWireTests.swiftmodule","-output-file-map","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/sources","-I","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx14.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-Xfrontend","-enable-cross-import-overlays","-j8","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-swift-version","6","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","pry"]
+
+  "C.pry-mcp-arm64-apple-macosx-debug.exe":
+    tool: shell
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp.product/Objects.LinkFileList"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp"]
+    description: "Linking ./.build/arm64-apple-macosx/debug/pry-mcp"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-L","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug","-o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp","-module-name","pry_mcp","-Xlinker","-no_warn_duplicate_libraries","-emit-executable","-Xlinker","-alias","-Xlinker","_pry_mcp_main","-Xlinker","_main","-Xlinker","-rpath","-Xlinker","@loader_path","@/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp.product/Objects.LinkFileList","-Xlinker","-rpath","-Xlinker","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-6.2/macosx","-target","arm64-apple-macosx14.0","-Xlinker","-add_ast_path","-Xlinker","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/pry_mcp.swiftmodule","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g"]
+
+  "C.pry-mcp-arm64-apple-macosx-debug.exe-entitlements":
+    tool: shell
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp-entitlement.plist"]
+    outputs: ["<pry-mcp-arm64-apple-macosx-debug.exe-CodeSigning>"]
+    description: "Applying debug entitlements to ./.build/arm64-apple-macosx/debug/pry-mcp"
+    args: ["codesign","--force","--sign","-","--entitlements","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp-entitlement.plist","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry-mcp"]
+
+  "C.pry-mcp-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/main.swift","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/sources"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/pry_mcp.swiftmodule"]
+    description: "Compiling Swift Module 'pry_mcp' (1 sources)"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","pry_mcp","-emit-dependencies","-emit-module","-emit-module-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/pry_mcp.swiftmodule","-output-file-map","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/output-file-map.json","-incremental","-c","@/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/sources","-I","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx14.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j8","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-Xfrontend","-entry-point-function-name","-Xfrontend","pry_mcp_main","-swift-version","6","-enable-upcoming-feature","StrictConcurrency","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","pry"]
+
+  "C.pryPackageTests-arm64-apple-macosx-debug.module":
+    tool: shell
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.derived/runner.swift","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWireTests.swiftmodule","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarnessTests.swiftmodule","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.build/sources"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.build/runner.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/pryPackageTests.swiftmodule"]
+    description: "Compiling Swift Module 'pryPackageTests' (1 sources)"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","pryPackageTests","-emit-dependencies","-emit-module","-emit-module-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/pryPackageTests.swiftmodule","-output-file-map","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.build/sources","-I","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx14.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-Xfrontend","-enable-cross-import-overlays","-j8","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.build/include/pryPackageTests-Swift.h","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","pry"]
+
+  "C.pryPackageTests-arm64-apple-macosx-debug.test":
+    tool: shell
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarnessTests.build/PryHarnessTests.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWireTests.build/PryWireTests.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.build/runner.swift.o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.product/Objects.LinkFileList"]
+    outputs: ["/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.xctest/Contents/MacOS/pryPackageTests"]
+    description: "Linking ./.build/arm64-apple-macosx/debug/pryPackageTests.xctest/Contents/MacOS/pryPackageTests"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-L","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug","-o","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.xctest/Contents/MacOS/pryPackageTests","-module-name","pryPackageTests","-Xlinker","-no_warn_duplicate_libraries","-Xlinker","-bundle","-Xlinker","-rpath","-Xlinker","@loader_path/../../../","@/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pryPackageTests.product/Objects.LinkFileList","-Xlinker","-rpath","-Xlinker","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-6.2/macosx","-target","arm64-apple-macosx14.0","-Xlinker","-add_ast_path","-Xlinker","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarness.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarnessTests.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWireTests.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/pryPackageTests.swiftmodule","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/","/Users/Dom/Projects/NeimadWorks/pry/Sources/PryWire/","/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/","/Users/Dom/Projects/NeimadWorks/pry/Tests/PryHarnessTests/","/Users/Dom/Projects/NeimadWorks/pry/Tests/PryWireTests/","/Users/Dom/Projects/NeimadWorks/pry/Package.swift","/Users/Dom/Projects/NeimadWorks/pry/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+

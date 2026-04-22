@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/primary.swiftdeps"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/main.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main.dia"
+  }
+}

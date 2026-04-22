@@ -1,0 +1,33 @@
+{
+  "": {
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/primary.swiftdeps"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspectable.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryRegistry.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PrySocketServer.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer.dia"
+  }
+}

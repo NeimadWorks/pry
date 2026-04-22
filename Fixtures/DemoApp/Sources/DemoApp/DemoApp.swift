@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 import Foundation
 import OSLog
+import PryHarness
 
 @main
 struct DemoApp: App {
@@ -13,7 +14,14 @@ struct DemoApp: App {
             ContentView()
                 .environmentObject(vm)
                 .frame(minWidth: 480, minHeight: 320)
-                .task { PryRegistry.shared.register(vm) }
+                .task {
+                    PryRegistry.shared.register(vm)
+                    // Spike-support marker so spike05 can observe that registration happened.
+                    SpikeMarker.writeJSON(event: "pry_registered", object: [
+                        "viewmodel": type(of: vm).pryName,
+                        "keys": Array(vm.prySnapshot().keys).sorted(),
+                    ])
+                }
         }
         .windowResizability(.contentSize)
     }
@@ -23,6 +31,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+
+        // Start the real PryHarness. #if DEBUG-gated in a real app; here DemoApp
+        // is always a fixture, so start unconditionally.
+        PryHarness.start(bundleID: "fr.neimad.pry.demoapp")
 
         if ProcessInfo.processInfo.environment["PRY_SPIKE_LOG_LATENCY"] == "1" {
             Task.detached(priority: .userInitiated) {
@@ -89,41 +101,6 @@ final class DocumentListVM: ObservableObject, PryInspectable {
             }
         }
         return out
-    }
-}
-
-// MARK: - PryInspectable prototype
-//
-// This is a minimal in-DemoApp version of what Phase 1's PryHarness package
-// will export. It lives here only so Spike 5 can verify that the protocol
-// shape compiles cleanly under Swift 6 strict concurrency and that the
-// registry/snapshot cycle behaves for a typical @MainActor ObservableObject.
-
-@MainActor
-protocol PryInspectable: AnyObject {
-    static var pryName: String { get }
-    func prySnapshot() -> [String: any Sendable]
-}
-
-@MainActor
-final class PryRegistry {
-    static let shared = PryRegistry()
-    private var snapshots: [String: () -> [String: any Sendable]] = [:]
-
-    private init() {}
-
-    func register<T: PryInspectable>(_ instance: T) {
-        snapshots[T.pryName] = { [weak instance] in
-            instance?.prySnapshot() ?? [:]
-        }
-        SpikeMarker.writeJSON(event: "pry_registered", object: [
-            "viewmodel": T.pryName,
-            "keys": Array(instance.prySnapshot().keys).sorted(),
-        ])
-    }
-
-    func snapshot(of name: String) -> [String: any Sendable]? {
-        snapshots[name]?()
     }
 }
 

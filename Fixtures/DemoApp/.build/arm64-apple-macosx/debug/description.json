@@ -32,6 +32,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules/PryHarness.swiftmodule"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/DemoApp.build/sources"
         }
       ],
@@ -110,6 +114,323 @@
       ],
       "tempsPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/DemoApp.build",
       "wholeModuleOptimization" : false
+    },
+    "C.PryHarness-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/sources",
+      "importPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspectable.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryRegistry.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PrySocketServer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "PryHarness",
+      "moduleOutputPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules/PryHarness.swiftmodule",
+      "objects" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/include/PryHarness-Swift.h",
+        "-swift-version",
+        "6",
+        "-enable-upcoming-feature",
+        "StrictConcurrency",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "pry"
+      ],
+      "outputFileMapPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules/PryHarness.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspectable.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryRegistry.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PrySocketServer.swift"
+      ],
+      "tempsPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.PryWire-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/sources",
+      "importPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryWire/Messages.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "PryWire",
+      "moduleOutputPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule",
+      "objects" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/include/PryWire-Swift.h",
+        "-swift-version",
+        "6",
+        "-enable-upcoming-feature",
+        "StrictConcurrency",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "pry"
+      ],
+      "outputFileMapPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryWire/Messages.swift"
+      ],
+      "tempsPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.pry-mcp-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry_mcp.build/sources",
+      "importPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/main.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry_mcp.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "pry_mcp",
+      "moduleOutputPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules/pry_mcp.swiftmodule",
+      "objects" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry_mcp.build/main.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "pry_mcp_main",
+        "-swift-version",
+        "6",
+        "-enable-upcoming-feature",
+        "StrictConcurrency",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "pry"
+      ],
+      "outputFileMapPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry_mcp.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry_mcp.build/main.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules/pry_mcp.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/main.swift"
+      ],
+      "tempsPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry_mcp.build",
+      "wholeModuleOptimization" : false
     }
   },
   "swiftFrontendCommands" : {
@@ -178,11 +499,210 @@
       "demoapp",
       "-driver-use-frontend-path",
       "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "PryHarness" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "PryHarness",
+      "-package-name",
+      "pry",
+      "-c",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspectable.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryRegistry.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PrySocketServer.swift",
+      "-I",
+      "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/include/PryHarness-Swift.h",
+      "-swift-version",
+      "6",
+      "-enable-upcoming-feature",
+      "StrictConcurrency",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "pry",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "PryWire" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "PryWire",
+      "-package-name",
+      "pry",
+      "-c",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryWire/Messages.swift",
+      "-I",
+      "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/include/PryWire-Swift.h",
+      "-swift-version",
+      "6",
+      "-enable-upcoming-feature",
+      "StrictConcurrency",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "pry",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "pry_mcp" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "pry_mcp",
+      "-package-name",
+      "pry",
+      "-c",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/main.swift",
+      "-I",
+      "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "pry_mcp_main",
+      "-swift-version",
+      "6",
+      "-enable-upcoming-feature",
+      "StrictConcurrency",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "pry",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
     ]
   },
   "targetDependencyMap" : {
     "DemoApp" : [
+      "PryHarness",
+      "PryWire"
+    ],
+    "PryHarness" : [
+      "PryWire"
+    ],
+    "PryWire" : [
 
+    ],
+    "pry_mcp" : [
+      "PryWire"
     ]
   },
   "testDiscoveryCommands" : {
@@ -235,9 +755,115 @@
         {
           "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/DemoApp.build/DemoApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o"
         }
       ],
       "outputFilePath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/DemoApp.product/Objects.LinkFileList"
+    },
+    "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspectable.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryRegistry.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PrySocketServer.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/sources"
+    },
+    "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryWire/Messages.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/sources"
+    },
+    "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry-mcp-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry-mcp-entitlement.plist"
+    },
+    "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry-mcp.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry_mcp.build/main.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry-mcp.product/Objects.LinkFileList"
+    },
+    "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry_mcp.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/main.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/pry_mcp.build/sources"
     },
     "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
       "alwaysOutOfDate" : true,

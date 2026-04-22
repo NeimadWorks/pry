@@ -20,13 +20,18 @@
 
 ## Current state
 
-**Phase:** Phase 0 — spikes — **COMPLETE** (2026-04-22). 4/5 PASS, 1 FAIL. Ready for Phase 1.
+**Phase:** Phase 1 — skeleton. PryHarness side **complete and live**. pry-mcp side is a stub.
 
-**Results:** Spikes 1, 2, 3, 5 PASS. Spike 4 FAIL (OSLogStore p50 ~1.2 s — triggered pre-committed branch: `assert_logs` / `assert_no_errors` removed from v1 grammar; `pry_logs` stays best-effort; Tier 2 real-time log tee deferred via [ADR-006](docs/architecture/decisions/ADR-006-log-observation-strategy.md)).
+**State:**
+- Root `Package.swift` declares `PryHarness`, `PryWire`, `pry-mcp`.
+- `PryWire` — full wire contract: JSON-RPC envelope, `AnyCodable`, all 6 methods' param/result types, error codes.
+- `PryHarness` — `PryInspectable` protocol, `PryRegistry` (lifted from DemoApp), `PryHarness.start()`, `PrySocketServer` with length-prefixed JSON-RPC framing, `hello` and `read_state` handlers wired. `inspect_tree` / `read_logs` / `snapshot` return methodNotFound until implemented.
+- `pry-mcp` — version stub only. No MCP server, no AppDriver, no event injection, no spec runner.
+- `Fixtures/DemoApp` — migrated off the local prototype; depends on `PryHarness` via `.package(path: "../..")`.
+- **End-to-end smoke test verified**: external client opens the Unix socket, calls `hello` + `read_state` (full snapshot, path-scoped, unknown VM, unknown path), gets correctly-shaped responses with diagnostic `data` payloads.
+- **Tests**: 11/11 passing (PryWire roundtrips, PryRegistry lifecycle).
 
-**Architectural branches triggered:** one — ADR-006 for log observation. Core PROJECT-BIBLE §6.1 ships as-is.
-
-**Next single action:** begin Phase 1 skeleton — create root `Package.swift` declaring three products (`PryHarness`, `PryWire`, `pry-mcp`), stub source files per [docs/architecture/overview.md](docs/architecture/overview.md) module map. Lift the DemoApp-local `PryInspectable` / `PryRegistry` prototype into the `PryHarness` target unchanged (Spike 5 validated the shape).
+**Next single action:** build the pry-mcp side of the socket — a `HarnessClient` that wraps the Unix socket with PryWire Codables and exposes async methods (`hello()`, `readState(viewmodel:path:)`, etc.). After that, `AppDriver` (NSWorkspace launch + wait for socket) and a first MCP tool `pry_state` so Claude Code can call through the full chain.
 
 ---
 
@@ -133,3 +138,25 @@ Append one block per session. Keep each to ~15 lines. Don't rewrite previous ses
 **Open questions discovered:** Q5 in §16 — when to build the Tier 2 log tee.
 **Blocked on:** Nothing. Phase 0 is done.
 **Next single action:** begin Phase 1 skeleton. Create root `Package.swift` with three products and stub the module map from `docs/architecture/overview.md`. Lift `PryInspectable` / `PryRegistry` from DemoApp into the `PryHarness` target.
+
+## Session 2026-04-23 — Phase 1 skeleton, harness side live
+
+**Worked on:** Set up the SwiftPM workspace and implemented the full PryHarness in-process side. Wrote the wire contract, the socket server with length-prefixed JSON-RPC framing, the registry, and smoke-tested everything end-to-end against DemoApp.
+**Landed:**
+  - `Package.swift` (root, 3 products + 2 test targets)
+  - `Sources/PryWire/Messages.swift` — complete Codable contract for hello/read_state/inspect_tree/read_logs/snapshot/goodbye, `AnyCodable`, error codes
+  - `Sources/PryHarness/{PryInspectable,PryRegistry,PryHarness,PrySocketServer}.swift`
+  - `Sources/pry-mcp/main.swift` — version-stub placeholder only
+  - `Tests/{PryWireTests,PryHarnessTests}/*.swift` — 11 passing tests
+  - `Fixtures/DemoApp/Package.swift` now depends on the root package via path
+  - DemoApp strips local PryInspectable prototype, imports PryHarness, calls `PryHarness.start(bundleID:)` from AppDelegate
+**Decisions:**
+  - `DispatchQueue.main.sync { MainActor.assumeIsolated { PryRegistry.shared.snapshot(...) } }` is the pattern for cross-thread reads of main-actor state. Validated end-to-end; no Sendable complaints under Swift 6 strict concurrency.
+  - Error responses carry a `data` payload with diagnostic hints (`registered: [...]`, `available_paths: [...]`). This directly supports Invariant 4 (no `failed` without context) and shapes the verdict's diagnostic sections later.
+  - Kept the `pry_registered` SpikeMarker emission in DemoApp's `.task` so spike05 remains reproducible; registry code itself is clean.
+**Tests / smoke:**
+  - `swift test` — 11/11 pass.
+  - Live socket against DemoApp: hello + read_state (full + path + unknown VM + unknown path + unimplemented method) — all shapes correct.
+**Open questions discovered:** none new.
+**Blocked on:** nothing.
+**Next single action:** implement `pry-mcp/Driver/HarnessClient.swift` — an async wrapper around a connecting `AF_UNIX` socket using PryWire Codables (`func hello() async throws -> HelloResult`, etc.). Then `AppDriver` (NSWorkspace launch + socket-appears wait), then a first MCP tool `pry_state` routed through a minimal stdio JSON-RPC server. That closes the loop: Claude Code → stdio MCP → pry-mcp → AF_UNIX socket → PryHarness → VM snapshot.
