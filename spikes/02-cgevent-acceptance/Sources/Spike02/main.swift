@@ -38,8 +38,16 @@ guard CommandLine.arguments.count >= 2 else {
     exit(2)
 }
 
+let rawBinaryArg = CommandLine.arguments[1]
+let resolvedBinary = URL(fileURLWithPath: rawBinaryArg).standardizedFileURL
+guard FileManager.default.isExecutableFile(atPath: resolvedBinary.path) else {
+    fputs("[spike02] FAIL — not an executable file at: \(resolvedBinary.path)\n", stderr)
+    fputs("[spike02] pass an absolute path, or a path relative to the current working directory.\n", stderr)
+    exit(1)
+}
+
 let config = Config(
-    demoAppBinary: URL(fileURLWithPath: CommandLine.arguments[1]),
+    demoAppBinary: resolvedBinary,
     markerFile: URL(fileURLWithPath: NSTemporaryDirectory())
         .appendingPathComponent("pry-spike02-\(UUID().uuidString).marker")
 )

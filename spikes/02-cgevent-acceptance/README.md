@@ -34,8 +34,11 @@ This spike drives [ADR-005](../../docs/architecture/decisions/ADR-005-event-inje
 cd Fixtures/DemoApp && swift build && cd -
 
 # 2. Build and run the spike, passing the DemoApp binary path.
+#    Use an absolute path — Process.executableURL resolves relative paths
+#    against CWD, which is the spike dir once swift run is active.
 cd spikes/02-cgevent-acceptance
-swift run spike02 ../../Fixtures/DemoApp/.build/debug/DemoApp
+DEMO=$(cd ../../Fixtures/DemoApp && pwd)/.build/debug/DemoApp
+swift run spike02 "$DEMO"
 echo "exit: $?"
 ```
 
