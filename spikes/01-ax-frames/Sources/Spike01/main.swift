@@ -220,20 +220,32 @@ for t in targets {
 }
 
 // Report
+func pad(_ s: String, _ w: Int) -> String {
+    // Pad by grapheme count; good enough for ASCII identifiers + single-glyph symbols.
+    let len = s.count
+    return len >= w ? s : s + String(repeating: " ", count: w - len)
+}
+func frameStr(_ f: CGRect?) -> String {
+    guard let f else { return "-" }
+    return String(format: "(%.0f,%.0f,%.0f,%.0f)", f.origin.x, f.origin.y, f.size.width, f.size.height)
+}
+
 log("")
-log(String(format: "%-20s %-8s %-18s %-28s %-6s %-6s", "identifier", "present", "role", "frame", "sane", "click"))
+log(pad("identifier", 20) + pad("present", 8) + pad("role", 18) + pad("frame", 28) + pad("sane", 6) + "click")
 log(String(repeating: "-", count: 90))
 for r in rows {
-    let frameStr: String
-    if let f = r.frame {
-        frameStr = String(format: "(%.0f,%.0f,%.0f,%.0f)", f.origin.x, f.origin.y, f.size.width, f.size.height)
-    } else { frameStr = "-" }
     let click: String
     if r.clickable {
         click = r.clickFired == true ? "✓" : "✗"
-    } else { click = "n/a" }
-    log(String(format: "%-20s %-8s %-18s %-28s %-6s %-6s",
-               r.id, r.present ? "✓" : "✗", r.role, frameStr, r.frameSane ? "✓" : "✗", click))
+    } else {
+        click = "n/a"
+    }
+    log(pad(r.id, 20)
+        + pad(r.present ? "✓" : "✗", 8)
+        + pad(r.role, 18)
+        + pad(frameStr(r.frame), 28)
+        + pad(r.frameSane ? "✓" : "✗", 6)
+        + click)
 }
 log("")
 
