@@ -40,20 +40,53 @@ Exit `0` = PASS, `1` = FAIL, `2` = bad invocation.
 ## Verdict
 
 ```
-[ ] PASS
+[x] PASS
 [ ] FAIL
 ```
+
+Date: 2026-04-22. Reflected in [PROJECT-BIBLE §11](../../PROJECT-BIBLE.md#11-validated-assumptions).
 
 ### Evidence
 
 ```
-macOS version:
-Swift version:
-Compile warnings:    (paste relevant warnings or "none")
-Run count:           N/N
-Registered keys:
-Observed snapshot:
+macOS version:    26.4.1 (build 25E253)
+Swift version:    6.3.1 (swiftlang-6.3.1.1.2)
+Compile warnings: none related to Sendable or strict concurrency
+Run count:        1/1 PASS
 ```
+
+Registered keys (at startup, from `pry_registered` marker):
+
+```json
+{"keys":["clickCount","documents.count","draftName","verbose","zoneTapCount"],"viewmodel":"DocumentListVM"}
+```
+
+Observed snapshot (after `click → createDocument`):
+
+```json
+{
+  "viewmodel": "DocumentListVM",
+  "keys": {
+    "clickCount": 1,
+    "documents.count": 1,
+    "draftName": "",
+    "verbose": false,
+    "zoneTapCount": 0
+  }
+}
+```
+
+All five expected values matched exactly. MainActor mutation propagated through `prySnapshot()` with no race or ordering issue.
+
+### Observations worth keeping
+
+- `@MainActor protocol PryInspectable` with `func prySnapshot() -> [String: any Sendable]` compiles clean under Swift 6 strict concurrency.
+- `PryRegistry.register<T: PryInspectable>(_ instance: T)` with a `[weak instance]` closure capture works as expected — the generic constraint, weak reference, and `@MainActor` isolation compose correctly.
+- `[String: any Sendable]` is comfortably convertible to JSON via a minimal type-switch (Int / Bool / String / Double passthrough, everything else stringified). That small coercion helper is part of what moves from DemoApp into the `PryHarness` package in Phase 1.
+
+### Decision implied
+
+[ADR-004](../../docs/architecture/decisions/ADR-004-state-introspection-protocol.md) stands. Phase 1 lifts the prototype out of DemoApp into the `PryHarness` Swift package unchanged.
 
 ### Decision branches
 

@@ -413,7 +413,7 @@ Spike 1 — AX frames reliability:        [x] PASS [ ] FAIL — evidence: spikes
 Spike 2 — Synthetic CGEvent acceptance: [x] PASS [ ] FAIL — evidence: spikes/02-cgevent-acceptance/README.md (macOS 26.4.1, Swift 6.3.1, 1/1)
 Spike 3 — accessibilityIdentifier:      [x] PASS [ ] FAIL — evidence: spikes/01-ax-frames/README.md (combined driver; 6/6 view types, 1/1 run)
 Spike 4 — OSLogStore latency:           [ ] PASS [ ] FAIL — evidence:
-Spike 5 — Mirror introspection:         [ ] PASS [ ] FAIL — evidence:
+Spike 5 — Mirror introspection:         [x] PASS [ ] FAIL — evidence: spikes/05-mirror-introspection/README.md (macOS 26.4.1, Swift 6.3.1, no Sendable warnings, snapshot round-trip correct)
 ```
 
 ### Branch decisions

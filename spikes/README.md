@@ -32,4 +32,4 @@ Covered in [PROJECT-BIBLE §11](../PROJECT-BIBLE.md#branch-decisions). Once a sp
 - `02-cgevent-acceptance/` — ✅ PASS (2026-04-22, macOS 26.4.1)
 - `03-ax-identifier/` — ✅ PASS (2026-04-22, covered by 01-ax-frames driver)
 - `04-oslog-streaming/` — ⏳ not started
-- `05-mirror-introspection/` — ⏳ not started
+- `05-mirror-introspection/` — ✅ PASS (2026-04-22, no Sendable warnings, runtime values match)
