@@ -1,5 +1,9 @@
 # Pry
 
+[![CI](https://github.com/neimad/pry/actions/workflows/ci.yml/badge.svg)](https://github.com/neimad/pry/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-lightgrey.svg)](#)
+
 > The test runner that reads Markdown and clicks like a human.
 
 Pry runs Markdown test scripts against macOS apps and returns verdicts [Claude Code](https://claude.com/claude-code) can act on. No screenshots. No pixel diffs. No XCUITest.
@@ -11,7 +15,7 @@ Pry runs Markdown test scripts against macOS apps and returns verdicts [Claude C
 └──────────┘                 └─────────────┘
 ```
 
-**Status:** pre-spike. The architecture is locked (see [`PROJECT-BIBLE.md`](PROJECT-BIBLE.md)) but nothing ships until the five spikes in §11 return green. Expect the API to move before `v0.1`.
+**Status:** `v0.1.0-dev`. All five spikes green (one triggered [ADR-006](docs/architecture/decisions/ADR-006-log-observation-strategy.md) to drop real-time log assertions). Spec runner end-to-end: `pry-mcp run --spec flows/new-document.md` against the DemoApp fixture produces a PASS verdict in ~1 s. Breaking changes to the spec grammar bump `pry_spec_version`.
 
 ---
 
@@ -44,7 +48,21 @@ See [docs/architecture/overview.md](docs/architecture/overview.md) for the full 
 
 ## Quickstart
 
-> Not yet shippable. Tracking toward `v0.1` once the spike results in [§11 of PROJECT-BIBLE](PROJECT-BIBLE.md#11-validated-assumptions) are green.
+### 0. Install `pry-mcp`
+
+```sh
+# Via Homebrew tap (once 0.1.0 is tagged and the tap is published):
+brew install neimad/tap/pry-mcp
+
+# Or from source:
+git clone https://github.com/neimad/pry
+cd pry
+swift build -c release
+cp .build/release/pry-mcp /usr/local/bin/
+```
+
+Grant **Accessibility** permission to the terminal or IDE that will run `pry-mcp`:
+*System Settings → Privacy & Security → Accessibility → add Terminal (or equivalent) → quit and relaunch it*.
 
 ### 1. Add the harness to your app
 
@@ -90,13 +108,7 @@ PryRegistry.shared.register(DocumentListVM.self) { vm in
 #endif
 ```
 
-### 3. Install `pry-mcp`
-
-```sh
-brew install neimad/tap/pry-mcp
-```
-
-### 4. Write a spec
+### 3. Write a spec
 
 ````markdown
 ---
@@ -119,19 +131,41 @@ assert_state:
 ```
 ````
 
-### 5. Run it
+### 4. Run it
 
 ```sh
-pry run flows/new-document.md
+# One-shot
+pry-mcp run --spec flows/new-document.md
+
+# All specs in a directory, filtered by tag
+pry-mcp run-suite --dir flows --tag smoke
 ```
 
-Or register the MCP server and let Claude Code call `pry_run_spec` directly.
+Or register `pry-mcp` as an MCP server and let Claude Code call `pry_run_spec` directly.
 
 ---
 
 ## Spec format
 
 A Pry test is a Markdown file with YAML frontmatter and fenced `pry` code blocks containing steps. The grammar is documented in [docs/design/spec-format.md](docs/design/spec-format.md). Verdict format: [docs/design/verdict-format.md](docs/design/verdict-format.md).
+
+## Using from Claude Code
+
+Register `pry-mcp` as an MCP server in your Claude Code settings:
+
+```json
+{
+  "mcpServers": {
+    "pry": {
+      "command": "/usr/local/bin/pry-mcp"
+    }
+  }
+}
+```
+
+Then ask Claude Code to write a spec and run it. The agent will call `pry_run_spec` and get a structured verdict back.
+
+Tools exposed: `pry_launch`, `pry_terminate`, `pry_state`, `pry_click`, `pry_type`, `pry_key`, `pry_tree`, `pry_find`, `pry_snapshot`, `pry_logs`, `pry_run_spec`, `pry_run_suite`, `pry_list_specs`. Full reference: [docs/api/pry-mcp-tools.md](docs/api/pry-mcp-tools.md).
 
 ---
 

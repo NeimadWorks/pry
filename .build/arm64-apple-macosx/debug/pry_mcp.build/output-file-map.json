@@ -9,6 +9,13 @@
     "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/CLI.swiftdeps",
     "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/CLI.dia"
   },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/AXTreeWalker.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AXTreeWalker.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AXTreeWalker.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AXTreeWalker~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AXTreeWalker.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AXTreeWalker.dia"
+  },
   "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/ElementResolver.swift": {
     "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/ElementResolver.d",
     "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/ElementResolver.swift.o",
@@ -22,6 +29,13 @@
     "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/EventInjector~partial.swiftmodule",
     "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/EventInjector.swiftdeps",
     "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/EventInjector.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/WindowCapture.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/WindowCapture.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/WindowCapture.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/WindowCapture~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/WindowCapture.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/WindowCapture.dia"
   },
   "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/AppDriver.swift": {
     "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AppDriver.d",
@@ -50,6 +64,55 @@
     "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Tools~partial.swiftmodule",
     "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Tools.swiftdeps",
     "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Tools.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/Spec.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Spec.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Spec.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Spec~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Spec.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Spec.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/SpecParser.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecParser.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecParser.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecParser~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecParser.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecParser.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/SpecRunner.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecRunner.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecRunner.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecRunner~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecRunner.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecRunner.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/Step.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Step.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Step.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Step~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Step.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Step.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/YAMLFlow.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/YAMLFlow.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/YAMLFlow.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/YAMLFlow~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/YAMLFlow.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/YAMLFlow.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Verdict/Verdict.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Verdict.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Verdict.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Verdict~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Verdict.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Verdict.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Verdict/VerdictReporter.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/VerdictReporter.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/VerdictReporter.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/VerdictReporter~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/VerdictReporter.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/VerdictReporter.dia"
   },
   "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/main.swift": {
     "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main.d",

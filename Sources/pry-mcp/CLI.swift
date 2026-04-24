@@ -1,4 +1,5 @@
 import Foundation
+import ApplicationServices
 import CoreGraphics
 import PryWire
 
@@ -19,6 +20,29 @@ enum CLI {
             return 2
         }
         let rest = Array(args.dropFirst())
+
+        // Fail-fast AX permission check for subcommands that need it. Gives a
+        // clean error before we waste time launching the target app.
+        let needsAX = ["click", "type", "key", "tree", "find", "snapshot", "run", "run-suite"]
+        if needsAX.contains(sub) {
+            if !AXIsProcessTrusted() {
+                FileHandle.standardError.write(Data("""
+                pry-mcp needs Accessibility permission to drive other apps.
+
+                How to fix:
+                  1. Open  System Settings → Privacy & Security → Accessibility
+                  2. Grant access to the process that spawned this shell (Terminal, iTerm, etc.),
+                     since pry-mcp inherits the permission from its parent.
+                  3. Fully quit and relaunch that terminal so the grant takes effect.
+
+                Verify with:
+                  osascript -e 'tell application "System Events" to get name of every process' >/dev/null && echo "AX OK" || echo "AX KO"
+
+
+                """.utf8))
+                return 3
+            }
+        }
 
         do {
             switch sub {
@@ -63,6 +87,53 @@ enum CLI {
                 let out = try await PryTools.key(.init(
                     app: required(rest, "--app"),
                     combo: required(rest, "--combo")
+                ))
+                print(try jsonPretty(out))
+
+            case "tree":
+                let out = try await PryTools.tree(.init(app: required(rest, "--app"), window: nil))
+                print(out.yaml)
+
+            case "find":
+                let target = try parseTargetArgs(rest)
+                let out = try await PryTools.find(.init(app: required(rest, "--app"), target: target))
+                print(try jsonPretty(out))
+
+            case "snapshot":
+                let out = try await PryTools.snapshot(.init(app: required(rest, "--app"),
+                                                             path: optional(rest, "--out")))
+                print(try jsonPretty(out))
+
+            case "run":
+                let out = try await PryTools.runSpec(.init(
+                    source: nil,
+                    path: required(rest, "--spec"),
+                    markdown: nil,
+                    verdicts_dir: optional(rest, "--verdicts-dir"),
+                    snapshots: optional(rest, "--snapshots")
+                ))
+                // Write verdict to stdout (Markdown). Exit code reflects status.
+                print(out.verdict_markdown)
+                return out.status == "passed" ? 0 : 1
+
+            case "run-suite":
+                let out = try await PryTools.runSuite(.init(
+                    path: required(rest, "--dir"),
+                    tag: optional(rest, "--tag"),
+                    verdicts_dir: optional(rest, "--verdicts-dir")
+                ))
+                print(try jsonPretty(out))
+                return out.failed == 0 && out.errored == 0 ? 0 : 1
+
+            case "list-specs":
+                let out = try await PryTools.listSpecs(.init(path: required(rest, "--dir")))
+                print(try jsonPretty(out))
+
+            case "logs":
+                let out = try await PryTools.logs(.init(
+                    app: required(rest, "--app"),
+                    since: optional(rest, "--since"),
+                    subsystem: optional(rest, "--subsystem")
                 ))
                 print(try jsonPretty(out))
 
@@ -182,12 +253,18 @@ enum CLI {
         Subcommands:
           version
           mcp                         # explicit stdio MCP mode
-          launch    --app <bundle> [--path <exe>] [--arg <a>]... [--env K=V]...
-          terminate --app <bundle>
-          state     --app <bundle> --viewmodel <name> [--path <path>]
-          click     --app <bundle> <target>
-          type      --app <bundle> --text <text>
-          key       --app <bundle> --combo <combo>
+          launch      --app <bundle> [--path <exe>] [--arg <a>]... [--env K=V]...
+          terminate   --app <bundle>
+          state       --app <bundle> --viewmodel <name> [--path <path>]
+          click       --app <bundle> <target>
+          type        --app <bundle> --text <text>
+          key         --app <bundle> --combo <combo>
+          tree        --app <bundle>                         # AX tree as YAML
+          find        --app <bundle> <target>                # all matches for a target
+          snapshot    --app <bundle> [--out <path>]          # front window PNG
+          run         --spec <file.md> [--verdicts-dir <d>]  # run one spec; exit reflects status
+          run-suite   --dir <dir> [--tag <tag>] [--verdicts-dir <d>]
+          list-specs  --dir <dir>
 
         Target for `click`: one of
           --id <ax-identifier>

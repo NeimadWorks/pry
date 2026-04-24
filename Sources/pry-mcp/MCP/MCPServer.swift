@@ -159,6 +159,41 @@ actor MCPServer {
             let out = try await PryTools.key(input)
             return try jsonString(out)
 
+        case "pry_tree":
+            let input = try decoder.decode(PryTools.TreeInput.self, from: arguments)
+            let out = try await PryTools.tree(input)
+            return try jsonString(out)
+
+        case "pry_find":
+            let input = try decoder.decode(PryTools.FindInput.self, from: arguments)
+            let out = try await PryTools.find(input)
+            return try jsonString(out)
+
+        case "pry_snapshot":
+            let input = try decoder.decode(PryTools.SnapshotInput.self, from: arguments)
+            let out = try await PryTools.snapshot(input)
+            return try jsonString(out)
+
+        case "pry_run_spec":
+            let input = try decoder.decode(PryTools.RunSpecInput.self, from: arguments)
+            let out = try await PryTools.runSpec(input)
+            return try jsonString(out)
+
+        case "pry_run_suite":
+            let input = try decoder.decode(PryTools.RunSuiteInput.self, from: arguments)
+            let out = try await PryTools.runSuite(input)
+            return try jsonString(out)
+
+        case "pry_list_specs":
+            let input = try decoder.decode(PryTools.ListSpecsInput.self, from: arguments)
+            let out = try await PryTools.listSpecs(input)
+            return try jsonString(out)
+
+        case "pry_logs":
+            let input = try decoder.decode(PryTools.LogsInput.self, from: arguments)
+            let out = try await PryTools.logs(input)
+            return try jsonString(out)
+
         default:
             throw PryTools.ToolError.kinded(kind: "method_not_found", message: "no such tool: \(tool)")
         }
@@ -267,6 +302,68 @@ enum ToolCatalog {
             "inputSchema": objectSchema(required: ["app", "combo"], properties: [
                 "app": ["type": "string"],
                 "combo": ["type": "string"],
+            ]),
+        ],
+        [
+            "name": "pry_tree",
+            "description": "Dump the AX tree of the target app (optionally scoped to a window) as YAML.",
+            "inputSchema": objectSchema(required: ["app"], properties: [
+                "app": ["type": "string"],
+                "window": ["type": "object", "properties": [
+                    "title": ["type": "string"],
+                    "title_matches": ["type": "string"],
+                ]],
+            ]),
+        ],
+        [
+            "name": "pry_find",
+            "description": "Resolve a target to zero, one, or many AX elements (returns all matches without the usual ambiguity check).",
+            "inputSchema": objectSchema(required: ["app", "target"], properties: [
+                "app": ["type": "string"],
+                "target": targetSchema,
+            ]),
+        ],
+        [
+            "name": "pry_snapshot",
+            "description": "Capture a PNG of the target app's front window.",
+            "inputSchema": objectSchema(required: ["app"], properties: [
+                "app": ["type": "string"],
+                "path": ["type": "string", "description": "Optional absolute path. Defaults to a unique temp path."],
+            ]),
+        ],
+        [
+            "name": "pry_run_spec",
+            "description": "Execute a Markdown test spec end-to-end and return a structured verdict. The primary entry point for driven runs.",
+            "inputSchema": objectSchema(required: [], properties: [
+                "path": ["type": "string", "description": "Filesystem path to a .md spec file. Use either `path` or `markdown`."],
+                "markdown": ["type": "string", "description": "Inline spec content (alternative to path)."],
+                "verdicts_dir": ["type": "string", "description": "Directory to write verdict.md and attachments into. Defaults to ./pry-verdicts."],
+                "snapshots": ["type": "string", "enum": ["on_failure", "always"], "description": "When to save snapshot: steps to disk."],
+            ]),
+        ],
+        [
+            "name": "pry_run_suite",
+            "description": "Execute every .md spec in a directory and aggregate results.",
+            "inputSchema": objectSchema(required: ["path"], properties: [
+                "path": ["type": "string"],
+                "tag": ["type": "string", "description": "Only run specs whose frontmatter `tags` include this tag."],
+                "verdicts_dir": ["type": "string"],
+            ]),
+        ],
+        [
+            "name": "pry_list_specs",
+            "description": "Discover .md spec files under a directory.",
+            "inputSchema": objectSchema(required: ["path"], properties: [
+                "path": ["type": "string"],
+            ]),
+        ],
+        [
+            "name": "pry_logs",
+            "description": "Read OSLog lines from the target app. Best-effort ~1s latency — useful for post-hoc diagnostics, not race-sensitive assertions (ADR-006).",
+            "inputSchema": objectSchema(required: ["app"], properties: [
+                "app": ["type": "string"],
+                "since": ["type": "string", "description": "ISO 8601 timestamp."],
+                "subsystem": ["type": "string"],
             ]),
         ],
     ] }

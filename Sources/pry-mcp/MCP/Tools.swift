@@ -215,6 +215,258 @@ enum PryTools {
         return KeyOutput(ok: true)
     }
 
+    // MARK: - Tree / find / wait_for / assert / snapshot
+
+    struct TreeInput: Codable {
+        var app: String
+        var window: WindowSpec?
+    }
+    struct WindowSpec: Codable {
+        var title: String?
+        var title_matches: String?
+    }
+    struct TreeOutput: Codable { var yaml: String }
+    static func tree(_ input: TreeInput) async throws -> TreeOutput {
+        try ElementResolver.requireTrust()
+        let hello = try await harnessHello(app: input.app)
+        let filter = input.window.map { WindowFilter(title: $0.title, titleMatches: $0.title_matches) }
+        let tree = AXTreeWalker.snapshot(pid: hello.pid, window: filter)
+        return TreeOutput(yaml: AXTreeWalker.renderYAML(tree))
+    }
+
+    struct FindInput: Codable {
+        var app: String
+        var target: TargetSpec
+    }
+    struct FindMatch: Codable {
+        var role: String
+        var label: String?
+        var id: String?
+        var frame: [Double]?
+        var enabled: Bool
+    }
+    struct FindOutput: Codable { var matches: [FindMatch] }
+    static func find(_ input: FindInput) async throws -> FindOutput {
+        try ElementResolver.requireTrust()
+        let hello = try await harnessHello(app: input.app)
+        let target = try parseTarget(input.target)
+        let tree = AXTreeWalker.snapshot(pid: hello.pid)
+        var matches: [FindMatch] = []
+        collectMatches(tree, target: target, into: &matches)
+        return FindOutput(matches: matches)
+    }
+
+    private static func collectMatches(_ node: AXNode, target: Target, into out: inout [FindMatch]) {
+        let hit: Bool
+        switch target {
+        case .id(let s): hit = node.identifier == s
+        case .roleLabel(let r, let l): hit = node.role == r && node.label == l
+        case .label(let l): hit = node.label == l
+        case .labelMatches(let re):
+            if let lbl = node.label, let rx = try? NSRegularExpression(pattern: re) {
+                hit = rx.firstMatch(in: lbl, range: NSRange(lbl.startIndex..., in: lbl)) != nil
+            } else { hit = false }
+        default: hit = false
+        }
+        if hit {
+            out.append(FindMatch(role: node.role, label: node.label, id: node.identifier,
+                                 frame: node.frame, enabled: node.enabled))
+        }
+        for c in node.children { collectMatches(c, target: target, into: &out) }
+    }
+
+    struct SnapshotInput: Codable {
+        var app: String
+        var path: String?
+    }
+    struct SnapshotOutput: Codable { var path: String }
+    static func snapshot(_ input: SnapshotInput) async throws -> SnapshotOutput {
+        try ElementResolver.requireTrust()
+        let hello = try await harnessHello(app: input.app)
+        let targetPath = input.path ?? NSTemporaryDirectory() + "pry-snap-\(UUID().uuidString).png"
+        guard let data = await WindowCapture.capturePNG(pid: hello.pid) else {
+            throw ToolError.kinded(kind: "snapshot_failed",
+                                   message: "could not capture window for pid \(hello.pid)",
+                                   fix: "Grant Screen Recording permission to pry-mcp's parent process.")
+        }
+        try data.write(to: URL(fileURLWithPath: targetPath))
+        return SnapshotOutput(path: targetPath)
+    }
+
+    // MARK: - Logs
+
+    struct LogsInput: Codable {
+        var app: String
+        var since: String?
+        var subsystem: String?
+    }
+    struct LogsOutput: Codable {
+        var lines: [PryWire.LogLine]
+        var cursor: String
+    }
+    static func logs(_ input: LogsInput) async throws -> LogsOutput {
+        let client = try await harnessConnection(for: input.app)
+        do {
+            let result = try await client.readLogs(since: input.since, subsystem: input.subsystem)
+            return LogsOutput(lines: result.lines, cursor: result.cursor)
+        } catch let e as HarnessClient.ClientError {
+            throw Self.translate(e)
+        }
+    }
+
+    // MARK: - Spec execution
+
+    struct RunSpecInput: Codable {
+        var source: String?         // "path" | "inline" ; defaults to path if `path` set
+        var path: String?
+        var markdown: String?
+        var verdicts_dir: String?
+        var snapshots: String?      // "always" | "on_failure"
+    }
+    struct RunSpecOutput: Codable {
+        var status: String
+        var verdict_path: String?
+        var verdict_markdown: String
+    }
+    static func runSpec(_ input: RunSpecInput) async throws -> RunSpecOutput {
+        let spec: Spec
+        if let p = input.path {
+            let url = URL(fileURLWithPath: p).standardizedFileURL
+            guard let text = try? String(contentsOf: url, encoding: .utf8) else {
+                throw ToolError.kinded(kind: "spec_parse_error", message: "cannot read \(url.path)")
+            }
+            do {
+                spec = try SpecParser.parse(source: text, sourcePath: url.path)
+            } catch {
+                throw ToolError.kinded(kind: "spec_parse_error", message: "\(error)")
+            }
+        } else if let md = input.markdown {
+            do {
+                spec = try SpecParser.parse(source: md, sourcePath: nil)
+            } catch {
+                throw ToolError.kinded(kind: "spec_parse_error", message: "\(error)")
+            }
+        } else {
+            throw ToolError.kinded(kind: "invalid_params", message: "pry_run_spec needs `path` or `markdown`")
+        }
+
+        let opts = SpecRunner.Options(
+            verdictsDir: URL(fileURLWithPath: input.verdicts_dir ?? "./pry-verdicts"),
+            alwaysSnapshot: input.snapshots == "always"
+        )
+        let runner = SpecRunner(spec: spec, options: opts)
+        let verdict = await runner.run()
+        let md = VerdictReporter.render(verdict)
+
+        var verdictPath: String?
+        if let dir = verdict.attachmentsDir {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let url = dir.appendingPathComponent("verdict.md")
+            try? md.write(to: url, atomically: true, encoding: .utf8)
+            verdictPath = url.path
+        }
+
+        return RunSpecOutput(
+            status: verdict.status.rawValue,
+            verdict_path: verdictPath,
+            verdict_markdown: md
+        )
+    }
+
+    struct RunSuiteInput: Codable {
+        var path: String
+        var tag: String?
+        var verdicts_dir: String?
+    }
+    struct SuiteEntry: Codable {
+        var spec: String
+        var status: String
+        var duration: Double
+        var failed_at_step: Int?
+    }
+    struct RunSuiteOutput: Codable {
+        var total: Int
+        var passed: Int
+        var failed: Int
+        var errored: Int
+        var verdicts: [SuiteEntry]
+    }
+    static func runSuite(_ input: RunSuiteInput) async throws -> RunSuiteOutput {
+        let dir = URL(fileURLWithPath: input.path).standardizedFileURL
+        let files: [URL]
+        do {
+            let enumerator = FileManager.default.enumerator(at: dir, includingPropertiesForKeys: nil)
+            var acc: [URL] = []
+            while let u = enumerator?.nextObject() as? URL {
+                if u.pathExtension.lowercased() == "md" { acc.append(u) }
+            }
+            files = acc.sorted(by: { $0.path < $1.path })
+        }
+        guard !files.isEmpty else {
+            throw ToolError.kinded(kind: "no_specs_found",
+                                   message: "no .md files under \(dir.path)")
+        }
+
+        var entries: [SuiteEntry] = []
+        var passed = 0, failed = 0, errored = 0
+        let opts = SpecRunner.Options(
+            verdictsDir: URL(fileURLWithPath: input.verdicts_dir ?? "./pry-verdicts")
+        )
+        for f in files {
+            guard let src = try? String(contentsOf: f, encoding: .utf8),
+                  let spec = try? SpecParser.parse(source: src, sourcePath: f.path) else {
+                continue
+            }
+            if let tag = input.tag, !spec.tags.contains(tag) { continue }
+            let runner = SpecRunner(spec: spec, options: opts)
+            let v = await runner.run()
+            let md = VerdictReporter.render(v)
+            if let attachments = v.attachmentsDir {
+                try? FileManager.default.createDirectory(at: attachments, withIntermediateDirectories: true)
+                let url = attachments.appendingPathComponent("verdict.md")
+                try? md.write(to: url, atomically: true, encoding: .utf8)
+            }
+            switch v.status {
+            case .passed: passed += 1
+            case .failed: failed += 1
+            case .errored, .timedOut: errored += 1
+            }
+            entries.append(SuiteEntry(
+                spec: spec.id, status: v.status.rawValue,
+                duration: v.duration, failed_at_step: v.failedAtStep
+            ))
+        }
+        return RunSuiteOutput(total: entries.count, passed: passed, failed: failed,
+                              errored: errored, verdicts: entries)
+    }
+
+    struct ListSpecsInput: Codable {
+        var path: String
+    }
+    struct SpecListEntry: Codable {
+        var path: String
+        var id: String
+        var tags: [String]
+    }
+    struct ListSpecsOutput: Codable {
+        var specs: [SpecListEntry]
+    }
+    static func listSpecs(_ input: ListSpecsInput) async throws -> ListSpecsOutput {
+        let dir = URL(fileURLWithPath: input.path).standardizedFileURL
+        var entries: [SpecListEntry] = []
+        if let enumerator = FileManager.default.enumerator(at: dir, includingPropertiesForKeys: nil) {
+            while let u = enumerator.nextObject() as? URL {
+                guard u.pathExtension.lowercased() == "md" else { continue }
+                if let src = try? String(contentsOf: u, encoding: .utf8),
+                   let spec = try? SpecParser.parse(source: src, sourcePath: u.path) {
+                    entries.append(SpecListEntry(path: u.path, id: spec.id, tags: spec.tags))
+                }
+            }
+        }
+        entries.sort(by: { $0.path < $1.path })
+        return ListSpecsOutput(specs: entries)
+    }
+
     // MARK: - Helpers
 
     private static func harnessConnection(for bundle: String) async throws -> HarnessClient {

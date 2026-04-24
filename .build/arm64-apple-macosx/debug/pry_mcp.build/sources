@@ -1,8 +1,17 @@
 /Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/CLI.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/AXTreeWalker.swift
 /Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/ElementResolver.swift
 /Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/EventInjector.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/WindowCapture.swift
 /Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/AppDriver.swift
 /Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/HarnessClient.swift
 /Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/MCP/MCPServer.swift
 /Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/MCP/Tools.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/Spec.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/SpecParser.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/SpecRunner.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/Step.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/YAMLFlow.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Verdict/Verdict.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Verdict/VerdictReporter.swift
 /Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/main.swift

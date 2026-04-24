@@ -1,6 +1,6 @@
 # Pry test spec format
 
-The user-facing reference for writing `.md` test specs. Grammar version: **`pry_spec_version: 1`**.
+The user-facing reference for writing `.md` test specs. Grammar version: **`pry_spec_version: 1`** (frozen for v1.0 — no breaking changes until v2).
 
 A Pry test is a Markdown file with YAML frontmatter and fenced ` ```pry ` blocks. Prose is for humans. The fenced blocks are for the runner.
 

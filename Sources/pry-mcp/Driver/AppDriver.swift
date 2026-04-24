@@ -51,6 +51,12 @@ enum AppDriver {
             throw DriverError.executableNotFound(url.path)
         }
 
+        // Unlink any stale socket from a prior run — the new DemoApp process will
+        // create a fresh one in its `PryHarness.start()`. Without this, runs of
+        // multiple specs in a row race on `waitForSocket` hitting the leftover
+        // inode before the new process has rebound.
+        unlink(PryHarness.socketPath(for: bundleID))
+
         let p = Process()
         p.executableURL = url
         p.arguments = args

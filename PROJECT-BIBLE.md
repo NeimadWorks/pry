@@ -475,7 +475,7 @@ See [docs/architecture/overview.md](docs/architecture/overview.md) for the fully
 4. Every verdict failure includes location + expected + observed + diagnostic context. No "failed" without context.
 5. Every public MCP tool has a Markdown spec example in `docs/api/pry-mcp-tools.md`.
 6. Every ADR that supersedes another links both directions.
-7. The Markdown spec format is versioned (`pry_spec_version: 1` implicit in frontmatter). Breaking changes bump the version and require a migration note.
+7. The Markdown spec format is versioned (`pry_spec_version: 1` implicit in frontmatter). Breaking changes bump the version and require a migration note. **v1 grammar is frozen** (2026-04-24): no removals or renames until v2.
 
 ---
 

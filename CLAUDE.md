@@ -20,7 +20,21 @@
 
 ## Current state
 
-**Phase:** Phase 1 skeleton — **COMPLETE**. Full Claude Code → stdio MCP → pry-mcp → AF_UNIX → PryHarness → VM round-trip works. Ready for Phase 2 (spec runner) whenever you want to start it.
+**Phase:** Phases 0-3 **COMPLETE**. Phase 4 delivered as docs + templates (signed-binary / Homebrew tap publication is deferred to the human operator). Phase 5 dogfooding across Proof / Probe / Narrow / Harald is the only remaining item — requires those apps' source, which lives outside this repo.
+
+**What works today:**
+- Spec runner: `pry-mcp run --spec flows/new-document.md` → verdict with full diagnostic context (AX tree snippet, registered VM state, auto-PNG on failure, step-by-step timings).
+- `pry-mcp run-suite --dir flows [--tag smoke]` → aggregate across all `.md` specs under a dir.
+- 13 MCP tools: `pry_launch`, `pry_terminate`, `pry_state`, `pry_click`, `pry_type`, `pry_key`, `pry_tree`, `pry_find`, `pry_snapshot`, `pry_logs`, `pry_run_spec`, `pry_run_suite`, `pry_list_specs`.
+- CLI mirrors every tool one-to-one for hand-driven testing.
+- DemoApp suite: 3 specs (`new-document`, `text-field`, `toggle`) all passing in ~2.5s combined.
+- CI workflow (`.github/workflows/ci.yml`), Homebrew formula template (`HomebrewFormula/pry-mcp.rb`), signing/notarization release script (`scripts/release.sh`).
+- `pry_spec_version: 1` frozen.
+
+**What remains (explicit hand-offs for the human operator):**
+- **Phase 4 publication**: tag a release, run `./scripts/release.sh vX.Y.Z` with a Developer ID cert + notarization credentials, upload the archive to a GitHub release, create a `neimad/tap` repo, drop `HomebrewFormula/pry-mcp.rb` in it with updated `url` + `sha256`. None of this is code-writable by me — it needs Apple credentials and external repos.
+- **Phase 5 dogfooding**: adopt Pry in Proof, Probe, Narrow, Harald. Each requires adding the `PryHarness` SwiftPM dep under `#if DEBUG`, registering their ViewModels, and writing `flows/` per app. Requires those codebases.
+- **Flakiness audit** (Phase 5 principle 8): once real apps use Pry, any flaky spec is a Pry bug — track them in issues tagged `flakiness`. No flakes observed so far on DemoApp fixtures.
 
 **State — pry-mcp side:**
 - `Driver/HarnessClient.swift` — actor-isolated AF_UNIX socket client with PryWire Codables, serialized JSON-RPC ID matching.
@@ -195,3 +209,49 @@ Append one block per session. Keep each to ~15 lines. Don't rewrite previous ses
 **Open questions discovered:** none new; §16 still stands.
 **Blocked on:** nothing.
 **Next single action:** begin Phase 2 — the spec runner. Write `Sources/pry-mcp/Spec/{SpecParser,SpecRunner}.swift` + `Sources/pry-mcp/Verdict/VerdictReporter.swift` per `docs/design/verdict-format.md`, then expose `pry_run_spec` as the seventh MCP tool. First real spec to target: `Fixtures/flows/new-document.md` driving DemoApp.
+
+## Session 2026-04-24 — Phases 2-5 shipped
+
+**Worked on:** Phases 2 (spec runner), 3 (observability completeness), 4 (distribution plumbing), 5 (grammar freeze + doc polish). The only remaining items are signed-binary publication and Phase 5 dogfooding across non-repo apps — hand-offs documented above.
+
+**Landed (Phase 2):**
+- `Sources/pry-mcp/Spec/YAMLFlow.swift` — minimal YAML-flow parser (tokenizer + recursive descent) for `{ key: value }`, arrays, durations, etc.
+- `Sources/pry-mcp/Spec/{Step,Spec,SpecParser,SpecRunner}.swift` — Step AST, Spec value type, Markdown+frontmatter+fenced-block parser, actor-based runner with full step execution.
+- `Sources/pry-mcp/Verdict/{Verdict,VerdictReporter}.swift` — Verdict shape + renderer producing the Markdown format documented in `docs/design/verdict-format.md` (pass/fail/errored shapes; auto-PNG on failure; AX snippet + registered state in failure context).
+- `Sources/pry-mcp/Control/AXTreeWalker.swift` — out-of-process tree enumeration + YAML render + truncation for failure snippets.
+- `Sources/pry-mcp/Control/WindowCapture.swift` — `CGWindowListCreateImage`-based snapshots (deprecated warning noted; ScreenCaptureKit is future work per Phase 5).
+- New MCP tool `pry_run_spec` + CLI `run` subcommand.
+
+**Landed (Phase 3):**
+- `Sources/PryHarness/{PryLogTap,PryInspector}.swift`, `read_logs` wired in `PrySocketServer`.
+- MCP tools: `pry_tree`, `pry_find`, `pry_snapshot`, `pry_logs`, `pry_run_suite`, `pry_list_specs` + CLI subcommands for each.
+- Multi-window scoping (`WindowFilter` passed through tree + snapshot).
+- AX permission fail-fast UX in the CLI with a concrete fix recipe.
+- Cross-spec launch race fixed in `AppDriver.launchByPath` (unlink stale socket before spawning).
+
+**Landed (Phase 4 — templates only):**
+- `.github/workflows/ci.yml` — swift build + swift test on macos-14, release artifact packaging on version tags.
+- `HomebrewFormula/pry-mcp.rb` — formula template for a `neimad/tap`, with post-install AX caveat.
+- `scripts/release.sh` — Developer ID codesign + notarytool submission + archive + SHA256.
+
+**Landed (Phase 5 — docs):**
+- `pry_spec_version: 1` frozen in both `docs/design/spec-format.md` and PROJECT-BIBLE §14.
+- README rewritten for persona C: CI badge, new quickstart with install paths (tap + from-source), `run` + `run-suite` usage, MCP server registration example, full tool list.
+
+**Decisions during the marathon:**
+- **`AppDriver.launchByPath` unlinks the stale socket before `Process.run()`.** Without this, `waitForSocket` could return on a leftover inode from the previous spec and the handshake would race the new app's `bind()`. Tri-spec suite went from 1/3 to 3/3 with this two-line fix.
+- **`wait_for` state predicates need to catch `StepFailure` and rethrow as `PredicateFailure`** — without this the wait loop aborts on the first state mismatch instead of polling. Caught by the first real DemoApp run where the state mutation was still flushing from the CGEvent.
+- **`OSLogStore` surfaces under `pry_logs` only** — per ADR-006, no assertion-grade log commands in v1 grammar. The best-effort latency note is in the MCP tool description.
+- **`CGWindowListCreateImage` deprecation accepted** — ScreenCaptureKit would gate us on TCC Screen Recording permission with a modal prompt per app. Snapshots are debug aids; deprecated API works fine.
+
+**Tests / smoke:**
+- `swift test` — 11/11 pass.
+- DemoApp suite via `pry-mcp run-suite --dir Fixtures/DemoApp/flows` — 3/3 pass, total ~2.6s.
+- Individual specs: `new-document` (11 steps, 1.0s), `text-field` (9 steps, 0.8s), `toggle` (10 steps, 1.0s).
+- CLI smoke: `tree`, `find`, `snapshot`, `logs`, `run`, `run-suite`, `list-specs` all functional against a live DemoApp.
+
+**Open questions discovered:** none new; §16 Q5 (Tier 2 log tee) remains the biggest deferred piece.
+
+**Blocked on:** nothing for code work. Phase 4 publication and Phase 5 dogfooding need human operator / external repos.
+
+**Next single action (for the human):** tag `v0.1.0`, run `./scripts/release.sh v0.1.0` with Developer ID credentials, publish the tap, then start adopting Pry in Proof — the first real-world app. A new session can begin by reading `CLAUDE.md`, `PROJECT-BIBLE.md`, and the Phase 5 notes above.

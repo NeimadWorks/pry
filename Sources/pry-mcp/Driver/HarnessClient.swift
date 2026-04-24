@@ -78,6 +78,10 @@ actor HarnessClient {
         try call(method: .readState, params: PryWire.ReadStateParams(viewmodel: viewmodel, path: path))
     }
 
+    func readLogs(since: String?, subsystem: String?) throws -> PryWire.ReadLogsResult {
+        try call(method: .readLogs, params: PryWire.ReadLogsParams(since: since, subsystem: subsystem))
+    }
+
     func goodbye() throws {
         let _: PryWire.GoodbyeResult = try call(method: .goodbye, params: PryWire.GoodbyeParams())
     }

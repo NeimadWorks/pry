@@ -135,14 +135,51 @@ final class PrySocketServer: @unchecked Sendable {
             return handleHello(id: raw.id, params: raw.params, encoder: encoder, decoder: decoder)
         case .readState:
             return handleReadState(id: raw.id, params: raw.params, encoder: encoder, decoder: decoder)
-        case .inspectTree, .readLogs, .snapshot:
+        case .readLogs:
+            return handleReadLogs(id: raw.id, params: raw.params, encoder: encoder, decoder: decoder)
+        case .inspectTree, .snapshot:
+            // These are handled out-of-process in pry-mcp — the harness doesn't
+            // need to own AX walks or window captures. See ADR-002.
             return encodeError(id: raw.id, code: PryWire.RPCError.methodNotFound,
-                               message: "method '\(raw.method)' not implemented yet (Phase 1 skeleton)",
+                               message: "method '\(raw.method)' lives out-of-process in pry-mcp",
                                encoder: encoder)
         case .goodbye:
             let resp = PryWire.Response(id: raw.id, result: PryWire.GoodbyeResult())
             return (try? encoder.encode(resp)) ?? Data()
         }
+    }
+
+    // MARK: - read_logs
+
+    private func handleReadLogs(id: Int, params: PryWire.AnyCodable, encoder: JSONEncoder, decoder: JSONDecoder) -> Data {
+        let p: PryWire.ReadLogsParams
+        if let reencoded = try? encoder.encode(params),
+           let parsed = try? decoder.decode(PryWire.ReadLogsParams.self, from: reencoded) {
+            p = parsed
+        } else {
+            p = PryWire.ReadLogsParams()
+        }
+
+        let since: Date? = {
+            guard let s = p.since else { return nil }
+            return ISO8601DateFormatter().date(from: s)
+        }()
+
+        let lines = PryLogTap.readLines(since: since, subsystem: p.subsystem)
+        let isoOut = ISO8601DateFormatter()
+        let cursor = lines.last?.date ?? Date()
+        let wireLines = lines.map {
+            PryWire.LogLine(
+                ts: isoOut.string(from: $0.date),
+                level: $0.level,
+                msg: $0.message,
+                subsystem: $0.subsystem,
+                category: $0.category
+            )
+        }
+        let result = PryWire.ReadLogsResult(lines: wireLines, cursor: isoOut.string(from: cursor))
+        let resp = PryWire.Response(id: id, result: result)
+        return (try? encoder.encode(resp)) ?? Data()
     }
 
     // MARK: - Handlers
