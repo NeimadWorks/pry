@@ -2,6 +2,55 @@
   "": {
     "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/primary.swiftdeps"
   },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/CLI.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/CLI.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/CLI.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/CLI~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/CLI.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/CLI.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/ElementResolver.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/ElementResolver.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/ElementResolver.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/ElementResolver~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/ElementResolver.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/ElementResolver.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/EventInjector.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/EventInjector.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/EventInjector.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/EventInjector~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/EventInjector.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/EventInjector.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/AppDriver.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AppDriver.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AppDriver.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AppDriver~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AppDriver.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AppDriver.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/HarnessClient.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/HarnessClient.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/HarnessClient.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/HarnessClient~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/HarnessClient.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/HarnessClient.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/MCP/MCPServer.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/MCPServer.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/MCPServer.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/MCPServer~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/MCPServer.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/MCPServer.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/MCP/Tools.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Tools.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Tools.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Tools~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Tools.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Tools.dia"
+  },
   "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/main.swift": {
     "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main.d",
     "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main.swift.o",

@@ -20,18 +20,28 @@
 
 ## Current state
 
-**Phase:** Phase 1 — skeleton. PryHarness side **complete and live**. pry-mcp side is a stub.
+**Phase:** Phase 1 skeleton — **COMPLETE**. Full Claude Code → stdio MCP → pry-mcp → AF_UNIX → PryHarness → VM round-trip works. Ready for Phase 2 (spec runner) whenever you want to start it.
 
-**State:**
-- Root `Package.swift` declares `PryHarness`, `PryWire`, `pry-mcp`.
-- `PryWire` — full wire contract: JSON-RPC envelope, `AnyCodable`, all 6 methods' param/result types, error codes.
-- `PryHarness` — `PryInspectable` protocol, `PryRegistry` (lifted from DemoApp), `PryHarness.start()`, `PrySocketServer` with length-prefixed JSON-RPC framing, `hello` and `read_state` handlers wired. `inspect_tree` / `read_logs` / `snapshot` return methodNotFound until implemented.
-- `pry-mcp` — version stub only. No MCP server, no AppDriver, no event injection, no spec runner.
-- `Fixtures/DemoApp` — migrated off the local prototype; depends on `PryHarness` via `.package(path: "../..")`.
-- **End-to-end smoke test verified**: external client opens the Unix socket, calls `hello` + `read_state` (full snapshot, path-scoped, unknown VM, unknown path), gets correctly-shaped responses with diagnostic `data` payloads.
-- **Tests**: 11/11 passing (PryWire roundtrips, PryRegistry lifecycle).
+**State — pry-mcp side:**
+- `Driver/HarnessClient.swift` — actor-isolated AF_UNIX socket client with PryWire Codables, serialized JSON-RPC ID matching.
+- `Driver/AppDriver.swift` — launch-by-path (SwiftPM fixtures) + launch-by-bundle-ID (NSWorkspace) + attach + terminate. `waitForSocket` polls the socket file path.
+- `Control/ElementResolver.swift` — resolves `Target` (id / role+label / label / label_matches / tree_path / point) to a single AXUIElement. Ambiguity is an error (never silent-picks).
+- `Control/EventInjector.swift` — click / double_click / right_click / hover / type (unicode string API) / key (combo parsing + virtual key codes).
+- `MCP/MCPServer.swift` — minimal stdio JSON-RPC 2.0 server handling `initialize`, `notifications/initialized`, `tools/list`, `tools/call`.
+- `MCP/Tools.swift` — six tools implemented: `pry_launch`, `pry_terminate`, `pry_state`, `pry_click`, `pry_type`, `pry_key`. Each returns a structured Codable result; errors carry stable `kind` strings + optional `fix` hints.
+- `CLI.swift` + rewritten `main.swift` — dual-mode binary: no args → stdio MCP; args → CLI subcommands mirroring the tools one-to-one.
 
-**Next single action:** build the pry-mcp side of the socket — a `HarnessClient` that wraps the Unix socket with PryWire Codables and exposes async methods (`hello()`, `readState(viewmodel:path:)`, etc.). After that, `AppDriver` (NSWorkspace launch + wait for socket) and a first MCP tool `pry_state` so Claude Code can call through the full chain.
+**Validated:**
+- `swift test` — 11/11 still passing.
+- CLI end-to-end on DemoApp: launch → state (full + path) → click new_doc_button 3× → state shows count=3 → errors structured with kind. Clean shutdown via terminate.
+- Stdio MCP end-to-end: Python driver sends initialize/tools/list/tools/call over stdin/stdout; all 6 tools respond; `isError: true` envelope for VM-not-registered error case.
+
+**Known gaps (all intentional; roadmap's Phase 2 and beyond):**
+- `pry_tree`, `pry_find`, `pry_wait_for`, `pry_assert`, `pry_expect_change`, `pry_logs`, `pry_snapshot`, `pry_run_spec`, `pry_run_suite`, `pry_list_specs` — not implemented yet.
+- `inspect_tree`, `read_logs`, `snapshot` harness-side handlers still return methodNotFound — to be added alongside the MCP tools that need them.
+- `tree_path` target form parses but never matches (never walked).
+
+**Next single action:** begin Phase 2 — the spec runner. Write `Spec/SpecParser.swift` (Markdown + frontmatter → step tree), `Spec/SpecRunner.swift` (executes steps, collects a verdict), `Verdict/VerdictReporter.swift` (writes the Markdown verdict per `docs/design/verdict-format.md`), then expose `pry_run_spec` as the seventh MCP tool. After that, build the first real spec (`Fixtures/flows/new-document.md`) and run it end-to-end against DemoApp.
 
 ---
 
@@ -160,3 +170,28 @@ Append one block per session. Keep each to ~15 lines. Don't rewrite previous ses
 **Open questions discovered:** none new.
 **Blocked on:** nothing.
 **Next single action:** implement `pry-mcp/Driver/HarnessClient.swift` — an async wrapper around a connecting `AF_UNIX` socket using PryWire Codables (`func hello() async throws -> HelloResult`, etc.). Then `AppDriver` (NSWorkspace launch + socket-appears wait), then a first MCP tool `pry_state` routed through a minimal stdio JSON-RPC server. That closes the loop: Claude Code → stdio MCP → pry-mcp → AF_UNIX socket → PryHarness → VM snapshot.
+
+## Session 2026-04-24 — Phase 1 complete
+
+**Worked on:** Built the entire pry-mcp side of Phase 1 and closed the Claude Code → stdio MCP → pry-mcp → socket → PryHarness → VM round-trip.
+**Landed:**
+  - `Sources/pry-mcp/Driver/{HarnessClient,AppDriver}.swift`
+  - `Sources/pry-mcp/Control/{ElementResolver,EventInjector}.swift`
+  - `Sources/pry-mcp/MCP/{MCPServer,Tools}.swift`
+  - `Sources/pry-mcp/CLI.swift`
+  - `Sources/pry-mcp/main.swift` rewritten as dual-mode (stdio MCP by default; CLI when subcommand given)
+  - `Package.swift` updated: `pry-mcp` depends on both `PryWire` and `PryHarness` (to reuse `PryHarness.socketPath(for:)`)
+**Decisions:**
+  - `HarnessClient` as `actor` — serializes request/response so JSON-RPC `id` matching stays correct without explicit locking.
+  - `PryTools.launch` uses a handshake-with-retry loop because `waitForSocket` returns after `bind()` but connect can race the `listen()` that follows. 2 s budget, 50 ms backoff — invisible in the happy path.
+  - Errors from harness / resolver are translated at the MCP boundary into a closed set of `kind` strings (matches `docs/api/pry-mcp-tools.md` error contract). No raw RPC codes leak out.
+  - `ToolCatalog.all` as computed property (not `static let`) to satisfy Swift 6 strict concurrency on `[String: Any]`. Minor cost, clean solution.
+  - AX target resolution ports the precedence rule literally: `id > role+label > label > label_matches > tree_path > point`. Ambiguity raises `resolution_ambiguous` with candidate descriptors — matches verdict-quality diagnostic promise.
+  - `tree_path` form parses but is a no-op match for now; documented gap.
+**Tests / smoke:**
+  - `swift test` — 11/11 passing, no new tests added yet (target for next pass: golden wire-protocol tests for the MCP server).
+  - CLI end-to-end on DemoApp: launch → state(full/path) → click 3× → state shows count=3 → unknown-VM error / unknown-path error → terminate. All shapes correct.
+  - Stdio MCP end-to-end via Python driver: initialize, tools/list (6 tools), tools/call for pry_state + pry_click + follow-up pry_state (proves mutation round-trip); unknown-VM call returns MCP `isError: true` envelope with structured `kind`+`message`+optional `fix`.
+**Open questions discovered:** none new; §16 still stands.
+**Blocked on:** nothing.
+**Next single action:** begin Phase 2 — the spec runner. Write `Sources/pry-mcp/Spec/{SpecParser,SpecRunner}.swift` + `Sources/pry-mcp/Verdict/VerdictReporter.swift` per `docs/design/verdict-format.md`, then expose `pry_run_spec` as the seventh MCP tool. First real spec to target: `Fixtures/flows/new-document.md` driving DemoApp.

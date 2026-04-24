@@ -21,7 +21,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "pry-mcp",
-            dependencies: ["PryWire"],
+            dependencies: ["PryWire", "PryHarness"],
             swiftSettings: [.enableUpcomingFeature("StrictConcurrency")]
         ),
         .testTarget(
