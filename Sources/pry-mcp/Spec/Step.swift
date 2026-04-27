@@ -17,9 +17,12 @@ public enum Step: Sendable {
     case hover(target: TargetRef)
     case type(text: String)
     case key(combo: String)
+    case scroll(target: TargetRef, direction: ScrollDirection, amount: Int)
+    case drag(from: TargetRef, to: TargetRef, steps: Int)
 
     case assertTree(predicate: Predicate)
     case assertState(viewmodel: String, path: String, expect: StateExpectation)
+    case expectChange(action: ExpectChangeAction, viewmodel: String, path: String, to: YAMLValue, timeout: Duration)
 
     case snapshot(name: String)
     case dumpTree(name: String)
@@ -30,6 +33,21 @@ public enum StateExpectation: Sendable {
     case equals(YAMLValue)
     case matches(String)
     case anyOf([YAMLValue])
+}
+
+public enum ScrollDirection: String, Sendable {
+    case up, down, left, right
+}
+
+/// Restricted action vocabulary for `expect_change`. We deliberately do not
+/// allow arbitrary nested steps — composition lives in `wait_for` chained with
+/// regular steps. expect_change is the atomic do-then-observe shortcut.
+public enum ExpectChangeAction: Sendable {
+    case click(TargetRef)
+    case doubleClick(TargetRef)
+    case rightClick(TargetRef)
+    case key(String)
+    case type(String)
 }
 
 public enum TargetRef: Sendable {

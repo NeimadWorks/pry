@@ -20,14 +20,14 @@
 
 ## Current state
 
-**Phase:** Phases 0-3 **COMPLETE**. Phase 4 delivered as docs + templates (signed-binary / Homebrew tap publication is deferred to the human operator). Phase 5 dogfooding across Proof / Probe / Narrow / Harald is the only remaining item — requires those apps' source, which lives outside this repo.
+**Phase:** Phases 0-3 **COMPLETE**. Grammar v1 is now fully implemented (drag, scroll, expect_change added 2026-04-27 — closing the gap that would have blocked apps like Carnet, where piece drag is the central interaction). Phase 4 delivered as docs + templates (signed-binary / Homebrew tap publication is deferred to the human operator). Phase 5 dogfooding across Proof / Probe / Narrow / Harald is the only remaining item — requires those apps' source, which lives outside this repo.
 
 **What works today:**
 - Spec runner: `pry-mcp run --spec flows/new-document.md` → verdict with full diagnostic context (AX tree snippet, registered VM state, auto-PNG on failure, step-by-step timings).
 - `pry-mcp run-suite --dir flows [--tag smoke]` → aggregate across all `.md` specs under a dir.
-- 13 MCP tools: `pry_launch`, `pry_terminate`, `pry_state`, `pry_click`, `pry_type`, `pry_key`, `pry_tree`, `pry_find`, `pry_snapshot`, `pry_logs`, `pry_run_spec`, `pry_run_suite`, `pry_list_specs`.
+- 15 MCP tools: `pry_launch`, `pry_terminate`, `pry_state`, `pry_click`, `pry_type`, `pry_key`, `pry_drag`, `pry_scroll`, `pry_tree`, `pry_find`, `pry_snapshot`, `pry_logs`, `pry_run_spec`, `pry_run_suite`, `pry_list_specs`.
 - CLI mirrors every tool one-to-one for hand-driven testing.
-- DemoApp suite: 3 specs (`new-document`, `text-field`, `toggle`) all passing in ~2.5s combined.
+- DemoApp suite: 5 specs (`new-document`, `text-field`, `toggle`, `slider-drag`, `expect-change`) all passing in ~4.3s combined.
 - CI workflow (`.github/workflows/ci.yml`), Homebrew formula template (`HomebrewFormula/pry-mcp.rb`), signing/notarization release script (`scripts/release.sh`).
 - `pry_spec_version: 1` frozen.
 

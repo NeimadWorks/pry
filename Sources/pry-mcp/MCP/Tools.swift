@@ -215,6 +215,66 @@ enum PryTools {
         return KeyOutput(ok: true)
     }
 
+    // MARK: - Drag / scroll / expect_change
+
+    struct DragInput: Codable {
+        var app: String
+        var from: TargetSpec
+        var to: TargetSpec
+        var steps: Int?
+    }
+    struct DragOutput: Codable { var ok: Bool }
+    static func drag(_ input: DragInput) async throws -> DragOutput {
+        try ElementResolver.requireTrust()
+        let hello = try await harnessHello(app: input.app)
+        let f = try parseTarget(input.from)
+        let t = try parseTarget(input.to)
+        let rf = try ElementResolver.resolve(target: f, in: hello.pid)
+        let rt = try ElementResolver.resolve(target: t, in: hello.pid)
+        guard let ff = rf.frame, let tf = rt.frame else {
+            throw ToolError.kinded(kind: "resolution_empty",
+                                   message: "drag endpoints have no frame")
+        }
+        try EventInjector.drag(
+            from: CGPoint(x: ff.midX, y: ff.midY),
+            to: CGPoint(x: tf.midX, y: tf.midY),
+            steps: input.steps ?? 12
+        )
+        return DragOutput(ok: true)
+    }
+
+    struct ScrollInput: Codable {
+        var app: String
+        var target: TargetSpec
+        var direction: String  // up | down | left | right
+        var amount: Int?
+    }
+    struct ScrollOutput: Codable { var ok: Bool }
+    static func scroll(_ input: ScrollInput) async throws -> ScrollOutput {
+        try ElementResolver.requireTrust()
+        let hello = try await harnessHello(app: input.app)
+        let target = try parseTarget(input.target)
+        let r = try ElementResolver.resolve(target: target, in: hello.pid)
+        guard let f = r.frame else {
+            throw ToolError.kinded(kind: "resolution_empty",
+                                   message: "scroll target has no frame")
+        }
+        let p = CGPoint(x: f.midX, y: f.midY)
+        let mag = Int32(input.amount ?? 3)
+        let (dx, dy): (Int32, Int32)
+        switch input.direction {
+        case "up": (dx, dy) = (0, mag)
+        case "down": (dx, dy) = (0, -mag)
+        case "left": (dx, dy) = (mag, 0)
+        case "right": (dx, dy) = (-mag, 0)
+        default:
+            throw ToolError.kinded(kind: "invalid_params",
+                                   message: "direction must be up|down|left|right")
+        }
+        try EventInjector.scroll(at: p, dx: dx, dy: dy)
+        return ScrollOutput(ok: true)
+    }
+
     // MARK: - Tree / find / wait_for / assert / snapshot
 
     struct TreeInput: Codable {

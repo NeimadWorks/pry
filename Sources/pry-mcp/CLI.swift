@@ -104,6 +104,30 @@ enum CLI {
                                                              path: optional(rest, "--out")))
                 print(try jsonPretty(out))
 
+            case "drag":
+                // CLI form: pry-mcp drag --app <app> --from-id <id> --to-id <id>
+                var from = PryTools.TargetSpec()
+                from.id = optional(rest, "--from-id")
+                from.label = optional(rest, "--from-label")
+                var to = PryTools.TargetSpec()
+                to.id = optional(rest, "--to-id")
+                to.label = optional(rest, "--to-label")
+                let steps = optional(rest, "--steps").flatMap(Int.init)
+                let out = try await PryTools.drag(.init(
+                    app: required(rest, "--app"), from: from, to: to, steps: steps
+                ))
+                print(try jsonPretty(out))
+
+            case "scroll":
+                let target = try parseTargetArgs(rest)
+                let direction = optional(rest, "--direction") ?? "down"
+                let amount = optional(rest, "--amount").flatMap(Int.init)
+                let out = try await PryTools.scroll(.init(
+                    app: required(rest, "--app"), target: target,
+                    direction: direction, amount: amount
+                ))
+                print(try jsonPretty(out))
+
             case "run":
                 let out = try await PryTools.runSpec(.init(
                     source: nil,

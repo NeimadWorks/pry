@@ -113,9 +113,19 @@ All control tools inject real events through `CGEventPost`. See [ADR-005](../arc
 **Input:** `{ "app": "...", "combo": "cmd+s" }`
 **Output:** `{ }`
 
-### `pry_scroll` / `pry_drag`
+### `pry_drag`
 
-See [docs/design/spec-format.md §3](../design/spec-format.md#3-step-commands) for the parameters — MCP tool shapes mirror the spec commands 1:1.
+Drag from one resolved target's center to another's. Real CGEvent sequence: `mouseDown` + N interpolated `mouseDragged` + `mouseUp`.
+
+**Input:** `{ "app": "...", "from": <target>, "to": <target>, "steps": 12? }`
+**Output:** `{ "ok": true }`
+
+### `pry_scroll`
+
+Scroll wheel events at the center of a resolved target.
+
+**Input:** `{ "app": "...", "target": <target>, "direction": "up|down|left|right", "amount": 3? }`
+**Output:** `{ "ok": true }`
 
 ---
 

@@ -54,6 +54,8 @@ final class DocumentListVM: ObservableObject, PryInspectable {
     @Published var draftName: String = ""
     @Published var clickCount: Int = 0
     @Published var zoneTapCount: Int = 0
+    @Published var intensity: Double = 0
+    @Published var quantity: Int = 0
     @Published var verbose: Bool = false {
         didSet {
             guard oldValue != verbose else { return }
@@ -68,6 +70,8 @@ final class DocumentListVM: ObservableObject, PryInspectable {
             "clickCount": clickCount,
             "zoneTapCount": zoneTapCount,
             "verbose": verbose,
+            "intensity": intensity,
+            "quantity": quantity,
         ]
     }
 
@@ -129,6 +133,24 @@ struct ContentView: View {
             Toggle("Verbose", isOn: $vm.verbose)
                 .accessibilityIdentifier("verbose_toggle")
                 .padding(.horizontal)
+
+            HStack {
+                Text("Intensity")
+                Slider(value: $vm.intensity, in: 0...100)
+                    .accessibilityIdentifier("intensity_slider")
+                    .frame(maxWidth: 300)
+                Text(String(format: "%.0f", vm.intensity))
+                    .accessibilityIdentifier("intensity_label")
+                    .monospacedDigit()
+                    .frame(width: 40, alignment: .trailing)
+            }
+            .padding(.horizontal)
+
+            Stepper(value: $vm.quantity, in: 0...20) {
+                Text("Quantity: \(vm.quantity)")
+            }
+            .accessibilityIdentifier("quantity_stepper")
+            .padding(.horizontal)
 
             Rectangle()
                 .fill(Color.blue.opacity(0.15))

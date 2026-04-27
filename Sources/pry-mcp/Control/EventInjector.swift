@@ -40,6 +40,55 @@ enum EventInjector {
         e.post(tap: .cgSessionEventTap)
     }
 
+    /// Drag from one point to another. Posts mouseDown at `from`, a sequence of
+    /// interpolated mouseDragged events to look human-ish, then mouseUp at `to`.
+    /// `steps` controls the number of intermediate moves (>= 1).
+    static func drag(from: CGPoint, to: CGPoint, steps: Int = 12, dwellMicros: useconds_t = 12_000) throws {
+        guard let down = CGEvent(mouseEventSource: source, mouseType: .leftMouseDown,
+                                 mouseCursorPosition: from, mouseButton: .left) else {
+            throw InjectError.eventCreateFailed("leftMouseDown")
+        }
+        down.post(tap: .cgSessionEventTap)
+        usleep(dwellMicros)
+
+        let n = max(1, steps)
+        for i in 1...n {
+            let t = Double(i) / Double(n)
+            let p = CGPoint(x: from.x + (to.x - from.x) * t,
+                            y: from.y + (to.y - from.y) * t)
+            guard let m = CGEvent(mouseEventSource: source, mouseType: .leftMouseDragged,
+                                  mouseCursorPosition: p, mouseButton: .left) else {
+                throw InjectError.eventCreateFailed("leftMouseDragged")
+            }
+            m.post(tap: .cgSessionEventTap)
+            usleep(dwellMicros)
+        }
+
+        guard let up = CGEvent(mouseEventSource: source, mouseType: .leftMouseUp,
+                               mouseCursorPosition: to, mouseButton: .left) else {
+            throw InjectError.eventCreateFailed("leftMouseUp")
+        }
+        up.post(tap: .cgSessionEventTap)
+    }
+
+    /// Scroll wheel events at a given on-screen point. Direction is encoded as
+    /// signed deltas in the scroll vector; `amount` is the number of "lines".
+    /// On macOS the wheel coordinate space is flipped: positive Y scrolls up.
+    static func scroll(at point: CGPoint, dx: Int32, dy: Int32) throws {
+        // Move cursor first so the target window receives the scroll.
+        try move(to: point)
+        usleep(5_000)
+        guard let e = CGEvent(scrollWheelEvent2Source: source,
+                              units: .line,
+                              wheelCount: 2,
+                              wheel1: dy,
+                              wheel2: dx,
+                              wheel3: 0) else {
+            throw InjectError.eventCreateFailed("scrollWheelEvent")
+        }
+        e.post(tap: .cgSessionEventTap)
+    }
+
     private static func press(_ down: CGEventType, _ up: CGEventType, at point: CGPoint,
                               button: CGMouseButton = .left, clickCount: Int = 1) throws {
         guard let d = CGEvent(mouseEventSource: source, mouseType: down,

@@ -339,6 +339,48 @@ public enum SpecParser {
             }
             return .key(combo: s)
 
+        case "scroll":
+            guard case .object(let kvs)? = mergedYAML else {
+                throw SpecParseError.invalidArgument("scroll needs { target, direction, amount }", line: lineNumber)
+            }
+            var targetYAML: YAMLValue?
+            var direction: ScrollDirection = .down
+            var amount: Int = 3
+            for (k, v) in kvs {
+                switch k {
+                case "target": targetYAML = v
+                case "direction":
+                    guard let s = v.asString, let d = ScrollDirection(rawValue: s) else {
+                        throw SpecParseError.invalidArgument("direction must be up|down|left|right", line: lineNumber)
+                    }
+                    direction = d
+                case "amount":
+                    if let n = v.asInt { amount = n }
+                default: break
+                }
+            }
+            let target = try Self.parseTarget(targetYAML, line: lineNumber)
+            return .scroll(target: target, direction: direction, amount: amount)
+
+        case "drag":
+            guard case .object(let kvs)? = mergedYAML else {
+                throw SpecParseError.invalidArgument("drag needs { from, to }", line: lineNumber)
+            }
+            var fromYAML: YAMLValue?
+            var toYAML: YAMLValue?
+            var steps: Int = 12
+            for (k, v) in kvs {
+                switch k {
+                case "from": fromYAML = v
+                case "to": toYAML = v
+                case "steps": if let n = v.asInt { steps = n }
+                default: break
+                }
+            }
+            let f = try Self.parseTarget(fromYAML, line: lineNumber)
+            let t = try Self.parseTarget(toYAML, line: lineNumber)
+            return .drag(from: f, to: t, steps: max(1, steps))
+
         // Assertions
         case "assert_tree":
             guard let yaml = mergedYAML else {
@@ -350,6 +392,12 @@ public enum SpecParser {
                 throw SpecParseError.invalidArgument("assert_state needs { viewmodel, path, equals|matches|any_of }", line: lineNumber)
             }
             return try buildAssertState(kvs, line: lineNumber)
+
+        case "expect_change":
+            guard case .object(let kvs)? = mergedYAML else {
+                throw SpecParseError.invalidArgument("expect_change needs { action, in, to }", line: lineNumber)
+            }
+            return try buildExpectChange(kvs, line: lineNumber)
 
         // Debug aids
         case "snapshot":
@@ -371,6 +419,59 @@ public enum SpecParser {
         default:
             throw SpecParseError.unknownCommand(command, line: lineNumber)
         }
+    }
+
+    private static func buildExpectChange(_ kvs: [(String, YAMLValue)], line: Int) throws -> Step {
+        var actionYAML: YAMLValue?
+        var inObs: YAMLValue?
+        var toValue: YAMLValue?
+        var timeout: Duration = Duration(seconds: 2)
+        for (k, v) in kvs {
+            switch k {
+            case "action": actionYAML = v
+            case "in": inObs = v
+            case "to": toValue = v
+            case "timeout": if let s = v.asSeconds { timeout = Duration(seconds: s) }
+            default: break
+            }
+        }
+        guard let actionYAML, case .object(let actionKVs) = actionYAML, let (verb, arg) = actionKVs.first else {
+            throw SpecParseError.invalidArgument("expect_change.action must be a single-verb object like { click: { id: ... } }", line: line)
+        }
+        let action: ExpectChangeAction
+        switch verb {
+        case "click": action = .click(try parseTarget(arg, line: line))
+        case "double_click": action = .doubleClick(try parseTarget(arg, line: line))
+        case "right_click": action = .rightClick(try parseTarget(arg, line: line))
+        case "key":
+            guard let s = arg.asString else {
+                throw SpecParseError.invalidArgument("expect_change.action.key needs a combo string", line: line)
+            }
+            action = .key(s)
+        case "type":
+            guard let s = arg.asString else {
+                throw SpecParseError.invalidArgument("expect_change.action.type needs a string", line: line)
+            }
+            action = .type(s)
+        default:
+            throw SpecParseError.invalidArgument("expect_change.action verb '\(verb)' not allowed (use click/double_click/right_click/key/type)", line: line)
+        }
+        guard case .object(let obsKVs)? = inObs else {
+            throw SpecParseError.invalidArgument("expect_change.in must be { viewmodel, path }", line: line)
+        }
+        var vm: String?
+        var path: String?
+        for (k, v) in obsKVs {
+            if k == "viewmodel" { vm = v.asString }
+            if k == "path" { path = v.asString }
+        }
+        guard let vm, let path else {
+            throw SpecParseError.invalidArgument("expect_change.in needs viewmodel and path", line: line)
+        }
+        guard let toValue else {
+            throw SpecParseError.invalidArgument("expect_change needs `to`", line: line)
+        }
+        return .expectChange(action: action, viewmodel: vm, path: path, to: toValue, timeout: timeout)
     }
 
     private static func buildAssertState(_ kvs: [(String, YAMLValue)], line: Int) throws -> Step {

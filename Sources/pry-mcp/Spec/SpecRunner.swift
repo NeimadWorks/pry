@@ -156,6 +156,44 @@ public actor SpecRunner {
             try ElementResolver.requireTrust()
             try EventInjector.key(combo: combo)
 
+        case .scroll(let target, let direction, let amount):
+            try ElementResolver.requireTrust()
+            let r = try resolveTarget(target, stepSource: source, stepIndex: stepIndex)
+            guard let f = r.frame else {
+                throw StepFailure(expected: "scroll target has a frame",
+                                  observed: "\(r.role) has no frame", suggestion: nil)
+            }
+            let p = CGPoint(x: f.midX, y: f.midY)
+            // macOS scroll wheel: positive Y = scroll up content (page up).
+            // Translate semantic direction → wheel deltas.
+            let mag = Int32(amount)
+            let (dx, dy): (Int32, Int32)
+            switch direction {
+            case .up: (dx, dy) = (0, mag)
+            case .down: (dx, dy) = (0, -mag)
+            case .left: (dx, dy) = (mag, 0)
+            case .right: (dx, dy) = (-mag, 0)
+            }
+            try EventInjector.scroll(at: p, dx: dx, dy: dy)
+
+        case .drag(let from, let to, let steps):
+            try ElementResolver.requireTrust()
+            let rf = try resolveTarget(from, stepSource: source, stepIndex: stepIndex)
+            let rt = try resolveTarget(to, stepSource: source, stepIndex: stepIndex)
+            guard let ff = rf.frame, let tf = rt.frame else {
+                throw StepFailure(expected: "drag endpoints have frames",
+                                  observed: "missing frame on \(rf.frame == nil ? "from" : "to")",
+                                  suggestion: nil)
+            }
+            let fromP = CGPoint(x: ff.midX, y: ff.midY)
+            let toP = CGPoint(x: tf.midX, y: tf.midY)
+            try EventInjector.drag(from: fromP, to: toP, steps: steps)
+
+        case .expectChange(let action, let vm, let path, let target, let timeout):
+            try await runExpectChange(action: action, viewmodel: vm, path: path,
+                                      target: target, timeout: timeout,
+                                      stepIndex: stepIndex, source: source)
+
         case .assertTree(let pred):
             try await assertTreeNow(pred, stepIndex: stepIndex, source: source)
 
@@ -268,6 +306,67 @@ public actor SpecRunner {
         case .labelMatches(let s): return .labelMatches(s)
         case .treePath(let s): return .treePath(s)
         case .point(let x, let y): return .point(x: CGFloat(x), y: CGFloat(y))
+        }
+    }
+
+    // MARK: - expect_change
+
+    private func runExpectChange(action: ExpectChangeAction, viewmodel: String, path: String,
+                                 target: YAMLValue, timeout: Duration,
+                                 stepIndex: Int, source: String) async throws {
+        // Snapshot the value before the action (for the "before → after" message).
+        let before: PryWire.AnyCodable? = try? await {
+            guard let h = harness else { return nil }
+            return try await h.readState(viewmodel: viewmodel, path: path).value
+        }()
+
+        // Execute the action.
+        try ElementResolver.requireTrust()
+        switch action {
+        case .click(let t):
+            let r = try resolveTarget(t, stepSource: source, stepIndex: stepIndex)
+            guard let f = r.frame else {
+                throw StepFailure(expected: "action target has a frame",
+                                  observed: "\(r.role) has no frame", suggestion: nil)
+            }
+            try EventInjector.click(at: CGPoint(x: f.midX, y: f.midY))
+        case .doubleClick(let t):
+            let r = try resolveTarget(t, stepSource: source, stepIndex: stepIndex)
+            guard let f = r.frame else {
+                throw StepFailure(expected: "action target has a frame",
+                                  observed: "\(r.role) has no frame", suggestion: nil)
+            }
+            try EventInjector.doubleClick(at: CGPoint(x: f.midX, y: f.midY))
+        case .rightClick(let t):
+            let r = try resolveTarget(t, stepSource: source, stepIndex: stepIndex)
+            guard let f = r.frame else {
+                throw StepFailure(expected: "action target has a frame",
+                                  observed: "\(r.role) has no frame", suggestion: nil)
+            }
+            try EventInjector.rightClick(at: CGPoint(x: f.midX, y: f.midY))
+        case .key(let combo):
+            try EventInjector.key(combo: combo)
+        case .type(let text):
+            try EventInjector.type(text: text)
+        }
+
+        // Poll for the new value within the timeout. We reuse the wait_for
+        // mechanism but bound it more tightly — expect_change is "the value
+        // changed because of this action", not "the value will eventually
+        // arrive."
+        let pred = Predicate.state(viewmodel: viewmodel, path: path, expect: .equals(target))
+        do {
+            try await waitForPredicate(pred, timeout: timeout, stepIndex: stepIndex, source: source)
+        } catch let f as StepFailure {
+            // Enrich the failure with the before-value if we captured one.
+            let beforeStr: String
+            if let b = before { beforeStr = "before action: \(renderAny(b.value))" }
+            else { beforeStr = "before action: <unread>" }
+            throw StepFailure(
+                expected: f.expected,
+                observed: "\(f.observed); \(beforeStr)",
+                suggestion: f.suggestion
+            )
         }
     }
 
@@ -618,9 +717,21 @@ public actor SpecRunner {
         case .hover(let t): return "hover \(renderTarget(t))"
         case .type(let s): return "type \"\(s)\""
         case .key(let c): return "key \"\(c)\""
+        case .scroll(let t, let d, let n): return "scroll \(renderTarget(t)) \(d.rawValue) \(n)"
+        case .drag(let f, let t, _): return "drag from \(renderTarget(f)) to \(renderTarget(t))"
         case .assertTree(let p): return "assert_tree: \(renderPredicate(p))"
         case .assertState(let vm, let p, let e):
             return "assert_state \(vm).\(p) \(renderExpectation(e))"
+        case .expectChange(let a, let vm, let p, let to, _):
+            let actionStr: String
+            switch a {
+            case .click(let t): actionStr = "click \(renderTarget(t))"
+            case .doubleClick(let t): actionStr = "double_click \(renderTarget(t))"
+            case .rightClick(let t): actionStr = "right_click \(renderTarget(t))"
+            case .key(let c): actionStr = "key \"\(c)\""
+            case .type(let s): actionStr = "type \"\(s)\""
+            }
+            return "expect_change \(actionStr) → \(vm).\(p) = \(renderYAMLValue(to))"
         case .snapshot(let n): return "snapshot \"\(n)\""
         case .dumpTree(let n): return "dump_tree \"\(n)\""
         case .dumpState(let n): return "dump_state \"\(n)\""

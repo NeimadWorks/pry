@@ -194,6 +194,16 @@ actor MCPServer {
             let out = try await PryTools.logs(input)
             return try jsonString(out)
 
+        case "pry_drag":
+            let input = try decoder.decode(PryTools.DragInput.self, from: arguments)
+            let out = try await PryTools.drag(input)
+            return try jsonString(out)
+
+        case "pry_scroll":
+            let input = try decoder.decode(PryTools.ScrollInput.self, from: arguments)
+            let out = try await PryTools.scroll(input)
+            return try jsonString(out)
+
         default:
             throw PryTools.ToolError.kinded(kind: "method_not_found", message: "no such tool: \(tool)")
         }
@@ -364,6 +374,26 @@ enum ToolCatalog {
                 "app": ["type": "string"],
                 "since": ["type": "string", "description": "ISO 8601 timestamp."],
                 "subsystem": ["type": "string"],
+            ]),
+        ],
+        [
+            "name": "pry_drag",
+            "description": "Drag from the center of one resolved target to the center of another. Real CGEvent sequence (mouseDown + interpolated drags + mouseUp).",
+            "inputSchema": objectSchema(required: ["app", "from", "to"], properties: [
+                "app": ["type": "string"],
+                "from": targetSchema,
+                "to": targetSchema,
+                "steps": ["type": "integer", "description": "Number of intermediate mouseDragged events. Default 12."],
+            ]),
+        ],
+        [
+            "name": "pry_scroll",
+            "description": "Scroll wheel events at the center of a resolved target.",
+            "inputSchema": objectSchema(required: ["app", "target", "direction"], properties: [
+                "app": ["type": "string"],
+                "target": targetSchema,
+                "direction": ["type": "string", "enum": ["up", "down", "left", "right"]],
+                "amount": ["type": "integer", "description": "Number of line units. Default 3."],
             ]),
         ],
     ] }
