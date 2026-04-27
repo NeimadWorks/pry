@@ -1,3 +1,0 @@
-module PryRunner {
-    header "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryRunner.build/include/PryRunner-Swift.h"
-}

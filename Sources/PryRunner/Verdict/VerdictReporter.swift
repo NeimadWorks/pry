@@ -4,7 +4,7 @@ import Foundation
 /// `docs/design/verdict-format.md`. Frontmatter is stable YAML that consumers
 /// (including Claude Code) can grep first.
 public enum VerdictReporter {
-    public static let pryVersion = "0.1.0-dev"
+    public static let pryVersion = "0.1.0"
 
     public static func render(_ v: Verdict) -> String {
         var out = ""

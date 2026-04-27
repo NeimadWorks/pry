@@ -15,7 +15,7 @@ Pry runs Markdown test scripts against macOS apps and returns verdicts [Claude C
 └──────────┘                 └─────────────┘
 ```
 
-**Status:** `v0.5.0-dev`. Phase 0 spikes green; Waves 1–4 delivered. Spec grammar `pry_spec_version: 1` is frozen for v1.0. Runner exposes 20+ MCP tools and a public Swift library (`PryRunner`). DemoApp suite covers virtual clock, control flow, drag, magnify, pasteboard, and async handlers. CI/release plumbing in place; signed binary publication is the only remaining manual step.
+**Status:** `v0.1.0` (first tagged release). Phase 0 spikes green; Waves 1–4 delivered (virtual clock, control flow, modifier-clicks, magnify, pasteboard, async handlers, fixtures, parallel run-suite, JUnit/TAP/markdown exporters, file panels). Spec grammar `pry_spec_version: 1` frozen. Runner exposes 25+ MCP tools and a public Swift library (`PryRunner`). 9 DemoApp specs PASS. CI/release plumbing in place.
 
 **For AI agents** opening this repo: read [`docs/AGENTS.md`](docs/AGENTS.md) first — it indexes the docs by intent and includes a grammar + API cheat sheet.
 

@@ -749,5 +749,5 @@ enum PryTools {
 }
 
 enum PryMCP {
-    static let version = "0.1.0-dev"
+    static let version = "0.1.0"
 }

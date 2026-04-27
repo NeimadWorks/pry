@@ -10,7 +10,7 @@ import Foundation
 /// Safe to call multiple times (idempotent). No-op in RELEASE builds when
 /// gated behind `#if DEBUG`.
 public enum PryHarness {
-    public static let version = "0.1.0-dev"
+    public static let version = "0.1.0"
 
     private static let lock = NSLock()
     nonisolated(unsafe) private static var server: PrySocketServer?

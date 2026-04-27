@@ -1,3 +1,0 @@
-module PryWire {
-    header "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryWire.build/include/PryWire-Swift.h"
-}
