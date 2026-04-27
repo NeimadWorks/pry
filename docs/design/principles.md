@@ -32,7 +32,7 @@ Foundation and system frameworks only. No SwiftPM dependencies across any target
 
 ## 8. No flakiness tolerance
 
-A passing test must pass for a reason the verdict can explain. A failing test must fail for the reason the verdict states. Timing issues are Pry bugs — we fix them by making waits explicit (`wait_for`), not by adding `sleep`s to specs.
+A passing test must pass for a reason the verdict can explain. A failing test must fail for the reason the verdict states. Timing issues are Pry bugs — we fix them by making waits explicit (`wait_for`), advancing the virtual clock (`clock.advance`), or installing async handlers (`handler ... on sheet:...`), **not** by adding `sleep`s to specs.
 
 ## 9. Local-only by construction
 

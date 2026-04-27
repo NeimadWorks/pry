@@ -15,7 +15,9 @@ Pry runs Markdown test scripts against macOS apps and returns verdicts [Claude C
 └──────────┘                 └─────────────┘
 ```
 
-**Status:** `v0.1.0-dev`. All five spikes green (one triggered [ADR-006](docs/architecture/decisions/ADR-006-log-observation-strategy.md) to drop real-time log assertions). Spec runner end-to-end: `pry-mcp run --spec flows/new-document.md` against the DemoApp fixture produces a PASS verdict in ~1 s. Breaking changes to the spec grammar bump `pry_spec_version`.
+**Status:** `v0.5.0-dev`. Phase 0 spikes green; Waves 1–4 delivered. Spec grammar `pry_spec_version: 1` is frozen for v1.0. Runner exposes 20+ MCP tools and a public Swift library (`PryRunner`). DemoApp suite covers virtual clock, control flow, drag, magnify, pasteboard, and async handlers. CI/release plumbing in place; signed binary publication is the only remaining manual step.
+
+**For AI agents** opening this repo: read [`docs/AGENTS.md`](docs/AGENTS.md) first — it indexes the docs by intent and includes a grammar + API cheat sheet.
 
 ---
 
@@ -156,7 +158,19 @@ Or register `pry-mcp` as an MCP server and let Claude Code call `pry_run_spec` d
 
 ## Spec format
 
-A Pry test is a Markdown file with YAML frontmatter and fenced `pry` code blocks containing steps. The grammar is documented in [docs/design/spec-format.md](docs/design/spec-format.md). Verdict format: [docs/design/verdict-format.md](docs/design/verdict-format.md).
+A Pry test is a Markdown file with YAML frontmatter and fenced `pry` code blocks containing steps. Grammar `pry_spec_version: 1` covers:
+
+- **Lifecycle**: launch, terminate, relaunch
+- **Mouse/touch**: click (with modifiers), double-click, right-click, hover (with dwell), long-press, drag (with modifiers), marquee, scroll, magnify
+- **Keyboard**: type (with delay), key (with repeat)
+- **Time**: `clock.advance`, `clock.set`, `set_animations` (Wave 1, ADR-007/009)
+- **Sheets/menus/pasteboard**: `accept_sheet`, `dismiss_alert`, `select_menu`, `copy`, `paste`, `write_pasteboard`, `assert_pasteboard`
+- **Assertions**: `assert_state`, `assert_tree`, `expect_change`
+- **Control flow**: `if`/`then`/`else`, `for`, `repeat`, `call` to named flows (Wave 2)
+- **Async handlers**: `handler NAME on sheet:"..."` runs in parallel (ADR-008)
+- **Fixtures**: `with_fs`, `with_defaults`, `screenshots: every_step` (Wave 4, ADR-010/011)
+
+Full reference: [docs/design/spec-format.md](docs/design/spec-format.md). Verdict format: [docs/design/verdict-format.md](docs/design/verdict-format.md).
 
 ## Using as a Swift library (no MCP)
 

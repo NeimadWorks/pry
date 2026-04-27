@@ -26,9 +26,13 @@ Pry is deliberately two processes. One lives **inside** the target app (`PryHarn
 | App lifecycle (launch/terminate) | `pry-mcp` (outside) | Obvious. |
 | ViewModel / `Mirror` reads | `PryHarness` (inside) | SwiftUI state and `ObservableObject`s are only reachable in-process. |
 | `OSLogStore` tail | `PryHarness` (inside) | Subsystem filtering is simpler when bound to the app's own signposts. |
-| Window pixel snapshots | `PryHarness` (inside) | Simpler to target self-window via `CGWindowID`; also lets us grab during overlay transitions. |
-| Markdown spec parsing | `pry-mcp` (outside) | The runner orchestrates; harness stays passive. |
-| Verdict reporting | `pry-mcp` (outside) | Runner owns the ground truth of the run. |
+| Window pixel snapshots | `PryRunner` (outside) | `CGWindowListCreateImage` works cross-process via `CGWindowID`. |
+| Virtual clock (`PryClock`) | `PryHarness` (inside) | Time-dependent code lives in the app; runner just sends "advance" requests. |
+| Animation gating | `PryHarness` (inside) | `CATransaction` / `NSAnimationContext` are per-process. |
+| Async event handlers | `PryRunner` (outside) | Subscribe to harness `notify` frames; spec runner dispatches. |
+| Filesystem / defaults fixtures | `PryRunner` (outside) | Created/cleaned up around launch. |
+| Markdown spec parsing | `PryRunner` | The runner orchestrates; harness stays passive. |
+| Verdict reporting | `PryRunner` | Runner owns the ground truth of the run. |
 
 **Rule of thumb:** PryHarness is passive — it answers queries. pry-mcp is active — it drives.
 
@@ -142,8 +146,16 @@ No orphan folders. No `Utilities/`, no `Common/`, no `Helpers/`. Every directory
 
 ## Related ADRs
 
+Index: [`docs/architecture/decisions/README.md`](decisions/README.md).
+
 - [ADR-001 — Distribution tier: direct / open source](decisions/ADR-001-distribution-tier.md)
 - [ADR-002 — Two-process split](decisions/ADR-002-two-process-split.md)
 - [ADR-003 — Markdown test spec format](decisions/ADR-003-markdown-spec-format.md)
 - [ADR-004 — State introspection protocol](decisions/ADR-004-state-introspection-protocol.md)
 - [ADR-005 — Event injection strategy](decisions/ADR-005-event-injection-strategy.md)
+- [ADR-006 — Log observation strategy (best-effort)](decisions/ADR-006-log-observation-strategy.md)
+- [ADR-007 — Virtual clock (`PryClock`)](decisions/ADR-007-virtual-clock.md)
+- [ADR-008 — Push state notifications & async event handlers](decisions/ADR-008-push-state-and-events.md)
+- [ADR-009 — Animation gating](decisions/ADR-009-animation-gating.md)
+- [ADR-010 — Fixtures (filesystem, defaults, network)](decisions/ADR-010-fixtures-and-network.md)
+- [ADR-011 — Verdict richness, runner infra, a11y, visual](decisions/ADR-011-verdict-richness.md)

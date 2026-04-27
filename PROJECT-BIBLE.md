@@ -500,6 +500,28 @@ See [docs/architecture/overview.md](docs/architecture/overview.md) for the fully
 - **Q3** — How does Pry handle multi-window apps? Proposed: frontmatter `window: { title_matches: "..." }`.
 - **Q4** — Does `pry_run_spec` accept specs from stdin as well as file paths? Leaning: yes.
 - **Q5** — When does the Tier 2 real-time log tee ([ADR-006](docs/architecture/decisions/ADR-006-log-observation-strategy.md)) land? Blocks reintroducing `assert_logs` / `assert_no_errors`. Not v1.
+- **Q6** — When do we land true two-finger HID pinch via private `IOHIDEvent`? Currently `magnify` uses Option+scroll which works for SwiftUI `MagnificationGesture` but not all custom recognizers. Not v1.
+
+---
+
+## 18. Post-v0.1 wave summary (non-locked)
+
+The original §1-§17 captured the v0.1 baseline. Subsequent grammar and runtime
+extensions ship as additive ADRs and remain backward-compatible with
+`pry_spec_version: 1`. Index:
+
+- **Wave 1** — virtual time, push state, animation gating, sheet/menu/pasteboard helpers ([ADR-007](docs/architecture/decisions/ADR-007-virtual-clock.md), [ADR-008](docs/architecture/decisions/ADR-008-push-state-and-events.md), [ADR-009](docs/architecture/decisions/ADR-009-animation-gating.md))
+- **Wave 2** — variables, includes, setup/teardown, conditionals, loops, sub-flows
+- **Wave 3** — modifier-clicks, marquee, magnify, type-with-delay, key-repeat, long-press, menu navigation, pasteboard, multi-window scoping
+- **Wave 4** — filesystem & defaults fixtures, parallel suite, retry, JUnit/TAP/Markdown exporters, watch mode, image diff, accessibility audit ([ADR-010](docs/architecture/decisions/ADR-010-fixtures-and-network.md), [ADR-011](docs/architecture/decisions/ADR-011-verdict-richness.md))
+
+Public surface for these waves is documented in:
+- [docs/design/spec-format.md](docs/design/spec-format.md) (grammar)
+- [docs/api/PryRunner.md](docs/api/PryRunner.md) (Swift library)
+- [docs/api/PryHarness.md](docs/api/PryHarness.md) (host-app adoption)
+- [docs/api/pry-mcp-tools.md](docs/api/pry-mcp-tools.md) (MCP tools)
+
+The §13 non-negotiables and §15 non-goals are unchanged.
 
 ---
 

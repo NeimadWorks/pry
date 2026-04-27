@@ -162,3 +162,131 @@ Keep together when:
 - The combined flow mirrors a single user intent ("create and then name the thing").
 
 In doubt, split. Shorter specs produce clearer verdicts.
+
+---
+
+## Patterns from Wave 1-4
+
+### Time-dependent code
+
+If your VM uses `PryClock` for debouncing, scheduled work, or polling
+([adoption guide](../api/PryHarness.md#virtual-clock-pryclock-adr-007)),
+test it deterministically without real wait:
+
+```pry
+click: { id: "trigger" }                                # registers a 5s scheduled job
+wait_for: { state: { viewmodel: VM, path: "scheduleRequestedCount", equals: 1 } }
+clock.advance: 5s
+wait_for: { state: { viewmodel: VM, path: "scheduledFiredCount", equals: 1 } }
+```
+
+The wait between click and `clock.advance` is the standard race-killer:
+make sure the schedule was registered (the button action ran on main actor)
+before fast-forwarding. Otherwise the advance moves the clock past a
+deadline that hasn't been added yet.
+
+### Async dialogs you don't control timing of
+
+Use a handler to dismiss them automatically wherever they show up:
+
+````markdown
+```pry handler dismiss_replace on sheet:"Replace.*" once
+- accept_sheet: "Skip"
+```
+
+```pry
+copy
+paste
+# If a "Replace existing file?" sheet appears at any point, the handler
+# clicks "Skip" and the main flow continues.
+```
+````
+
+### Setup / teardown
+
+Setup runs before main; failure aborts. Teardown **always** runs (even on
+failure):
+
+````markdown
+```pry setup
+launch
+wait_for: { role: Window, title_matches: "MyApp" }
+```
+
+```pry
+# main flow
+```
+
+```pry teardown
+terminate
+```
+````
+
+### Loops, variables, sub-flows
+
+````markdown
+---
+vars: { user: "alice" }
+---
+
+```pry flow login_as(name)
+- click: { id: "login_button" }
+- type: "${name}"
+- key: "return"
+```
+
+```pry
+call: { name: login_as, args: { name: "${user}" } }
+for: { var: doc, in: ["doc1", "doc2", "doc3"] }
+  - click: { id: "${doc}_link" }
+  - assert_state: { viewmodel: ViewerVM, path: "currentDoc", matches: "${doc}.*" }
+```
+````
+
+### Filesystem fixtures (Canopy-style file managers)
+
+````yaml
+---
+with_fs:
+  base: ~/.pry-tmp/${spec_id}
+  layout:
+    - file: report.txt, content: "Hello world"
+    - dir: assets
+    - file: assets/img.png, source: ./fixtures/img.png
+---
+````
+
+The base directory is created before launch and deleted after teardown.
+Reference it inside the spec via `${fixture_dir}` (auto-set when `with_fs`
+is present).
+
+### Multi-select pattern
+
+```pry
+click: { id: "row_1" }
+click: { id: "row_3", modifiers: [cmd] }
+click: { id: "row_5", modifiers: [cmd] }
+key: "delete"
+assert_state: { viewmodel: ListVM, path: "items.count", equals: 7 }
+```
+
+### Marquee selection
+
+For empty-area drag selection:
+
+```pry
+marquee:
+  from: { x: 100, y: 200 }
+  to: { x: 400, y: 500 }
+```
+
+### Disable animations for snapshot determinism
+
+In frontmatter:
+
+```yaml
+animations: off
+screenshots: every_step
+```
+
+Animations are restored automatically after teardown.

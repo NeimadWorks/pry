@@ -2,17 +2,20 @@
 
 > Live handover file for AI coding sessions. This is NOT architecture — architecture lives in [PROJECT-BIBLE.md](PROJECT-BIBLE.md). This file records where the last session stopped and what the next one should do.
 
+**Coding-agent quickstart:** start with [`docs/AGENTS.md`](docs/AGENTS.md). It indexes the entire doc tree by intent (writing specs, calling Pry from Swift, extending the runner) and contains a one-page cheat sheet for the grammar and the public API.
+
 ---
 
 ## How to use this file
 
 **If you are a new Claude Code session picking up this repo:**
 
-1. Read [README.md](README.md) — 2 min, understand what Pry is.
-2. Read [PROJECT-BIBLE.md](PROJECT-BIBLE.md) — 10 min, the source of truth. Do NOT re-litigate anything locked there.
-3. Read the latest `## Session ...` block at the bottom of this file — that's where you pick up.
-4. Check `spikes/` for PASS/FAIL results before writing any code that assumes them.
-5. Start work. At the end of your session, append a new `## Session YYYY-MM-DD — Delta` block following the template below.
+1. Read [`docs/AGENTS.md`](docs/AGENTS.md) — 5 min, navigation + cheat sheet.
+2. Read [`README.md`](README.md) — 2 min, understand what Pry is.
+3. Read [`PROJECT-BIBLE.md`](PROJECT-BIBLE.md) — 10 min, the source of truth. Do NOT re-litigate anything locked there.
+4. Read the latest `## Session ...` block at the bottom of this file — that's where you pick up.
+5. Check `spikes/` for PASS/FAIL results before writing any code that assumes them.
+6. Start work. At the end of your session, append a new `## Session YYYY-MM-DD — Delta` block following the template below.
 
 **If you are resuming your own session:** scan the "Current state" section below first. Relative dates in prompts should be resolved to absolute dates when you write them into this file (e.g. "Thursday" → `2026-04-23`).
 
