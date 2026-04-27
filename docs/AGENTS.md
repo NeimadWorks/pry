@@ -66,6 +66,7 @@ and JSON-RPC. **`pry-mcp`** is a thin stdio MCP wrapper around `PryRunner`.
 ### "I'm picking up where the last session left off"
 
 → [`CLAUDE.md`](../CLAUDE.md) — live session state, last delta at the bottom
+→ [`docs/ROADMAP.md`](ROADMAP.md) — what's shipped, what's next, what's deferred
 
 ### "I want to extend the runner"
 

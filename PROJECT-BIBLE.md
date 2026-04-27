@@ -504,7 +504,13 @@ See [docs/architecture/overview.md](docs/architecture/overview.md) for the fully
 
 ---
 
-## 18. Post-v0.1 wave summary (non-locked)
+## 18. Roadmap pointer
+
+For shipped vs. planned vs. backlog vs. out-of-scope, the live
+source-of-truth is [`docs/ROADMAP.md`](docs/ROADMAP.md). It's updated at
+the end of every session that ships visible work.
+
+## 19. Post-v0.1 wave summary (non-locked)
 
 The original §1-§17 captured the v0.1 baseline. Subsequent grammar and runtime
 extensions ship as additive ADRs and remain backward-compatible with

@@ -22,7 +22,7 @@ Launch the target app and connect to its `PryHarness` socket.
 { "app": "fr.neimad.proof", "path": "/abs/path/to/binary"?, "args": []?, "env": {}? }
 
 // Output
-{ "pid": 12345, "socket": "/tmp/pry-fr.neimad.proof.sock", "harness_version": "0.1.0-dev" }
+{ "pid": 12345, "socket": "/tmp/pry-fr.neimad.proof.sock", "harness_version": "0.1.0" }
 ```
 
 Errors: `app_not_found`, `bundle_not_found`, `harness_unreachable`, `ax_permission_denied`, `launch_failed`.
@@ -309,6 +309,21 @@ high→low). Provide exactly one form (the others should be omitted):
 { "tree_path": "Window[0]/Group/Button[2]" }
 { "point": { "x": 120, "y": 340 } }
 ```
+
+### `nth` disambiguator
+
+Any of the above can carry an `nth: N` integer field to pick the N-th match
+(0-indexed, tree pre-order) without erroring on ambiguity:
+
+```json
+{ "id": "row", "nth": 0 }                      // first match
+{ "label": "Save", "nth": 2 }                  // third button labelled "Save"
+```
+
+This is the standard fix for the SwiftUI `accessibilityIdentifier`
+propagation gotcha (a container's identifier appears on every descendant
+`Text`, `Image`, etc, so `{ id: "container" }` would otherwise match
+multiple elements). See [`writing-specs.md` § SwiftUI gotchas](../guides/writing-specs.md#swiftui-gotchas).
 
 ---
 

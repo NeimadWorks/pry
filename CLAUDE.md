@@ -4,6 +4,8 @@
 
 **Coding-agent quickstart:** start with [`docs/AGENTS.md`](docs/AGENTS.md). It indexes the entire doc tree by intent (writing specs, calling Pry from Swift, extending the runner) and contains a one-page cheat sheet for the grammar and the public API.
 
+**For "what's next":** [`docs/ROADMAP.md`](docs/ROADMAP.md) is the source of truth — what's shipped, what's in flight, what's deferred (with rationale), what's been ruled out.
+
 ---
 
 ## How to use this file
@@ -28,7 +30,7 @@
 **What works today:**
 - Spec runner: `pry-mcp run --spec flows/new-document.md` → verdict with full diagnostic context (AX tree snippet, registered VM state, auto-PNG on failure, step-by-step timings).
 - `pry-mcp run-suite --dir flows [--tag smoke]` → aggregate across all `.md` specs under a dir.
-- 15 MCP tools: `pry_launch`, `pry_terminate`, `pry_state`, `pry_click`, `pry_type`, `pry_key`, `pry_drag`, `pry_scroll`, `pry_tree`, `pry_find`, `pry_snapshot`, `pry_logs`, `pry_run_spec`, `pry_run_suite`, `pry_list_specs`.
+- 25+ MCP tools — full reference in [`docs/api/pry-mcp-tools.md`](docs/api/pry-mcp-tools.md). Lifecycle, mouse/keyboard/gestures, observation, time control, pasteboard, animations, file panels, spec runner.
 - CLI mirrors every tool one-to-one for hand-driven testing.
 - DemoApp suite: 5 specs (`new-document`, `text-field`, `toggle`, `slider-drag`, `expect-change`) all passing in ~4.3s combined.
 - CI workflow (`.github/workflows/ci.yml`), Homebrew formula template (`HomebrewFormula/pry-mcp.rb`), signing/notarization release script (`scripts/release.sh`).
@@ -258,3 +260,64 @@ Append one block per session. Keep each to ~15 lines. Don't rewrite previous ses
 **Blocked on:** nothing for code work. Phase 4 publication and Phase 5 dogfooding need human operator / external repos.
 
 **Next single action (for the human):** tag `v0.1.0`, run `./scripts/release.sh v0.1.0` with Developer ID credentials, publish the tap, then start adopting Pry in Proof — the first real-world app. A new session can begin by reading `CLAUDE.md`, `PROJECT-BIBLE.md`, and the Phase 5 notes above.
+
+## Session 2026-04-28 — v0.1.0 tagged + Narrow feedback iteration
+
+**Worked on:** Three things in one session.
+1. **Cut `v0.1.0`.** Cleaned the tracked tree (5093 transient files purged
+   — `.build/`, `.swiftpm/`, `pry-verdicts/` were in the index from old
+   auto-commits). Wrote a real Swift `.gitignore`, bumped version strings
+   from `0.1.0-dev` → `0.1.0`, pushed two cleanup commits, tagged with an
+   annotated note, pushed to `origin`.
+2. **Addressed Narrow field feedback.** A real session driving Narrow
+   (chess study, 13K-symbol explorer) surfaced 11 friction points; all
+   landed in one commit:
+     - Top 5 (numeric comparators, matches Int↔String coerce, key
+       punctuation, `.pry/config.yaml`, SwiftUI gotchas docs)
+     - Plus: `nth:` selector, `count: { gte }`, `panel:` predicate,
+       auto-`.gitignore` in verdicts/, SIGINT cleanup, AX context fallback.
+3. **Documentation overhaul.** New `docs/ROADMAP.md` is the single
+   source-of-truth for shipped vs. next vs. backlog vs. out-of-scope.
+   Updated `PryRunner.md`, `pry-mcp-tools.md`, `AGENTS.md`, README, and
+   `PROJECT-BIBLE.md` to point at it.
+
+**Landed:**
+  - `Sources/PryRunner/PryConfig.swift` (new)
+  - `Sources/PryRunner/Spec/{Step,SpecParser,SpecRunner}.swift` — numeric
+    comparators, nth target, panel predicate, count NumOp
+  - `Sources/PryRunner/Control/{ElementResolver,EventInjector}.swift` —
+    `.nth` resolution + count(matching:in:), punctuation keycodes
+  - `Sources/pry-mcp/{main.swift,MCP/Tools.swift}` — signal handlers,
+    `nth` in TargetSpec
+  - `docs/ROADMAP.md` (new)
+  - Doc updates in README, AGENTS, spec-format, writing-specs,
+    PryRunner.md, pry-mcp-tools.md, PROJECT-BIBLE §18 pointer
+
+**Decisions:**
+  - `.pry/config.yaml` chosen over per-spec workspace var because it's
+    per-project rather than per-spec, and the lookup walks ancestor dirs
+    so deeply nested fixtures work without copy-pasting the path.
+  - `nth: N` as a wrapper case on `TargetRef` (`.nth(base, index)`) rather
+    than a field on every TargetRef variant — keeps existing call sites
+    untouched and makes the resolver path explicit.
+  - `panelOpen` as a separate Predicate case rather than overloading
+    `window:` — the matching semantics differ (sheets aren't windows) and
+    a clean predicate produces clearer verdict text.
+
+**Tests / smoke:**
+  - `swift test` — 26/26 (3 new parser tests for the new comparators,
+    nth, count-with-NumOp).
+  - DemoApp suite — 9/9 PASS unchanged.
+
+**Open questions discovered:**
+  - Whether `.pry/config.yaml` should also carry `with_defaults`,
+    `with_fs`, etc. defaults inheritable across specs. Punted; specs are
+    self-contained today and that's a feature.
+
+**Blocked on:** nothing.
+
+**Next single action:** start Phase 5 dogfooding on Narrow (the field-feedback
+app). The DX trail blazed by the post-v0.1 commit means the first
+adoption flow should be cheap to write. After Narrow validates, pick the
+next backlog item from [`docs/ROADMAP.md`](docs/ROADMAP.md) "Next" section
+— likely `pry-mcp lint` or `assert.soft_state`.

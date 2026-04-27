@@ -14,7 +14,7 @@ import PryRunner
 ## Install
 
 ```swift
-.package(url: "https://github.com/neimad/pry", from: "0.5.0")
+.package(url: "https://github.com/neimad/pry", from: "0.1.0")
 
 .testTarget(name: "MyAppTests", dependencies: [
     .product(name: "PryRunner", package: "pry")
@@ -193,9 +193,47 @@ public struct Spec: Sendable { /* id, app, steps, setupSteps, teardownSteps,
                                   screenshotsPolicy, ... */ }
 
 public enum Step: Sendable { /* every grammar command */ }
-public enum Predicate: Sendable { /* contains, visible, state, all_of, ... */ }
-public enum Target: Sendable { /* id, roleLabel, label, ... */ }
-public enum StateExpectation: Sendable { case equals, matches, anyOf }
+public enum Predicate: Sendable {
+    case contains(TargetRef)
+    case notContains(TargetRef)
+    case countOf(TargetRef, op: NumOp)         // numeric op replaces fixed equals
+    case visible(TargetRef)
+    case enabled(TargetRef)
+    case focused(TargetRef)
+    case state(viewmodel: String, path: String, expect: StateExpectation)
+    case allOf([Predicate])
+    case anyOf([Predicate])
+    case not(Predicate)
+    case window(title: String?, titleMatches: String?)
+    case panelOpen(titleMatches: String?)      // matches AXSheet OR modal AXWindow
+}
+
+public indirect enum TargetRef: Sendable {
+    case id(String)
+    case roleLabel(role: String, label: String)
+    case label(String)
+    case labelMatches(String)
+    case treePath(String)
+    case point(x: Double, y: Double)
+    case nth(base: TargetRef, index: Int)      // disambiguator
+}
+
+public enum StateExpectation: Sendable {
+    case equals(YAMLValue)
+    case matches(String)                       // auto-coerces Int/Double to string
+    case anyOf([YAMLValue])
+    case gt(Double)
+    case gte(Double)
+    case lt(Double)
+    case lte(Double)
+    case between(low: Double, high: Double)
+}
+
+public enum NumOp: Sendable, Equatable {
+    case eq(Int), gt(Int), gte(Int), lt(Int), lte(Int), between(Int, Int)
+    public func matches(_ n: Int) -> Bool
+}
+
 public enum ScrollDirection: String, Sendable { case up, down, left, right }
 public struct Duration: Sendable { /* seconds */ }
 
@@ -207,6 +245,23 @@ public enum SpecParser {
 }
 
 public enum SpecParseError: Error { /* missingFrontmatter, unknownCommand(line), ... */ }
+
+/// Project-wide config loaded from `.pry/config.yaml`. Walks up from a spec
+/// file (8 ancestor levels) looking for the file. Lets specs omit
+/// `executable_path:` from their frontmatter — particularly useful for
+/// SwiftPM-built apps whose path varies per machine.
+public struct PryConfig: Sendable {
+    public struct AppConfig: Sendable { public var executablePath: String? }
+    public var configFileURL: URL?
+    public var apps: [String: AppConfig]
+
+    /// Highest-precedence path resolution: env var
+    /// `PRY_EXEC_<UPPERCASED_BUNDLE_ID>` (`.` and `-` → `_`), then config
+    /// file, then nil.
+    public func resolveExecutablePath(for bundleID: String) -> String?
+    public static func discover(from start: URL) -> PryConfig?
+    public static func load(from url: URL) throws -> PryConfig
+}
 ```
 
 ---
