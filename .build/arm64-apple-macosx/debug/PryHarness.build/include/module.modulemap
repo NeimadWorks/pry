@@ -1,3 +1,0 @@
-module PryHarness {
-    header "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/include/PryHarness-Swift.h"
-}
