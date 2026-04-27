@@ -28,6 +28,18 @@
       "inputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryAnimations.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryClock.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryEventBus.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift"
         },
         {
@@ -67,6 +79,9 @@
       "moduleName" : "PryHarness",
       "moduleOutputPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarness.swiftmodule",
       "objects" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspector.swift.o",
@@ -129,6 +144,18 @@
       "outputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o"
         },
         {
@@ -158,6 +185,9 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryAnimations.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryClock.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryEventBus.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspectable.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspector.swift",
@@ -269,6 +299,10 @@
       "inputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Audit/AccessibilityAudit.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/AXTreeWalker.swift"
         },
         {
@@ -290,6 +324,10 @@
         {
           "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/HarnessClient.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Fixtures.swift"
         },
         {
           "kind" : "file",
@@ -321,7 +359,15 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictExporters.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictReporter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Visual/ImageDiff.swift"
         },
         {
           "kind" : "file",
@@ -344,12 +390,14 @@
       "moduleName" : "PryRunner",
       "moduleOutputPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryRunner.swiftmodule",
       "objects" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AccessibilityAudit.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AXTreeWalker.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ElementResolver.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/EventInjector.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/WindowCapture.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AppDriver.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/HarnessClient.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Fixtures.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Pry.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Spec.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/SpecParser.swift.o",
@@ -357,7 +405,9 @@
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Step.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/YAMLFlow.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Verdict.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter.swift.o"
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictExporters.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ImageDiff.swift.o"
       ],
       "otherArguments" : [
         "-target",
@@ -414,6 +464,10 @@
       "outputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AccessibilityAudit.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AXTreeWalker.swift.o"
         },
         {
@@ -435,6 +489,10 @@
         {
           "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/HarnessClient.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Fixtures.swift.o"
         },
         {
           "kind" : "file",
@@ -466,7 +524,15 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictExporters.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ImageDiff.swift.o"
         },
         {
           "kind" : "file",
@@ -475,12 +541,14 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Audit/AccessibilityAudit.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/AXTreeWalker.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/ElementResolver.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/EventInjector.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/WindowCapture.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/AppDriver.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/HarnessClient.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Fixtures.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Pry.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Spec.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/SpecParser.swift",
@@ -488,7 +556,9 @@
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Step.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/YAMLFlow.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/Verdict.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictReporter.swift"
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictExporters.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictReporter.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Visual/ImageDiff.swift"
       ],
       "tempsPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build",
       "wholeModuleOptimization" : false
@@ -1016,6 +1086,9 @@
       "-package-name",
       "pry",
       "-c",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryAnimations.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryClock.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryEventBus.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspectable.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspector.swift",
@@ -1142,12 +1215,14 @@
       "-package-name",
       "pry",
       "-c",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Audit/AccessibilityAudit.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/AXTreeWalker.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/ElementResolver.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/EventInjector.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/WindowCapture.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/AppDriver.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/HarnessClient.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Fixtures.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Pry.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Spec.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/SpecParser.swift",
@@ -1155,7 +1230,9 @@
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Step.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/YAMLFlow.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/Verdict.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictExporters.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictReporter.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Visual/ImageDiff.swift",
       "-I",
       "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules",
       "-target",
@@ -1584,6 +1661,18 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryAnimations.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryClock.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryEventBus.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift"
         },
         {
@@ -1632,6 +1721,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Audit/AccessibilityAudit.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/AXTreeWalker.swift"
         },
         {
@@ -1653,6 +1746,10 @@
         {
           "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/HarnessClient.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Fixtures.swift"
         },
         {
           "kind" : "file",
@@ -1684,7 +1781,15 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictExporters.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictReporter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Visual/ImageDiff.swift"
         }
       ],
       "outputFilePath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/sources"
@@ -1754,6 +1859,18 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o"
         },
         {
@@ -1782,6 +1899,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AccessibilityAudit.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AppDriver.swift.o"
         },
         {
@@ -1794,7 +1915,15 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Fixtures.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/HarnessClient.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ImageDiff.swift.o"
         },
         {
           "kind" : "file",
@@ -1819,6 +1948,10 @@
         {
           "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Verdict.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictExporters.swift.o"
         },
         {
           "kind" : "file",
@@ -1878,6 +2011,18 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o"
         },
         {
@@ -1910,6 +2055,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AccessibilityAudit.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AppDriver.swift.o"
         },
         {
@@ -1922,7 +2071,15 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Fixtures.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/HarnessClient.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ImageDiff.swift.o"
         },
         {
           "kind" : "file",
@@ -1947,6 +2104,10 @@
         {
           "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Verdict.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictExporters.swift.o"
         },
         {
           "kind" : "file",

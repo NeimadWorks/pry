@@ -1,5 +1,6 @@
 import Foundation
 import Darwin
+import AppKit
 import PryWire
 
 /// Unix-domain stream socket server speaking the PryWire JSON-RPC protocol.
@@ -15,6 +16,10 @@ final class PrySocketServer: @unchecked Sendable {
     private let acceptQueue = DispatchQueue(label: "fr.neimad.pry.harness.accept", qos: .utility)
     private var running = false
     private let lock = NSLock()
+
+    /// Per-client subscription IDs (so unsubscribe cleans them up on disconnect).
+    private var clientSubs: [Int32: [String]] = [:]
+    private let subsLock = NSLock()
 
     init(socketPath: String, appBundle: String) {
         self.socketPath = socketPath
@@ -105,15 +110,23 @@ final class PrySocketServer: @unchecked Sendable {
     // MARK: - Per-client request/response loop
 
     private func handle(clientFD: Int32) {
-        defer { close(clientFD) }
+        defer {
+            // Cancel any subscriptions held by this client.
+            subsLock.lock()
+            let ids = clientSubs[clientFD] ?? []
+            clientSubs[clientFD] = nil
+            subsLock.unlock()
+            for id in ids { PryEventBus.shared.unsubscribe(id) }
+            close(clientFD)
+        }
 
         while let frame = FrameIO.readFrame(fd: clientFD) {
-            let response = dispatch(frame: frame)
+            let response = dispatch(frame: frame, clientFD: clientFD)
             if !FrameIO.writeFrame(fd: clientFD, data: response) { return }
         }
     }
 
-    private func dispatch(frame: Data) -> Data {
+    private func dispatch(frame: Data, clientFD: Int32 = -1) -> Data {
         let decoder = JSONDecoder()
         let encoder = JSONEncoder()
 
@@ -137,6 +150,22 @@ final class PrySocketServer: @unchecked Sendable {
             return handleReadState(id: raw.id, params: raw.params, encoder: encoder, decoder: decoder)
         case .readLogs:
             return handleReadLogs(id: raw.id, params: raw.params, encoder: encoder, decoder: decoder)
+        case .clockGet:
+            return handleClockGet(id: raw.id, encoder: encoder)
+        case .clockSet:
+            return handleClockSet(id: raw.id, params: raw.params, encoder: encoder, decoder: decoder)
+        case .clockAdvance:
+            return handleClockAdvance(id: raw.id, params: raw.params, encoder: encoder, decoder: decoder)
+        case .setAnimations:
+            return handleSetAnimations(id: raw.id, params: raw.params, encoder: encoder, decoder: decoder)
+        case .subscribe:
+            return handleSubscribe(id: raw.id, params: raw.params, encoder: encoder, decoder: decoder, clientFD: clientFD)
+        case .unsubscribe:
+            return handleUnsubscribe(id: raw.id, params: raw.params, encoder: encoder, decoder: decoder, clientFD: clientFD)
+        case .readPasteboard:
+            return handleReadPasteboard(id: raw.id, params: raw.params, encoder: encoder, decoder: decoder)
+        case .writePasteboard:
+            return handleWritePasteboard(id: raw.id, params: raw.params, encoder: encoder, decoder: decoder)
         case .inspectTree, .snapshot:
             // These are handled out-of-process in pry-mcp — the harness doesn't
             // need to own AX walks or window captures. See ADR-002.
@@ -147,6 +176,124 @@ final class PrySocketServer: @unchecked Sendable {
             let resp = PryWire.Response(id: raw.id, result: PryWire.GoodbyeResult())
             return (try? encoder.encode(resp)) ?? Data()
         }
+    }
+
+    // MARK: - clock
+
+    private func handleClockGet(id: Int, encoder: JSONEncoder) -> Data {
+        let result = PryWire.ClockGetResult(
+            iso8601: ISO8601DateFormatter().string(from: PryClock.shared.now),
+            paused: PryClock.shared.isPaused
+        )
+        return (try? encoder.encode(PryWire.Response(id: id, result: result))) ?? Data()
+    }
+
+    private func handleClockSet(id: Int, params: PryWire.AnyCodable, encoder: JSONEncoder, decoder: JSONDecoder) -> Data {
+        guard let p: PryWire.ClockSetParams = decode(params, as: PryWire.ClockSetParams.self, encoder: encoder, decoder: decoder),
+              let date = ISO8601DateFormatter().date(from: p.iso8601) else {
+            return encodeError(id: id, code: PryWire.RPCError.invalidParams,
+                               message: "clock_set requires { iso8601, paused? }", encoder: encoder)
+        }
+        let fired = PryClock.shared.set(to: date, paused: p.paused)
+        let result = PryWire.ClockSetResult(
+            iso8601: ISO8601DateFormatter().string(from: PryClock.shared.now),
+            firedCallbacks: fired
+        )
+        return (try? encoder.encode(PryWire.Response(id: id, result: result))) ?? Data()
+    }
+
+    private func handleClockAdvance(id: Int, params: PryWire.AnyCodable, encoder: JSONEncoder, decoder: JSONDecoder) -> Data {
+        guard let p: PryWire.ClockAdvanceParams = decode(params, as: PryWire.ClockAdvanceParams.self, encoder: encoder, decoder: decoder) else {
+            return encodeError(id: id, code: PryWire.RPCError.invalidParams,
+                               message: "clock_advance requires { seconds }", encoder: encoder)
+        }
+        let fired = PryClock.shared.advance(by: p.seconds)
+        let result = PryWire.ClockSetResult(
+            iso8601: ISO8601DateFormatter().string(from: PryClock.shared.now),
+            firedCallbacks: fired
+        )
+        return (try? encoder.encode(PryWire.Response(id: id, result: result))) ?? Data()
+    }
+
+    // MARK: - animations
+
+    private func handleSetAnimations(id: Int, params: PryWire.AnyCodable, encoder: JSONEncoder, decoder: JSONDecoder) -> Data {
+        guard let p: PryWire.SetAnimationsParams = decode(params, as: PryWire.SetAnimationsParams.self, encoder: encoder, decoder: decoder) else {
+            return encodeError(id: id, code: PryWire.RPCError.invalidParams,
+                               message: "set_animations requires { enabled }", encoder: encoder)
+        }
+        DispatchQueue.main.sync {
+            MainActor.assumeIsolated {
+                PryAnimations.setEnabled(p.enabled)
+            }
+        }
+        let result = PryWire.SetAnimationsResult(enabled: p.enabled)
+        return (try? encoder.encode(PryWire.Response(id: id, result: result))) ?? Data()
+    }
+
+    // MARK: - subscriptions
+
+    private func handleSubscribe(id: Int, params: PryWire.AnyCodable, encoder: JSONEncoder, decoder: JSONDecoder, clientFD: Int32) -> Data {
+        let p: PryWire.SubscribeParams = (decode(params, as: PryWire.SubscribeParams.self, encoder: encoder, decoder: decoder)) ?? PryWire.SubscribeParams(kinds: [])
+        let kinds = p.kinds.compactMap { PryWire.NotificationKind(rawValue: $0) }
+        let serverEncoder = encoder
+        let captureFD = clientFD
+        let server = self
+        let subID = PryEventBus.shared.subscribe(kinds: kinds) { [captureFD, serverEncoder, server] params in
+            let notif = PryWire.Notification(params: params)
+            guard let data = try? serverEncoder.encode(notif) else { return }
+            // Best-effort write; if the client is gone the next request will fail and clean up.
+            _ = FrameIO.writeFrame(fd: captureFD, data: data)
+            _ = server // keep ARC alive across capture
+        }
+        // Track per-client so we cancel on disconnect.
+        subsLock.lock()
+        clientSubs[clientFD, default: []].append(subID)
+        subsLock.unlock()
+
+        let result = PryWire.SubscribeResult(subscriptionID: subID)
+        return (try? encoder.encode(PryWire.Response(id: id, result: result))) ?? Data()
+    }
+
+    private func handleUnsubscribe(id: Int, params: PryWire.AnyCodable, encoder: JSONEncoder, decoder: JSONDecoder, clientFD: Int32) -> Data {
+        guard let p: PryWire.UnsubscribeParams = decode(params, as: PryWire.UnsubscribeParams.self, encoder: encoder, decoder: decoder) else {
+            return encodeError(id: id, code: PryWire.RPCError.invalidParams,
+                               message: "unsubscribe requires { subscription_id }", encoder: encoder)
+        }
+        PryEventBus.shared.unsubscribe(p.subscriptionID)
+        subsLock.lock()
+        clientSubs[clientFD]?.removeAll { $0 == p.subscriptionID }
+        subsLock.unlock()
+        return (try? encoder.encode(PryWire.Response(id: id, result: PryWire.UnsubscribeResult()))) ?? Data()
+    }
+
+    // MARK: - pasteboard
+
+    private func handleReadPasteboard(id: Int, params: PryWire.AnyCodable, encoder: JSONEncoder, decoder: JSONDecoder) -> Data {
+        let pb = NSPasteboard.general
+        let types = pb.types?.map(\.rawValue) ?? []
+        let str = pb.string(forType: .string)
+        let result = PryWire.ReadPasteboardResult(string: str, types: types)
+        return (try? encoder.encode(PryWire.Response(id: id, result: result))) ?? Data()
+    }
+
+    private func handleWritePasteboard(id: Int, params: PryWire.AnyCodable, encoder: JSONEncoder, decoder: JSONDecoder) -> Data {
+        guard let p: PryWire.WritePasteboardParams = decode(params, as: PryWire.WritePasteboardParams.self, encoder: encoder, decoder: decoder) else {
+            return encodeError(id: id, code: PryWire.RPCError.invalidParams,
+                               message: "write_pasteboard requires { string }", encoder: encoder)
+        }
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(p.string, forType: .string)
+        return (try? encoder.encode(PryWire.Response(id: id, result: PryWire.WritePasteboardResult()))) ?? Data()
+    }
+
+    // MARK: - decode helper
+
+    private func decode<T: Codable>(_ params: PryWire.AnyCodable, as: T.Type,
+                                     encoder: JSONEncoder, decoder: JSONDecoder) -> T? {
+        guard let data = try? encoder.encode(params) else { return nil }
+        return try? decoder.decode(T.self, from: data)
     }
 
     // MARK: - read_logs

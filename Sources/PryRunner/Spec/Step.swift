@@ -11,14 +11,17 @@ public enum Step: Sendable {
     case waitFor(predicate: Predicate, timeout: Duration)
     case sleep(Duration)
 
-    case click(target: TargetRef)
-    case doubleClick(target: TargetRef)
-    case rightClick(target: TargetRef)
-    case hover(target: TargetRef)
-    case type(text: String)
-    case key(combo: String)
+    case click(target: TargetRef, modifiers: [String])
+    case doubleClick(target: TargetRef, modifiers: [String])
+    case rightClick(target: TargetRef, modifiers: [String])
+    case hover(target: TargetRef, dwellMs: Int?)
+    case longPress(target: TargetRef, dwellMs: Int)
+    case type(text: String, delayMs: Int?)
+    case key(combo: String, repeatCount: Int)
     case scroll(target: TargetRef, direction: ScrollDirection, amount: Int)
-    case drag(from: TargetRef, to: TargetRef, steps: Int)
+    case drag(from: TargetRef, to: TargetRef, steps: Int, modifiers: [String])
+    case marqueeDrag(from: PointSpec, to: PointSpec, modifiers: [String])
+    case magnify(target: TargetRef, delta: Int)
 
     case assertTree(predicate: Predicate)
     case assertState(viewmodel: String, path: String, expect: StateExpectation)
@@ -27,6 +30,25 @@ public enum Step: Sendable {
     case snapshot(name: String)
     case dumpTree(name: String)
     case dumpState(name: String)
+
+    // Wave 1
+    case clockAdvance(seconds: Double)
+    case clockSet(iso8601: String, paused: Bool?)
+    case setAnimations(enabled: Bool)
+    case acceptSheet(button: String?)
+    case dismissAlert
+    case selectMenu(path: [String])
+    case copy
+    case paste
+    case waitForIdle(timeout: Duration)
+    case writePasteboard(text: String)
+    case assertPasteboard(contains: String)
+
+    // Wave 2 — control flow
+    case `if`(predicate: Predicate, then: [Step], `else`: [Step])
+    case forEach(varName: String, items: [YAMLValue], body: [Step])
+    case repeatN(count: Int, body: [Step])
+    case callFlow(name: String, args: [String: YAMLValue])
 }
 
 public enum StateExpectation: Sendable {
@@ -57,6 +79,12 @@ public enum TargetRef: Sendable {
     case labelMatches(String)
     case treePath(String)
     case point(x: Double, y: Double)
+}
+
+public struct PointSpec: Sendable {
+    public var x: Double
+    public var y: Double
+    public init(x: Double, y: Double) { self.x = x; self.y = y }
 }
 
 /// Tree / state predicate used by `wait_for` and `assert_tree`.

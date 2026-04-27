@@ -119,6 +119,47 @@ extension PryWire {
         case readLogs = "read_logs"
         case snapshot
         case goodbye
+        // Wave 1
+        case clockGet = "clock_get"
+        case clockSet = "clock_set"
+        case clockAdvance = "clock_advance"
+        case setAnimations = "set_animations"
+        case subscribe = "subscribe"
+        case unsubscribe = "unsubscribe"
+        case readPasteboard = "read_pasteboard"
+        case writePasteboard = "write_pasteboard"
+    }
+
+    /// Notification kind, sent over the socket without an `id`. Clients
+    /// subscribe via `subscribe` and consume these.
+    public enum NotificationKind: String, Codable, Sendable, CaseIterable {
+        case stateChanged = "state_changed"
+        case windowAppeared = "window_appeared"
+        case windowDisappeared = "window_disappeared"
+        case sheetAppeared = "sheet_appeared"
+        case logEmitted = "log_emitted"
+    }
+
+    public struct Notification: Codable, Sendable {
+        public var jsonrpc: String
+        public var method: String                // "notify"
+        public var params: NotificationParams
+
+        public init(params: NotificationParams) {
+            self.jsonrpc = "2.0"
+            self.method = "notify"
+            self.params = params
+        }
+    }
+
+    public struct NotificationParams: Codable, Sendable {
+        public var kind: String                  // NotificationKind raw
+        public var data: AnyCodable
+
+        public init(kind: NotificationKind, data: AnyCodable) {
+            self.kind = kind.rawValue
+            self.data = data
+        }
     }
 }
 
@@ -265,6 +306,97 @@ extension PryWire {
 
         private enum CodingKeys: String, CodingKey { case pngBase64 = "png_base64" }
     }
+}
+
+// MARK: - clock
+
+extension PryWire {
+    public struct ClockGetParams: Codable, Sendable { public init() {} }
+    public struct ClockGetResult: Codable, Sendable {
+        public var iso8601: String
+        public var paused: Bool
+        public init(iso8601: String, paused: Bool) {
+            self.iso8601 = iso8601; self.paused = paused
+        }
+    }
+
+    public struct ClockSetParams: Codable, Sendable {
+        public var iso8601: String
+        public var paused: Bool?
+        public init(iso8601: String, paused: Bool? = nil) {
+            self.iso8601 = iso8601; self.paused = paused
+        }
+    }
+    public struct ClockSetResult: Codable, Sendable {
+        public var iso8601: String
+        public var firedCallbacks: Int
+        public init(iso8601: String, firedCallbacks: Int) {
+            self.iso8601 = iso8601; self.firedCallbacks = firedCallbacks
+        }
+        private enum CodingKeys: String, CodingKey {
+            case iso8601
+            case firedCallbacks = "fired_callbacks"
+        }
+    }
+
+    public struct ClockAdvanceParams: Codable, Sendable {
+        public var seconds: Double
+        public init(seconds: Double) { self.seconds = seconds }
+    }
+}
+
+// MARK: - animations
+
+extension PryWire {
+    public struct SetAnimationsParams: Codable, Sendable {
+        public var enabled: Bool
+        public init(enabled: Bool) { self.enabled = enabled }
+    }
+    public struct SetAnimationsResult: Codable, Sendable {
+        public var enabled: Bool
+        public init(enabled: Bool) { self.enabled = enabled }
+    }
+}
+
+// MARK: - subscribe
+
+extension PryWire {
+    public struct SubscribeParams: Codable, Sendable {
+        public var kinds: [String]            // NotificationKind raw values; empty = all
+        public init(kinds: [String]) { self.kinds = kinds }
+    }
+    public struct SubscribeResult: Codable, Sendable {
+        public var subscriptionID: String
+        public init(subscriptionID: String) { self.subscriptionID = subscriptionID }
+        private enum CodingKeys: String, CodingKey { case subscriptionID = "subscription_id" }
+    }
+    public struct UnsubscribeParams: Codable, Sendable {
+        public var subscriptionID: String
+        public init(subscriptionID: String) { self.subscriptionID = subscriptionID }
+        private enum CodingKeys: String, CodingKey { case subscriptionID = "subscription_id" }
+    }
+    public struct UnsubscribeResult: Codable, Sendable { public init() {} }
+}
+
+// MARK: - pasteboard
+
+extension PryWire {
+    public struct ReadPasteboardParams: Codable, Sendable {
+        public var type: String?              // "string", "url", "any"
+        public init(type: String? = nil) { self.type = type }
+    }
+    public struct ReadPasteboardResult: Codable, Sendable {
+        public var string: String?
+        public var types: [String]
+        public init(string: String?, types: [String]) {
+            self.string = string; self.types = types
+        }
+    }
+    public struct WritePasteboardParams: Codable, Sendable {
+        public var string: String
+        public init(string: String) { self.string = string }
+    }
+    public struct WritePasteboardResult: Codable, Sendable { public init() {} }
 }
 
 // MARK: - goodbye

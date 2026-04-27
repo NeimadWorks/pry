@@ -2,6 +2,13 @@
   "": {
     "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/primary.swiftdeps"
   },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Audit/AccessibilityAudit.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AccessibilityAudit.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AccessibilityAudit.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AccessibilityAudit~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AccessibilityAudit.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AccessibilityAudit.dia"
+  },
   "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/AXTreeWalker.swift": {
     "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AXTreeWalker.d",
     "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AXTreeWalker.swift.o",
@@ -43,6 +50,13 @@
     "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/HarnessClient~partial.swiftmodule",
     "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/HarnessClient.swiftdeps",
     "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/HarnessClient.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Fixtures.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Fixtures.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Fixtures.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Fixtures~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Fixtures.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Fixtures.dia"
   },
   "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Pry.swift": {
     "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Pry.d",
@@ -93,11 +107,25 @@
     "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Verdict.swiftdeps",
     "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Verdict.dia"
   },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictExporters.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictExporters.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictExporters.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictExporters~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictExporters.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictExporters.dia"
+  },
   "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictReporter.swift": {
     "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter.d",
     "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter.swift.o",
     "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter~partial.swiftmodule",
     "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter.swiftdeps",
     "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Visual/ImageDiff.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ImageDiff.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ImageDiff.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ImageDiff~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ImageDiff.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ImageDiff.dia"
   }
 }

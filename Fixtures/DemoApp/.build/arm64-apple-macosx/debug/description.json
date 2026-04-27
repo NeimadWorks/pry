@@ -122,6 +122,18 @@
       "inputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryAnimations.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryClock.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryEventBus.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift"
         },
         {
@@ -161,6 +173,9 @@
       "moduleName" : "PryHarness",
       "moduleOutputPath" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/Modules/PryHarness.swiftmodule",
       "objects" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspector.swift.o",
@@ -223,6 +238,18 @@
       "outputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o"
         },
         {
@@ -252,6 +279,9 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryAnimations.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryClock.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryEventBus.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspectable.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspector.swift",
@@ -788,6 +818,9 @@
       "-package-name",
       "pry",
       "-c",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryAnimations.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryClock.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryEventBus.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspectable.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryInspector.swift",
@@ -1125,6 +1158,18 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o"
         },
         {
@@ -1160,6 +1205,18 @@
         {
           "kind" : "virtual",
           "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryAnimations.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryClock.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryEventBus.swift"
         },
         {
           "kind" : "file",
@@ -1288,6 +1345,18 @@
         {
           "kind" : "virtual",
           "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Fixtures/DemoApp/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.swift.o"
         },
         {
           "kind" : "file",

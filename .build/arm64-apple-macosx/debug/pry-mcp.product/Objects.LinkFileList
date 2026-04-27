@@ -1,3 +1,6 @@
+/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.swift.o
+/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.swift.o
+/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspectable.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryInspector.swift.o
@@ -5,16 +8,20 @@
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryRegistry.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PrySocketServer.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AXTreeWalker.swift.o
+/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AccessibilityAudit.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AppDriver.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ElementResolver.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/EventInjector.swift.o
+/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Fixtures.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/HarnessClient.swift.o
+/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ImageDiff.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Pry.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Spec.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/SpecParser.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/SpecRunner.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Step.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Verdict.swift.o
+/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictExporters.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/WindowCapture.swift.o
 /Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/YAMLFlow.swift.o

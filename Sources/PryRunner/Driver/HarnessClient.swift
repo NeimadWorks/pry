@@ -86,6 +86,40 @@ public actor HarnessClient {
         let _: PryWire.GoodbyeResult = try call(method: .goodbye, params: PryWire.GoodbyeParams())
     }
 
+    // MARK: - Wave 1
+
+    public func clockGet() throws -> PryWire.ClockGetResult {
+        try call(method: .clockGet, params: PryWire.ClockGetParams())
+    }
+
+    public func clockSet(iso8601: String, paused: Bool? = nil) throws -> PryWire.ClockSetResult {
+        try call(method: .clockSet, params: PryWire.ClockSetParams(iso8601: iso8601, paused: paused))
+    }
+
+    public func clockAdvance(seconds: Double) throws -> PryWire.ClockSetResult {
+        try call(method: .clockAdvance, params: PryWire.ClockAdvanceParams(seconds: seconds))
+    }
+
+    public func setAnimations(enabled: Bool) throws -> PryWire.SetAnimationsResult {
+        try call(method: .setAnimations, params: PryWire.SetAnimationsParams(enabled: enabled))
+    }
+
+    public func subscribe(kinds: [PryWire.NotificationKind]) throws -> PryWire.SubscribeResult {
+        try call(method: .subscribe, params: PryWire.SubscribeParams(kinds: kinds.map(\.rawValue)))
+    }
+
+    public func unsubscribe(_ subscriptionID: String) throws -> PryWire.UnsubscribeResult {
+        try call(method: .unsubscribe, params: PryWire.UnsubscribeParams(subscriptionID: subscriptionID))
+    }
+
+    public func readPasteboard() throws -> PryWire.ReadPasteboardResult {
+        try call(method: .readPasteboard, params: PryWire.ReadPasteboardParams())
+    }
+
+    public func writePasteboard(string: String) throws -> PryWire.WritePasteboardResult {
+        try call(method: .writePasteboard, params: PryWire.WritePasteboardParams(string: string))
+    }
+
     // MARK: - Generic call
 
     private func call<P: Codable & Sendable, R: Codable & Sendable>(method: PryWire.Method, params: P) throws -> R {

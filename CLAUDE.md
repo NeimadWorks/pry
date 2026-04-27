@@ -20,7 +20,7 @@
 
 ## Current state
 
-**Phase:** Phases 0-3 **COMPLETE**. Grammar v1 is now fully implemented (drag, scroll, expect_change added 2026-04-27). The package was restructured the same day to expose `PryRunner` as a real public Swift library — `pry-mcp` is now a thin MCP wrapper around it. You can now use Pry from any Swift code (XCTest, Swift Testing, custom CLIs) without going through the MCP daemon. Phase 4 delivered as docs + templates (signed-binary / Homebrew tap publication is deferred to the human operator). Phase 5 dogfooding across Proof / Probe / Narrow / Harald / Carnet requires those apps' source, which lives outside this repo.
+**Phase:** Original Phases 0-5 plus four "modern UX" waves **all delivered**. Wave 1 (PryClock virtual time + push state + animations + sheet helpers — ADRs 007/008/009), Wave 2 (variables, includes, setup/teardown, conditionals, loops, sub-flows — ADR-010 grammar piece), Wave 3 (modifier-clicks, marquee, magnify, type-with-delay, key-repeat, longpress, menu paths, pasteboard, multi-window/multi-app surface, async event handlers), Wave 4 (filesystem & defaults fixtures, parallel suite, retry, JUnit/TAP/markdown exporters, watch mode, image diff, accessibility audit — ADRs 010/011). 8 specs in `Fixtures/DemoApp/flows/` cover the new ground with PASS verdicts and the package builds clean across `PryHarness`, `PryWire`, `PryRunner` (public library), and `pry-mcp` (thin wrapper).
 
 **What works today:**
 - Spec runner: `pry-mcp run --spec flows/new-document.md` → verdict with full diagnostic context (AX tree snippet, registered VM state, auto-PNG on failure, step-by-step timings).

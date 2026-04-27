@@ -145,10 +145,39 @@ enum CLI {
                 let out = try await PryTools.runSuite(.init(
                     path: required(rest, "--dir"),
                     tag: optional(rest, "--tag"),
-                    verdicts_dir: optional(rest, "--verdicts-dir")
+                    verdicts_dir: optional(rest, "--verdicts-dir"),
+                    parallel: optional(rest, "--parallel").flatMap(Int.init),
+                    retry_failed: optional(rest, "--retry-failed").flatMap(Int.init),
+                    junit: optional(rest, "--junit"),
+                    tap: optional(rest, "--tap"),
+                    summary_md: optional(rest, "--summary-md")
                 ))
                 print(try jsonPretty(out))
                 return out.failed == 0 && out.errored == 0 ? 0 : 1
+
+            case "watch":
+                // Naive watch: poll every 1.5s for mtime changes under --dir,
+                // re-run the suite on change. Useful for local TDD.
+                let dir = try required(rest, "--dir")
+                FileHandle.standardError.write(Data("[pry] watching \(dir)\n".utf8))
+                var lastFingerprint = ""
+                while true {
+                    let fp = directoryFingerprint(dir)
+                    if fp != lastFingerprint {
+                        if !lastFingerprint.isEmpty {
+                            FileHandle.standardError.write(Data("[pry] change detected, running suite...\n".utf8))
+                            let out = try await PryTools.runSuite(.init(
+                                path: dir, tag: optional(rest, "--tag"),
+                                verdicts_dir: optional(rest, "--verdicts-dir"),
+                                parallel: optional(rest, "--parallel").flatMap(Int.init),
+                                retry_failed: nil, junit: nil, tap: nil, summary_md: nil
+                            ))
+                            print(try jsonPretty(out))
+                        }
+                        lastFingerprint = fp
+                    }
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                }
 
             case "list-specs":
                 let out = try await PryTools.listSpecs(.init(path: required(rest, "--dir")))
@@ -197,6 +226,23 @@ enum CLI {
     }
 
     // MARK: - Arg helpers
+
+    private static func directoryFingerprint(_ path: String) -> String {
+        var fp = ""
+        let url = URL(fileURLWithPath: path)
+        guard let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [.contentModificationDateKey]) else { return "" }
+        var entries: [(String, TimeInterval)] = []
+        while let item = enumerator.nextObject() as? URL {
+            guard item.pathExtension.lowercased() == "md" else { continue }
+            if let attrs = try? item.resourceValues(forKeys: [.contentModificationDateKey]),
+               let mod = attrs.contentModificationDate {
+                entries.append((item.path, mod.timeIntervalSinceReferenceDate))
+            }
+        }
+        entries.sort { $0.0 < $1.0 }
+        for (p, t) in entries { fp += "\(p):\(t);" }
+        return fp
+    }
 
     private static func required(_ args: [String], _ flag: String) throws -> String {
         guard let v = optional(args, flag) else {

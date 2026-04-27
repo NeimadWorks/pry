@@ -56,6 +56,9 @@ final class DocumentListVM: ObservableObject, PryInspectable {
     @Published var zoneTapCount: Int = 0
     @Published var intensity: Double = 0
     @Published var quantity: Int = 0
+    @Published var debounceMessage: String = ""
+    @Published var scheduledFiredCount: Int = 0
+    @Published var scheduleRequestedCount: Int = 0
     @Published var verbose: Bool = false {
         didSet {
             guard oldValue != verbose else { return }
@@ -72,7 +75,22 @@ final class DocumentListVM: ObservableObject, PryInspectable {
             "verbose": verbose,
             "intensity": intensity,
             "quantity": quantity,
+            "debounceMessage": debounceMessage,
+            "scheduledFiredCount": scheduledFiredCount,
+            "scheduleRequestedCount": scheduleRequestedCount,
         ]
+    }
+
+    /// Demonstrates `PryClock.after(_:)` — adoption pattern for clock-driven code.
+    func scheduleDebouncedMessage(_ text: String, after seconds: TimeInterval) {
+        scheduleRequestedCount += 1
+        PryClock.shared.after(seconds) { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.debounceMessage = text
+                self.scheduledFiredCount += 1
+            }
+        }
     }
 
     func createDocument() {
@@ -150,6 +168,21 @@ struct ContentView: View {
                 Text("Quantity: \(vm.quantity)")
             }
             .accessibilityIdentifier("quantity_stepper")
+            .padding(.horizontal)
+
+            HStack {
+                Button("Schedule (5s)") {
+                    vm.scheduleDebouncedMessage("Scheduled work fired!", after: 5)
+                }
+                .accessibilityIdentifier("schedule_button")
+                Text(vm.debounceMessage)
+                    .accessibilityIdentifier("debounce_message")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("Fired: \(vm.scheduledFiredCount)")
+                    .accessibilityIdentifier("scheduled_count")
+                    .monospacedDigit()
+            }
             .padding(.horizontal)
 
             Rectangle()

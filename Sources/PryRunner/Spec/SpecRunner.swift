@@ -27,6 +27,8 @@ public actor SpecRunner {
     private var stepResults: [StepResult] = []
     private var attachments: [String] = []
     private var attachmentsDir: URL?
+    private var fixtureBaseURL: URL?
+    private var defaultsSnapshot: DefaultsFixtures.Snapshot?
 
     public init(spec: Spec, options: Options = .init()) {
         self.spec = spec
@@ -42,17 +44,161 @@ public actor SpecRunner {
         var errorKind: String?
         var errorMessage: String?
 
+        // Fixtures (Wave 4): install BEFORE launch.
+        if let fs = spec.withFS {
+            do {
+                fixtureBaseURL = try FilesystemFixtures.install(fs, specID: spec.id)
+            } catch {
+                let finished = Date()
+                stepResults.append(StepResult(
+                    index: 0, line: nil, source: "[fixture] with_fs",
+                    outcome: .errored, duration: 0, message: "fixture install failed: \(error)"
+                ))
+                return Verdict(
+                    specPath: spec.sourcePath, specID: spec.id, app: spec.app,
+                    status: .errored, duration: finished.timeIntervalSince(started),
+                    stepsTotal: 0, stepsPassed: 0, failedAtStep: nil,
+                    startedAt: started, finishedAt: finished,
+                    stepResults: stepResults, failure: nil,
+                    errorKind: "fixture_failed", errorMessage: "\(error)",
+                    attachmentsDir: attachmentsDir
+                )
+            }
+        }
+        if !spec.withDefaults.isEmpty {
+            defaultsSnapshot = DefaultsFixtures.install(bundleID: spec.app, values: spec.withDefaults)
+        }
+
         let globalDeadline = started.addingTimeInterval(spec.timeout.seconds)
 
-        for (i, step) in spec.steps.enumerated() {
-            if Date() > globalDeadline {
-                status = .timedOut
-                appendSkipped(from: i)
-                break
+        // Setup phase
+        let setupResult = await runStepList(spec.setupSteps, label: "setup", baseIndex: 0, deadline: globalDeadline)
+        var stepIndexOffset = spec.setupSteps.count
+        if case .failed(let f) = setupResult {
+            status = .failed
+            failure = f
+            // Still run teardown
+        } else if case .errored(let kind, let msg) = setupResult {
+            status = .errored
+            errorKind = kind
+            errorMessage = msg
+        }
+
+        // Apply spec-level animations setting (if launch happened in setup)
+        if !spec.animationsEnabled, let h = harness, status == .passed {
+            _ = try? await h.setAnimations(enabled: false)
+        }
+
+        // Start async handlers (Wave 1 — ADR-008)
+        var handlerTask: Task<Void, Never>?
+        if !spec.handlers.isEmpty, status == .passed {
+            handlerTask = startHandlerLoop()
+        }
+
+        // Main phase (only if setup succeeded)
+        if status == .passed {
+            for (i, step) in spec.steps.enumerated() {
+                if Date() > globalDeadline {
+                    status = .timedOut
+                    appendSkipped(from: stepIndexOffset + i)
+                    break
+                }
+                let idx = stepIndexOffset + i + 1
+                let stepStart = Date()
+                let source = renderStep(step)
+                do {
+                    try await execute(step, stepIndex: idx, source: source)
+                    stepResults.append(StepResult(
+                        index: idx, line: nil, source: source,
+                        outcome: .passed, duration: Date().timeIntervalSince(stepStart), message: nil
+                    ))
+                    // Per-step screenshot policy
+                    if spec.screenshotsPolicy == .everyStep || spec.screenshotsPolicy == .always {
+                        if let att = try? await captureSnapshot(name: "step-\(idx)") {
+                            attachments.append(att)
+                        }
+                    }
+                } catch let e as StepFailure {
+                    stepResults.append(StepResult(
+                        index: idx, line: nil, source: source,
+                        outcome: .failed, duration: Date().timeIntervalSince(stepStart), message: e.summary
+                    ))
+                    status = .failed
+                    failure = await buildFailureContext(stepIndex: idx, stepSource: source, failure: e)
+                    appendSkippedMain(from: i + 1, indexOffset: stepIndexOffset)
+                    break
+                } catch let e as StepError {
+                    stepResults.append(StepResult(
+                        index: idx, line: nil, source: source,
+                        outcome: .errored, duration: Date().timeIntervalSince(stepStart), message: e.message
+                    ))
+                    status = .errored
+                    errorKind = e.kind
+                    errorMessage = e.message
+                    appendSkippedMain(from: i + 1, indexOffset: stepIndexOffset)
+                    break
+                } catch {
+                    stepResults.append(StepResult(
+                        index: idx, line: nil, source: source,
+                        outcome: .errored, duration: Date().timeIntervalSince(stepStart), message: "\(error)"
+                    ))
+                    status = .errored
+                    errorKind = "internal"
+                    errorMessage = "\(error)"
+                    appendSkippedMain(from: i + 1, indexOffset: stepIndexOffset)
+                    break
+                }
             }
-            let idx = i + 1
+        }
+
+        stepIndexOffset += spec.steps.count
+
+        // Teardown phase (always runs)
+        handlerTask?.cancel()
+        if let task = handlerTask { await task.value }
+        _ = await runStepList(spec.teardownSteps, label: "teardown",
+                              baseIndex: stepIndexOffset,
+                              deadline: Date().addingTimeInterval(15))
+
+        // Fixtures cleanup (always runs)
+        if let snap = defaultsSnapshot { DefaultsFixtures.restore(snap) }
+        if let url = fixtureBaseURL { FilesystemFixtures.cleanup(url) }
+
+        let finished = Date()
+
+        return Verdict(
+            specPath: spec.sourcePath,
+            specID: spec.id,
+            app: spec.app,
+            status: status,
+            duration: finished.timeIntervalSince(started),
+            stepsTotal: spec.setupSteps.count + spec.steps.count + spec.teardownSteps.count,
+            stepsPassed: stepResults.filter { $0.outcome == .passed }.count,
+            failedAtStep: failure?.stepIndex,
+            startedAt: started,
+            finishedAt: finished,
+            stepResults: stepResults,
+            failure: failure,
+            errorKind: errorKind,
+            errorMessage: errorMessage,
+            attachmentsDir: attachmentsDir
+        )
+    }
+
+    // MARK: - Phase helpers (setup / teardown / handlers)
+
+    private enum PhaseResult {
+        case ok
+        case failed(FailureContext)
+        case errored(kind: String, message: String)
+    }
+
+    private func runStepList(_ steps: [Step], label: String, baseIndex: Int, deadline: Date) async -> PhaseResult {
+        for (i, step) in steps.enumerated() {
+            if Date() > deadline { return .errored(kind: "timed_out", message: "\(label) exceeded budget") }
+            let idx = baseIndex + i + 1
             let stepStart = Date()
-            let source = renderStep(step)
+            let source = "[\(label)] " + renderStep(step)
             do {
                 try await execute(step, stepIndex: idx, source: source)
                 stepResults.append(StepResult(
@@ -64,53 +210,119 @@ public actor SpecRunner {
                     index: idx, line: nil, source: source,
                     outcome: .failed, duration: Date().timeIntervalSince(stepStart), message: e.summary
                 ))
-                status = .failed
                 let ctx = await buildFailureContext(stepIndex: idx, stepSource: source, failure: e)
-                failure = ctx
-                appendSkipped(from: i + 1)
-                break
+                return .failed(ctx)
             } catch let e as StepError {
                 stepResults.append(StepResult(
                     index: idx, line: nil, source: source,
                     outcome: .errored, duration: Date().timeIntervalSince(stepStart), message: e.message
                 ))
-                status = .errored
-                errorKind = e.kind
-                errorMessage = e.message
-                appendSkipped(from: i + 1)
-                break
+                return .errored(kind: e.kind, message: e.message)
             } catch {
                 stepResults.append(StepResult(
                     index: idx, line: nil, source: source,
                     outcome: .errored, duration: Date().timeIntervalSince(stepStart), message: "\(error)"
                 ))
-                status = .errored
-                errorKind = "internal"
-                errorMessage = "\(error)"
-                appendSkipped(from: i + 1)
-                break
+                return .errored(kind: "internal", message: "\(error)")
             }
         }
+        return .ok
+    }
 
-        let finished = Date()
+    private func appendSkippedMain(from index: Int, indexOffset: Int) {
+        for i in index..<spec.steps.count {
+            let idx = indexOffset + i + 1
+            if !stepResults.contains(where: { $0.index == idx }) {
+                stepResults.append(StepResult(
+                    index: idx, line: nil, source: renderStep(spec.steps[i]),
+                    outcome: .skipped, duration: 0, message: nil
+                ))
+            }
+        }
+    }
 
-        return Verdict(
-            specPath: spec.sourcePath,
-            specID: spec.id,
-            app: spec.app,
-            status: status,
-            duration: finished.timeIntervalSince(started),
-            stepsTotal: spec.steps.count,
-            stepsPassed: stepResults.filter { $0.outcome == .passed }.count,
-            failedAtStep: failure?.stepIndex,
-            startedAt: started,
-            finishedAt: finished,
-            stepResults: stepResults,
-            failure: failure,
-            errorKind: errorKind,
-            errorMessage: errorMessage,
-            attachmentsDir: attachmentsDir
-        )
+    /// Subscribe to harness notifications and dispatch matching handlers.
+    private func startHandlerLoop() -> Task<Void, Never> {
+        Task { [spec, weak self] in
+            guard let self else { return }
+            // Subscribe via the harness (Wave 1 wire surface).
+            // Each notification is a JSON-RPC frame on the SAME socket — but
+            // HarnessClient is request-response. For the spec runner we poll
+            // a synthetic version: every 100ms, ask the harness for the
+            // current registered names + state. If something changed since
+            // last tick AND a handler matches, fire it.
+            //
+            // (Full push delivery requires a separate listener task on the
+            // socket fd; that's tracked under ADR-008 for a future iteration.)
+            var lastSnapshots: [String: [String: String]] = [:]
+            var firedOnce: Set<String> = []
+
+            while !Task.isCancelled {
+                guard let harness = await self.harness else {
+                    try? await Task.sleep(nanoseconds: 100_000_000); continue
+                }
+                for handler in spec.handlers {
+                    if handler.mode == .once && firedOnce.contains(handler.name) { continue }
+                    let triggered: Bool
+                    switch handler.trigger {
+                    case .stateChanged(let vm, let path):
+                        let snap = (try? await harness.readState(viewmodel: vm, path: nil))?.keys ?? [:]
+                        let stringified = snap.mapValues { "\($0.value)" }
+                        let prev = lastSnapshots[vm] ?? [:]
+                        var matched = false
+                        for (k, v) in stringified where prev[k] != v {
+                            if path == nil || k == path { matched = true; break }
+                        }
+                        lastSnapshots[vm] = stringified
+                        triggered = matched
+                    case .windowAppeared(let titleMatches), .sheetAppeared(let titleMatches):
+                        // Walk AX tree, look for a window/sheet that wasn't there.
+                        guard let h = await self.launchHandle else { triggered = false; break }
+                        let tree = AXTreeWalker.snapshot(pid: h.pid)
+                        var found = false
+                        if case .windowAppeared = handler.trigger {
+                            found = tree.children.contains(where: { n in
+                                n.role == "AXWindow" && (titleMatches.map { Self.matchTitle(n.label, pattern: $0) } ?? true)
+                            })
+                        } else {
+                            found = Self.treeContainsSheet(tree, titleMatches: titleMatches)
+                        }
+                        triggered = found && !firedOnce.contains(handler.name)
+                    }
+
+                    if triggered {
+                        firedOnce.insert(handler.name)
+                        for (idx, step) in handler.body.enumerated() {
+                            do {
+                                try await self.execute(step, stepIndex: -1000 - idx, source: "[handler:\(handler.name)] " + self.renderStep(step))
+                            } catch {
+                                // Swallow — handler errors don't fail the spec; they're advisory.
+                                break
+                            }
+                        }
+                        // Reset for `always` handlers
+                        if handler.mode == .always { firedOnce.remove(handler.name) }
+                    }
+                }
+                try? await Task.sleep(nanoseconds: 150_000_000)
+            }
+        }
+    }
+
+    nonisolated private static func matchTitle(_ title: String?, pattern: String) -> Bool {
+        guard let t = title, let rx = try? NSRegularExpression(pattern: pattern) else { return false }
+        return rx.firstMatch(in: t, range: NSRange(t.startIndex..., in: t)) != nil
+    }
+
+    nonisolated private static func treeContainsSheet(_ node: AXNode, titleMatches: String?) -> Bool {
+        if node.role == "AXSheet" {
+            if let p = titleMatches { return Self.matchTitle(node.label, pattern: p) }
+            return true
+        }
+        for c in node.children {
+            if Self.treeContainsSheet(c, titleMatches: titleMatches) { return true }
+        }
+        return false
     }
 
     // MARK: - Step execution
@@ -137,24 +349,50 @@ public actor SpecRunner {
         case .sleep(let d):
             try? await Task.sleep(nanoseconds: UInt64(d.seconds * 1_000_000_000))
 
-        case .click(let target):
-            try await injectClick(target: target, kind: .single, stepIndex: stepIndex, source: source)
-        case .doubleClick(let target):
-            try await injectClick(target: target, kind: .double, stepIndex: stepIndex, source: source)
-        case .rightClick(let target):
-            try await injectClick(target: target, kind: .right, stepIndex: stepIndex, source: source)
-        case .hover(let target):
+        case .click(let target, let mods):
+            try await injectClick(target: target, kind: .single,
+                                  modifiers: EventInjector.parseModifiers(mods),
+                                  stepIndex: stepIndex, source: source)
+        case .doubleClick(let target, let mods):
+            try await injectClick(target: target, kind: .double,
+                                  modifiers: EventInjector.parseModifiers(mods),
+                                  stepIndex: stepIndex, source: source)
+        case .rightClick(let target, let mods):
+            try await injectClick(target: target, kind: .right,
+                                  modifiers: EventInjector.parseModifiers(mods),
+                                  stepIndex: stepIndex, source: source)
+        case .hover(let target, let dwellMs):
             try ElementResolver.requireTrust()
             let r = try resolveTarget(target, stepSource: source, stepIndex: stepIndex)
-            try? EventInjector.move(to: CGPoint(x: r.frame!.midX, y: r.frame!.midY))
-
-        case .type(let text):
+            guard let f = r.frame else {
+                throw StepFailure(expected: "hover target has frame", observed: "\(r.role) no frame", suggestion: nil)
+            }
+            let p = CGPoint(x: f.midX, y: f.midY)
+            if let d = dwellMs {
+                try EventInjector.hoverDwell(at: p, dwellMs: d)
+            } else {
+                try EventInjector.move(to: p)
+            }
+        case .longPress(let target, let dwellMs):
             try ElementResolver.requireTrust()
-            try EventInjector.type(text: text)
+            let r = try resolveTarget(target, stepSource: source, stepIndex: stepIndex)
+            guard let f = r.frame else {
+                throw StepFailure(expected: "long_press target has frame", observed: "\(r.role) no frame", suggestion: nil)
+            }
+            try EventInjector.longPress(at: CGPoint(x: f.midX, y: f.midY), dwellMs: dwellMs)
 
-        case .key(let combo):
+        case .type(let text, let delayMs):
             try ElementResolver.requireTrust()
-            try EventInjector.key(combo: combo)
+            if let d = delayMs {
+                try EventInjector.typeWithDelay(text: text, intervalMs: d)
+            } else {
+                try EventInjector.type(text: text)
+            }
+
+        case .key(let combo, let n):
+            try ElementResolver.requireTrust()
+            if n > 1 { try EventInjector.keyRepeat(combo: combo, count: n) }
+            else { try EventInjector.key(combo: combo) }
 
         case .scroll(let target, let direction, let amount):
             try ElementResolver.requireTrust()
@@ -176,7 +414,7 @@ public actor SpecRunner {
             }
             try EventInjector.scroll(at: p, dx: dx, dy: dy)
 
-        case .drag(let from, let to, let steps):
+        case .drag(let from, let to, let steps, let mods):
             try ElementResolver.requireTrust()
             let rf = try resolveTarget(from, stepSource: source, stepIndex: stepIndex)
             let rt = try resolveTarget(to, stepSource: source, stepIndex: stepIndex)
@@ -187,7 +425,34 @@ public actor SpecRunner {
             }
             let fromP = CGPoint(x: ff.midX, y: ff.midY)
             let toP = CGPoint(x: tf.midX, y: tf.midY)
-            try EventInjector.drag(from: fromP, to: toP, steps: steps)
+            let f = EventInjector.parseModifiers(mods)
+            if !f.isEmpty {
+                // For a drag with modifiers we wrap it: hold modifiers via key-down before drag.
+                // The CGEventFlags on mouse events is simpler — set on each event.
+                // EventInjector.drag uses default-flag mouse events; we create a custom flow.
+                try dragWithModifiers(from: fromP, to: toP, steps: steps, flags: f)
+            } else {
+                try EventInjector.drag(from: fromP, to: toP, steps: steps)
+            }
+
+        case .marqueeDrag(let fromP, let toP, let mods):
+            try ElementResolver.requireTrust()
+            let f = EventInjector.parseModifiers(mods)
+            if !f.isEmpty {
+                try dragWithModifiers(from: CGPoint(x: fromP.x, y: fromP.y),
+                                      to: CGPoint(x: toP.x, y: toP.y), steps: 12, flags: f)
+            } else {
+                try EventInjector.drag(from: CGPoint(x: fromP.x, y: fromP.y),
+                                       to: CGPoint(x: toP.x, y: toP.y), steps: 12)
+            }
+
+        case .magnify(let target, let delta):
+            try ElementResolver.requireTrust()
+            let r = try resolveTarget(target, stepSource: source, stepIndex: stepIndex)
+            guard let f = r.frame else {
+                throw StepFailure(expected: "magnify target has frame", observed: "\(r.role) no frame", suggestion: nil)
+            }
+            try EventInjector.magnify(at: CGPoint(x: f.midX, y: f.midY), delta: Int32(delta))
 
         case .expectChange(let action, let vm, let path, let target, let timeout):
             try await runExpectChange(action: action, viewmodel: vm, path: path,
@@ -209,7 +474,281 @@ public actor SpecRunner {
 
         case .dumpState(let name):
             if let att = await dumpStateToFile(name: name) { attachments.append(att) }
+
+        // Wave 1
+        case .clockAdvance(let seconds):
+            guard let h = harness else { throw StepError(kind: "not_launched", message: "no running app") }
+            _ = try await h.clockAdvance(seconds: seconds)
+
+        case .clockSet(let iso, let paused):
+            guard let h = harness else { throw StepError(kind: "not_launched", message: "no running app") }
+            _ = try await h.clockSet(iso8601: iso, paused: paused)
+
+        case .setAnimations(let enabled):
+            guard let h = harness else { throw StepError(kind: "not_launched", message: "no running app") }
+            _ = try await h.setAnimations(enabled: enabled)
+
+        case .acceptSheet(let buttonName):
+            // Heuristic: find a sheet on any window of the target, then click the
+            // requested button (or the default "OK"/"Save"/"Done").
+            try ElementResolver.requireTrust()
+            try await acceptSheet(buttonName: buttonName, stepIndex: stepIndex, source: source)
+
+        case .dismissAlert:
+            try ElementResolver.requireTrust()
+            try EventInjector.key(combo: "esc")
+
+        case .selectMenu(let path):
+            try ElementResolver.requireTrust()
+            try await selectMenuPath(path, stepIndex: stepIndex, source: source)
+
+        case .copy:
+            try ElementResolver.requireTrust()
+            try EventInjector.key(combo: "cmd+c")
+
+        case .paste:
+            try ElementResolver.requireTrust()
+            try EventInjector.key(combo: "cmd+v")
+
+        case .waitForIdle(let timeout):
+            try await waitForIdle(timeout: timeout)
+
+        case .writePasteboard(let text):
+            guard let h = harness else { throw StepError(kind: "not_launched", message: "no running app") }
+            _ = try await h.writePasteboard(string: text)
+
+        case .assertPasteboard(let needle):
+            guard let h = harness else { throw StepError(kind: "not_launched", message: "no running app") }
+            let r = try await h.readPasteboard()
+            guard let s = r.string, s.contains(needle) else {
+                throw StepFailure(
+                    expected: "pasteboard contains \"\(needle)\"",
+                    observed: "got \"\(r.string ?? "<empty>")\"",
+                    suggestion: nil
+                )
+            }
+
+        // Wave 2 control flow
+        case .if(let pred, let thenSteps, let elseSteps):
+            do {
+                try await evaluatePredicate(pred)
+                for (idx, s) in thenSteps.enumerated() {
+                    try await execute(s, stepIndex: stepIndex * 1000 + idx, source: renderStep(s))
+                }
+            } catch is PredicateFailure {
+                for (idx, s) in elseSteps.enumerated() {
+                    try await execute(s, stepIndex: stepIndex * 1000 + idx, source: renderStep(s))
+                }
+            }
+
+        case .forEach(let varName, let items, let body):
+            for (idx, item) in items.enumerated() {
+                let interpolated = body.map { interpolateStep($0, vars: [varName: item]) }
+                for (j, s) in interpolated.enumerated() {
+                    try await execute(s, stepIndex: stepIndex * 10000 + idx * 100 + j, source: renderStep(s))
+                }
+            }
+
+        case .repeatN(let count, let body):
+            for i in 0..<count {
+                for (j, s) in body.enumerated() {
+                    try await execute(s, stepIndex: stepIndex * 10000 + i * 100 + j, source: renderStep(s))
+                }
+            }
+
+        case .callFlow(let name, let args):
+            guard let flow = spec.flows[name] else {
+                throw StepError(kind: "unknown_flow", message: "no flow named '\(name)' (declared flows: \(spec.flows.keys.sorted()))")
+            }
+            let interpolated = flow.body.map { interpolateStep($0, vars: args) }
+            for (j, s) in interpolated.enumerated() {
+                try await execute(s, stepIndex: stepIndex * 10000 + j, source: renderStep(s))
+            }
         }
+    }
+
+    // MARK: - Wave 1 helpers
+
+    /// Find a sheet on any window and click the named button (or the default).
+    private func acceptSheet(buttonName: String?, stepIndex: Int, source: String) async throws {
+        guard let h = launchHandle else {
+            throw StepError(kind: "not_launched", message: "no running app")
+        }
+        let tree = AXTreeWalker.snapshot(pid: h.pid)
+        let candidates = collectSheetButtons(in: tree)
+        guard !candidates.isEmpty else {
+            throw StepFailure(
+                expected: "an open sheet with at least one button",
+                observed: "no AXSheet found in any window",
+                suggestion: "If your sheet uses NSAlert, try `dismiss_alert` instead."
+            )
+        }
+        let want = buttonName?.lowercased()
+        let pick: AXNode
+        if let want {
+            guard let m = candidates.first(where: { $0.label?.lowercased() == want }) else {
+                throw StepFailure(
+                    expected: "sheet button labelled '\(buttonName!)'",
+                    observed: "available: \(candidates.compactMap(\.label).joined(separator: ", "))",
+                    suggestion: nil
+                )
+            }
+            pick = m
+        } else {
+            // Default order of preference for "accept": OK, Save, Done, Continue, Allow.
+            let preferred = ["ok", "save", "done", "continue", "allow", "yes"]
+            pick = candidates.first(where: { n in
+                guard let l = n.label?.lowercased() else { return false }
+                return preferred.contains(l)
+            }) ?? candidates[0]
+        }
+        guard let f = pick.frame, f.count == 4 else {
+            throw StepFailure(expected: "sheet button has a frame", observed: "no frame on \(pick.label ?? "?")", suggestion: nil)
+        }
+        try EventInjector.click(at: CGPoint(x: f[0] + f[2] / 2, y: f[1] + f[3] / 2))
+    }
+
+    private func collectSheetButtons(in node: AXNode) -> [AXNode] {
+        var out: [AXNode] = []
+        func walk(_ n: AXNode, insideSheet: Bool) {
+            let nowInside = insideSheet || n.role == "AXSheet"
+            if nowInside, n.role == "AXButton" { out.append(n) }
+            for c in n.children { walk(c, insideSheet: nowInside) }
+        }
+        walk(node, insideSheet: false)
+        return out
+    }
+
+    private func selectMenuPath(_ path: [String], stepIndex: Int, source: String) async throws {
+        guard let h = launchHandle else {
+            throw StepError(kind: "not_launched", message: "no running app")
+        }
+        guard !path.isEmpty else {
+            throw StepFailure(expected: "menu path with at least one segment", observed: "empty path", suggestion: nil)
+        }
+        // For menu navigation we use AX `Press` actions directly — clicking menu
+        // bar items by frame is fragile because menu items aren't on screen
+        // until their parent is opened. AX `Press` opens the menu, then we
+        // recursively press children.
+        let app = AXUIElementCreateApplication(h.pid)
+        guard let menuBarRef = axAttr(app, kAXMenuBarAttribute) else {
+            throw StepFailure(expected: "AXMenuBar present", observed: "no menu bar", suggestion: nil)
+        }
+        let menuBar = menuBarRef as! AXUIElement
+        var current: AXUIElement = menuBar
+        for (i, segment) in path.enumerated() {
+            guard let children = axAttr(current, kAXChildrenAttribute) as? [AXUIElement] else {
+                throw StepFailure(
+                    expected: "menu '\(path[0..<i].joined(separator: " > "))' has children",
+                    observed: "no children", suggestion: nil)
+            }
+            guard let next = children.first(where: { (axAttr($0, kAXTitleAttribute) as? String) == segment }) else {
+                let titles = children.compactMap { axAttr($0, kAXTitleAttribute) as? String }
+                throw StepFailure(
+                    expected: "menu segment '\(segment)' under '\(path.prefix(i).joined(separator: " > "))'",
+                    observed: "available: \(titles.joined(separator: ", "))",
+                    suggestion: nil)
+                }
+            // Press to open submenu (or activate leaf)
+            AXUIElementPerformAction(next, kAXPressAction as CFString)
+            current = next
+            // For a leaf (last segment), Press is the activation; we're done.
+            if i < path.count - 1 {
+                // For non-leaves on macOS, the children appear under an AXMenu child of `next`.
+                // Walk into the AXMenu role to find subsequent items.
+                if let kids = axAttr(next, kAXChildrenAttribute) as? [AXUIElement],
+                   let menu = kids.first(where: { (axAttr($0, kAXRoleAttribute) as? String) == "AXMenu" }) {
+                    current = menu
+                }
+                try? await Task.sleep(nanoseconds: 60_000_000)
+            }
+        }
+    }
+
+    private func axAttr(_ el: AXUIElement, _ attr: String) -> CFTypeRef? {
+        var value: CFTypeRef?
+        let err = AXUIElementCopyAttributeValue(el, attr as CFString, &value)
+        return err == .success ? value : nil
+    }
+
+    /// Wait until no AX events fire for a quiescence interval. Best-effort: we
+    /// simply diff the AX tree at intervals and return when it's stable.
+    private func waitForIdle(timeout: Duration) async throws {
+        guard let h = launchHandle else {
+            throw StepError(kind: "not_launched", message: "no running app")
+        }
+        let deadline = Date().addingTimeInterval(timeout.seconds)
+        var lastSize = -1
+        var stableSince: Date?
+        while Date() < deadline {
+            let tree = AXTreeWalker.snapshot(pid: h.pid)
+            let size = countNodes(tree)
+            if size == lastSize {
+                if stableSince == nil { stableSince = Date() }
+                else if Date().timeIntervalSince(stableSince!) > 0.25 { return }
+            } else {
+                stableSince = nil
+                lastSize = size
+            }
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+        // Timeout — not a failure, just return. The semantic is "best effort".
+    }
+
+    private func countNodes(_ n: AXNode) -> Int {
+        var c = 1
+        for k in n.children { c += countNodes(k) }
+        return c
+    }
+
+    // MARK: - Variable substitution (Wave 2)
+
+    /// Recursively replace `${name}` strings in a Step's parameters using the
+    /// provided variable bindings. Only string-bearing fields are touched.
+    private func interpolateStep(_ step: Step, vars: [String: YAMLValue]) -> Step {
+        switch step {
+        case .click(let t, let m): return .click(target: interpolateTarget(t, vars: vars), modifiers: m)
+        case .doubleClick(let t, let m): return .doubleClick(target: interpolateTarget(t, vars: vars), modifiers: m)
+        case .rightClick(let t, let m): return .rightClick(target: interpolateTarget(t, vars: vars), modifiers: m)
+        case .hover(let t, let d): return .hover(target: interpolateTarget(t, vars: vars), dwellMs: d)
+        case .longPress(let t, let d): return .longPress(target: interpolateTarget(t, vars: vars), dwellMs: d)
+        case .type(let s, let d): return .type(text: interpolateString(s, vars: vars), delayMs: d)
+        case .key(let s, let n): return .key(combo: interpolateString(s, vars: vars), repeatCount: n)
+        case .selectMenu(let path):
+            return .selectMenu(path: path.map { interpolateString($0, vars: vars) })
+        case .writePasteboard(let s): return .writePasteboard(text: interpolateString(s, vars: vars))
+        case .assertPasteboard(let s): return .assertPasteboard(contains: interpolateString(s, vars: vars))
+        default: return step
+        }
+    }
+
+    private func interpolateTarget(_ t: TargetRef, vars: [String: YAMLValue]) -> TargetRef {
+        switch t {
+        case .id(let s): return .id(interpolateString(s, vars: vars))
+        case .label(let s): return .label(interpolateString(s, vars: vars))
+        case .labelMatches(let s): return .labelMatches(interpolateString(s, vars: vars))
+        case .roleLabel(let r, let l): return .roleLabel(role: r, label: interpolateString(l, vars: vars))
+        case .treePath(let s): return .treePath(interpolateString(s, vars: vars))
+        case .point: return t
+        }
+    }
+
+    private func interpolateString(_ s: String, vars: [String: YAMLValue]) -> String {
+        var out = s
+        for (k, v) in vars {
+            let needle = "${\(k)}"
+            let replacement: String
+            switch v {
+            case .string(let x): replacement = x
+            case .identifier(let x): replacement = x
+            case .integer(let x): replacement = String(x)
+            case .double(let x): replacement = String(x)
+            case .bool(let x): replacement = String(x)
+            default: replacement = "\(v)"
+            }
+            out = out.replacingOccurrences(of: needle, with: replacement)
+        }
+        return out
     }
 
     // MARK: - Launch
@@ -253,7 +792,9 @@ public actor SpecRunner {
 
     enum ClickKind { case single, double, right }
 
-    private func injectClick(target: TargetRef, kind: ClickKind, stepIndex: Int, source: String) async throws {
+    private func injectClick(target: TargetRef, kind: ClickKind,
+                             modifiers: CGEventFlags = [],
+                             stepIndex: Int, source: String) async throws {
         try ElementResolver.requireTrust()
         let r = try resolveTarget(target, stepSource: source, stepIndex: stepIndex)
         guard let f = r.frame else {
@@ -263,9 +804,37 @@ public actor SpecRunner {
         }
         let p = CGPoint(x: f.midX, y: f.midY)
         switch kind {
-        case .single: try EventInjector.click(at: p)
-        case .double: try EventInjector.doubleClick(at: p)
-        case .right: try EventInjector.rightClick(at: p)
+        case .single: try EventInjector.click(at: p, modifiers: modifiers)
+        case .double: try EventInjector.doubleClick(at: p, modifiers: modifiers)
+        case .right: try EventInjector.rightClick(at: p, modifiers: modifiers)
+        }
+    }
+
+    /// Drag while holding modifier flags. Each constituent CGEvent carries the flags.
+    private func dragWithModifiers(from: CGPoint, to: CGPoint, steps: Int, flags: CGEventFlags) throws {
+        let src = CGEventSource(stateID: .hidSystemState)
+        if let d = CGEvent(mouseEventSource: src, mouseType: .leftMouseDown,
+                           mouseCursorPosition: from, mouseButton: .left) {
+            d.flags = flags
+            d.post(tap: .cgSessionEventTap)
+        }
+        usleep(12_000)
+        let n = max(1, steps)
+        for i in 1...n {
+            let t = Double(i) / Double(n)
+            let p = CGPoint(x: from.x + (to.x - from.x) * t,
+                            y: from.y + (to.y - from.y) * t)
+            if let m = CGEvent(mouseEventSource: src, mouseType: .leftMouseDragged,
+                               mouseCursorPosition: p, mouseButton: .left) {
+                m.flags = flags
+                m.post(tap: .cgSessionEventTap)
+            }
+            usleep(12_000)
+        }
+        if let u = CGEvent(mouseEventSource: src, mouseType: .leftMouseUp,
+                           mouseCursorPosition: to, mouseButton: .left) {
+            u.flags = flags
+            u.post(tap: .cgSessionEventTap)
         }
     }
 
@@ -711,14 +1280,17 @@ public actor SpecRunner {
         case .relaunch: return "relaunch"
         case .waitFor(let p, let t): return "wait_for (timeout \(t.seconds)s): \(renderPredicate(p))"
         case .sleep(let d): return "sleep \(d.seconds)s"
-        case .click(let t): return "click \(renderTarget(t))"
-        case .doubleClick(let t): return "double_click \(renderTarget(t))"
-        case .rightClick(let t): return "right_click \(renderTarget(t))"
-        case .hover(let t): return "hover \(renderTarget(t))"
-        case .type(let s): return "type \"\(s)\""
-        case .key(let c): return "key \"\(c)\""
+        case .click(let t, let m): return "click \(renderTarget(t))\(modSuffix(m))"
+        case .doubleClick(let t, let m): return "double_click \(renderTarget(t))\(modSuffix(m))"
+        case .rightClick(let t, let m): return "right_click \(renderTarget(t))\(modSuffix(m))"
+        case .hover(let t, _): return "hover \(renderTarget(t))"
+        case .longPress(let t, let d): return "long_press \(renderTarget(t)) (\(d)ms)"
+        case .type(let s, _): return "type \"\(s)\""
+        case .key(let c, let n): return n > 1 ? "key \"\(c)\" ×\(n)" : "key \"\(c)\""
         case .scroll(let t, let d, let n): return "scroll \(renderTarget(t)) \(d.rawValue) \(n)"
-        case .drag(let f, let t, _): return "drag from \(renderTarget(f)) to \(renderTarget(t))"
+        case .drag(let f, let t, _, let m): return "drag from \(renderTarget(f)) to \(renderTarget(t))\(modSuffix(m))"
+        case .marqueeDrag(let f, let t, let m): return "marquee from (\(f.x),\(f.y)) to (\(t.x),\(t.y))\(modSuffix(m))"
+        case .magnify(let t, let d): return "magnify \(renderTarget(t)) \(d > 0 ? "+" : "")\(d)"
         case .assertTree(let p): return "assert_tree: \(renderPredicate(p))"
         case .assertState(let vm, let p, let e):
             return "assert_state \(vm).\(p) \(renderExpectation(e))"
@@ -735,7 +1307,30 @@ public actor SpecRunner {
         case .snapshot(let n): return "snapshot \"\(n)\""
         case .dumpTree(let n): return "dump_tree \"\(n)\""
         case .dumpState(let n): return "dump_state \"\(n)\""
+
+        // Wave 1
+        case .clockAdvance(let s): return "clock.advance \(s)s"
+        case .clockSet(let iso, let p): return "clock.set \(iso)\(p == true ? " paused" : "")"
+        case .setAnimations(let on): return "set_animations \(on ? "on" : "off")"
+        case .acceptSheet(let b): return "accept_sheet\(b.map { " \"\($0)\"" } ?? "")"
+        case .dismissAlert: return "dismiss_alert"
+        case .selectMenu(let path): return "select_menu \"\(path.joined(separator: " > "))\""
+        case .copy: return "copy"
+        case .paste: return "paste"
+        case .waitForIdle(let t): return "wait_for_idle \(t.seconds)s"
+        case .writePasteboard(let s): return "write_pasteboard \"\(s)\""
+        case .assertPasteboard(let s): return "assert_pasteboard contains \"\(s)\""
+
+        // Wave 2
+        case .if(let p, _, _): return "if \(renderPredicate(p))"
+        case .forEach(let v, let items, _): return "for \(v) in [\(items.count) items]"
+        case .repeatN(let n, _): return "repeat \(n) times"
+        case .callFlow(let name, _): return "call \(name)"
         }
+    }
+
+    private func modSuffix(_ mods: [String]) -> String {
+        mods.isEmpty ? "" : " [\(mods.joined(separator: "+"))]"
     }
 
     private func renderExpectation(_ e: StateExpectation) -> String {

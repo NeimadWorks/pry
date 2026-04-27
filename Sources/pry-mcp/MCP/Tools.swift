@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import ApplicationServices
 import PryWire
 import PryHarness
 import PryRunner
@@ -159,6 +160,7 @@ enum PryTools {
     struct ClickInput: Codable {
         var app: String
         var target: TargetSpec
+        var modifiers: [String]?
     }
     struct ClickOutput: Codable {
         var resolved: ResolvedOutput
@@ -183,7 +185,8 @@ enum PryTools {
             throw ToolError.kinded(kind: "resolution_empty",
                                    message: "resolved element has no frame")
         }
-        try EventInjector.click(at: CGPoint(x: frame.midX, y: frame.midY))
+        let mods = EventInjector.parseModifiers(input.modifiers ?? [])
+        try EventInjector.click(at: CGPoint(x: frame.midX, y: frame.midY), modifiers: mods)
         return ClickOutput(resolved: ResolvedOutput(
             role: resolved.role,
             label: resolved.label,
@@ -207,12 +210,83 @@ enum PryTools {
     struct KeyInput: Codable {
         var app: String
         var combo: String
+        var `repeat`: Int?
     }
     struct KeyOutput: Codable { var ok: Bool }
     static func key(_ input: KeyInput) async throws -> KeyOutput {
         _ = try await harnessHello(app: input.app)
         try ElementResolver.requireTrust()
-        try EventInjector.key(combo: input.combo)
+        let n = input.repeat ?? 1
+        if n > 1 { try EventInjector.keyRepeat(combo: input.combo, count: n) }
+        else { try EventInjector.key(combo: input.combo) }
+        return KeyOutput(ok: true)
+    }
+
+    struct LongPressInput: Codable { var app: String; var target: TargetSpec; var dwell_ms: Int? }
+    static func longPress(_ input: LongPressInput) async throws -> KeyOutput {
+        try ElementResolver.requireTrust()
+        let hello = try await harnessHello(app: input.app)
+        let t = try parseTarget(input.target)
+        let r = try ElementResolver.resolve(target: t, in: hello.pid)
+        guard let f = r.frame else { throw ToolError.kinded(kind: "resolution_empty", message: "no frame") }
+        try EventInjector.longPress(at: CGPoint(x: f.midX, y: f.midY), dwellMs: input.dwell_ms ?? 800)
+        return KeyOutput(ok: true)
+    }
+
+    struct MagnifyInput: Codable { var app: String; var target: TargetSpec; var delta: Int }
+    static func magnify(_ input: MagnifyInput) async throws -> KeyOutput {
+        try ElementResolver.requireTrust()
+        let hello = try await harnessHello(app: input.app)
+        let t = try parseTarget(input.target)
+        let r = try ElementResolver.resolve(target: t, in: hello.pid)
+        guard let f = r.frame else { throw ToolError.kinded(kind: "resolution_empty", message: "no frame") }
+        try EventInjector.magnify(at: CGPoint(x: f.midX, y: f.midY), delta: Int32(input.delta))
+        return KeyOutput(ok: true)
+    }
+
+    struct SelectMenuInput: Codable { var app: String; var path: [String] }
+    static func selectMenu(_ input: SelectMenuInput) async throws -> KeyOutput {
+        try ElementResolver.requireTrust()
+        let hello = try await harnessHello(app: input.app)
+        let pid = hello.pid
+        let appEl = AXUIElementCreateApplication(pid)
+        var attr: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(appEl, kAXMenuBarAttribute as CFString, &attr) == .success,
+              let menuBar = attr else {
+            throw ToolError.kinded(kind: "no_menu_bar", message: "app has no menu bar")
+        }
+        var current: AXUIElement = menuBar as! AXUIElement
+        for (i, segment) in input.path.enumerated() {
+            var childAttr: CFTypeRef?
+            AXUIElementCopyAttributeValue(current, kAXChildrenAttribute as CFString, &childAttr)
+            guard let kids = childAttr as? [AXUIElement] else {
+                throw ToolError.kinded(kind: "menu_walk_failed",
+                                       message: "no children at '\(input.path.prefix(i).joined(separator: " > "))'")
+            }
+            guard let next = kids.first(where: { el -> Bool in
+                var t: CFTypeRef?
+                AXUIElementCopyAttributeValue(el, kAXTitleAttribute as CFString, &t)
+                return (t as? String) == segment
+            }) else {
+                throw ToolError.kinded(kind: "menu_segment_not_found",
+                                       message: "segment '\(segment)' not found")
+            }
+            AXUIElementPerformAction(next, kAXPressAction as CFString)
+            current = next
+            if i < input.path.count - 1 {
+                var c: CFTypeRef?
+                AXUIElementCopyAttributeValue(next, kAXChildrenAttribute as CFString, &c)
+                if let cs = c as? [AXUIElement],
+                   let menu = cs.first(where: { el in
+                       var r: CFTypeRef?
+                       AXUIElementCopyAttributeValue(el, kAXRoleAttribute as CFString, &r)
+                       return (r as? String) == "AXMenu"
+                   }) {
+                    current = menu
+                }
+                try? await Task.sleep(nanoseconds: 60_000_000)
+            }
+        }
         return KeyOutput(ok: true)
     }
 
@@ -354,6 +428,55 @@ enum PryTools {
         return SnapshotOutput(path: targetPath)
     }
 
+    // MARK: - Clock / animations / pasteboard
+
+    struct ClockAdvanceInput: Codable { var app: String; var seconds: Double }
+    struct ClockAdvanceOutput: Codable { var iso8601: String; var fired_callbacks: Int }
+    static func clockAdvance(_ input: ClockAdvanceInput) async throws -> ClockAdvanceOutput {
+        let client = try await harnessConnection(for: input.app)
+        let r = try await client.clockAdvance(seconds: input.seconds)
+        return ClockAdvanceOutput(iso8601: r.iso8601, fired_callbacks: r.firedCallbacks)
+    }
+
+    struct ClockSetInput: Codable { var app: String; var iso8601: String; var paused: Bool? }
+    static func clockSet(_ input: ClockSetInput) async throws -> ClockAdvanceOutput {
+        let client = try await harnessConnection(for: input.app)
+        let r = try await client.clockSet(iso8601: input.iso8601, paused: input.paused)
+        return ClockAdvanceOutput(iso8601: r.iso8601, fired_callbacks: r.firedCallbacks)
+    }
+
+    struct ClockGetInput: Codable { var app: String }
+    struct ClockGetOutput: Codable { var iso8601: String; var paused: Bool }
+    static func clockGet(_ input: ClockGetInput) async throws -> ClockGetOutput {
+        let client = try await harnessConnection(for: input.app)
+        let r = try await client.clockGet()
+        return ClockGetOutput(iso8601: r.iso8601, paused: r.paused)
+    }
+
+    struct AnimationsInput: Codable { var app: String; var enabled: Bool }
+    struct AnimationsOutput: Codable { var enabled: Bool }
+    static func setAnimations(_ input: AnimationsInput) async throws -> AnimationsOutput {
+        let client = try await harnessConnection(for: input.app)
+        let r = try await client.setAnimations(enabled: input.enabled)
+        return AnimationsOutput(enabled: r.enabled)
+    }
+
+    struct PasteboardReadInput: Codable { var app: String }
+    struct PasteboardReadOutput: Codable { var string: String?; var types: [String] }
+    static func pasteboardRead(_ input: PasteboardReadInput) async throws -> PasteboardReadOutput {
+        let client = try await harnessConnection(for: input.app)
+        let r = try await client.readPasteboard()
+        return PasteboardReadOutput(string: r.string, types: r.types)
+    }
+
+    struct PasteboardWriteInput: Codable { var app: String; var string: String }
+    struct PasteboardWriteOutput: Codable { var ok: Bool }
+    static func pasteboardWrite(_ input: PasteboardWriteInput) async throws -> PasteboardWriteOutput {
+        let client = try await harnessConnection(for: input.app)
+        _ = try await client.writePasteboard(string: input.string)
+        return PasteboardWriteOutput(ok: true)
+    }
+
     // MARK: - Logs
 
     struct LogsInput: Codable {
@@ -438,6 +561,11 @@ enum PryTools {
         var path: String
         var tag: String?
         var verdicts_dir: String?
+        var parallel: Int?
+        var retry_failed: Int?
+        var junit: String?
+        var tap: String?
+        var summary_md: String?
     }
     struct SuiteEntry: Codable {
         var spec: String
@@ -453,51 +581,44 @@ enum PryTools {
         var verdicts: [SuiteEntry]
     }
     static func runSuite(_ input: RunSuiteInput) async throws -> RunSuiteOutput {
-        let dir = URL(fileURLWithPath: input.path).standardizedFileURL
-        let files: [URL]
-        do {
-            let enumerator = FileManager.default.enumerator(at: dir, includingPropertiesForKeys: nil)
-            var acc: [URL] = []
-            while let u = enumerator?.nextObject() as? URL {
-                if u.pathExtension.lowercased() == "md" { acc.append(u) }
-            }
-            files = acc.sorted(by: { $0.path < $1.path })
-        }
-        guard !files.isEmpty else {
-            throw ToolError.kinded(kind: "no_specs_found",
-                                   message: "no .md files under \(dir.path)")
-        }
-
-        var entries: [SuiteEntry] = []
-        var passed = 0, failed = 0, errored = 0
         let opts = SpecRunner.Options(
             verdictsDir: URL(fileURLWithPath: input.verdicts_dir ?? "./pry-verdicts")
         )
-        for f in files {
-            guard let src = try? String(contentsOf: f, encoding: .utf8),
-                  let spec = try? SpecParser.parse(source: src, sourcePath: f.path) else {
-                continue
-            }
-            if let tag = input.tag, !spec.tags.contains(tag) { continue }
-            let runner = SpecRunner(spec: spec, options: opts)
-            let v = await runner.run()
+        let verdicts = try await Pry.runSuite(
+            at: input.path,
+            tag: input.tag,
+            parallel: input.parallel ?? 1,
+            retry: input.retry_failed ?? 0,
+            options: opts
+        )
+
+        // Write each verdict.md
+        for v in verdicts {
             let md = VerdictReporter.render(v)
-            if let attachments = v.attachmentsDir {
-                try? FileManager.default.createDirectory(at: attachments, withIntermediateDirectories: true)
-                let url = attachments.appendingPathComponent("verdict.md")
-                try? md.write(to: url, atomically: true, encoding: .utf8)
+            if let dir = v.attachmentsDir {
+                try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                try? md.write(to: dir.appendingPathComponent("verdict.md"), atomically: true, encoding: .utf8)
             }
-            switch v.status {
-            case .passed: passed += 1
-            case .failed: failed += 1
-            case .errored, .timedOut: errored += 1
-            }
-            entries.append(SuiteEntry(
-                spec: spec.id, status: v.status.rawValue,
-                duration: v.duration, failed_at_step: v.failedAtStep
-            ))
         }
-        return RunSuiteOutput(total: entries.count, passed: passed, failed: failed,
+        // Aggregate exports
+        if let path = input.junit {
+            try? VerdictExporters.junit(verdicts).write(toFile: path, atomically: true, encoding: .utf8)
+        }
+        if let path = input.tap {
+            try? VerdictExporters.tap(verdicts).write(toFile: path, atomically: true, encoding: .utf8)
+        }
+        if let path = input.summary_md {
+            try? VerdictExporters.markdownSummary(verdicts).write(toFile: path, atomically: true, encoding: .utf8)
+        }
+
+        let passed = verdicts.filter { $0.status == .passed }.count
+        let failed = verdicts.filter { $0.status == .failed }.count
+        let errored = verdicts.filter { $0.status == .errored || $0.status == .timedOut }.count
+        let entries = verdicts.map {
+            SuiteEntry(spec: $0.specID, status: $0.status.rawValue,
+                       duration: $0.duration, failed_at_step: $0.failedAtStep)
+        }
+        return RunSuiteOutput(total: verdicts.count, passed: passed, failed: failed,
                               errored: errored, verdicts: entries)
     }
 

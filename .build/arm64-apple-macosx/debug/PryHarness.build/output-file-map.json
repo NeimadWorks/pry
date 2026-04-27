@@ -2,6 +2,27 @@
   "": {
     "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/primary.swiftdeps"
   },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryAnimations.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryAnimations.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryClock.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryClock.dia"
+  },
+  "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryEventBus.swift": {
+    "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.d",
+    "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.swift.o",
+    "swiftmodule": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus~partial.swiftmodule",
+    "swift-dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.swiftdeps",
+    "diagnostics": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryEventBus.dia"
+  },
   "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryHarness/PryHarness.swift": {
     "dependencies": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.d",
     "object": "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarness.build/PryHarness.swift.o",

@@ -20,16 +20,36 @@ public enum EventInjector {
 
     // MARK: - Mouse
 
-    public static func click(at point: CGPoint) throws {
-        try press(.leftMouseDown, .leftMouseUp, at: point)
+    public static func click(at point: CGPoint, modifiers: CGEventFlags = []) throws {
+        try press(.leftMouseDown, .leftMouseUp, at: point, flags: modifiers)
     }
 
-    public static func doubleClick(at point: CGPoint) throws {
-        try press(.leftMouseDown, .leftMouseUp, at: point, clickCount: 2)
+    public static func doubleClick(at point: CGPoint, modifiers: CGEventFlags = []) throws {
+        try press(.leftMouseDown, .leftMouseUp, at: point, clickCount: 2, flags: modifiers)
     }
 
-    public static func rightClick(at point: CGPoint) throws {
-        try press(.rightMouseDown, .rightMouseUp, at: point, button: .right)
+    public static func rightClick(at point: CGPoint, modifiers: CGEventFlags = []) throws {
+        try press(.rightMouseDown, .rightMouseUp, at: point, button: .right, flags: modifiers)
+    }
+
+    /// Long press: mouseDown, hold for `dwellMs`, mouseUp.
+    public static func longPress(at point: CGPoint, dwellMs: Int = 800) throws {
+        let s = source
+        guard let d = CGEvent(mouseEventSource: s, mouseType: .leftMouseDown,
+                              mouseCursorPosition: point, mouseButton: .left),
+              let u = CGEvent(mouseEventSource: s, mouseType: .leftMouseUp,
+                              mouseCursorPosition: point, mouseButton: .left) else {
+            throw InjectError.eventCreateFailed("longPress")
+        }
+        d.post(tap: .cgSessionEventTap)
+        usleep(useconds_t(dwellMs * 1000))
+        u.post(tap: .cgSessionEventTap)
+    }
+
+    /// Hover with a dwell — useful for waking tooltips & hover popovers.
+    public static func hoverDwell(at point: CGPoint, dwellMs: Int = 800) throws {
+        try move(to: point)
+        usleep(useconds_t(dwellMs * 1000))
     }
 
     public static func move(to point: CGPoint) throws {
@@ -90,7 +110,8 @@ public enum EventInjector {
     }
 
     private static func press(_ down: CGEventType, _ up: CGEventType, at point: CGPoint,
-                              button: CGMouseButton = .left, clickCount: Int = 1) throws {
+                              button: CGMouseButton = .left, clickCount: Int = 1,
+                              flags: CGEventFlags = []) throws {
         guard let d = CGEvent(mouseEventSource: source, mouseType: down,
                               mouseCursorPosition: point, mouseButton: button) else {
             throw InjectError.eventCreateFailed("\(down)")
@@ -103,9 +124,70 @@ public enum EventInjector {
             d.setIntegerValueField(.mouseEventClickState, value: Int64(clickCount))
             u.setIntegerValueField(.mouseEventClickState, value: Int64(clickCount))
         }
+        if !flags.isEmpty {
+            d.flags = flags
+            u.flags = flags
+        }
         d.post(tap: .cgSessionEventTap)
-        usleep(30_000) // 30 ms gap — Spike 2 evidence
+        usleep(30_000)
         u.post(tap: .cgSessionEventTap)
+    }
+
+    // MARK: - Modifier helpers
+
+    public static func parseModifiers(_ tokens: [String]) -> CGEventFlags {
+        var f: CGEventFlags = []
+        for t in tokens {
+            switch t.lowercased() {
+            case "cmd", "command", "⌘": f.insert(.maskCommand)
+            case "shift", "⇧": f.insert(.maskShift)
+            case "opt", "option", "alt", "⌥": f.insert(.maskAlternate)
+            case "ctrl", "control", "⌃": f.insert(.maskControl)
+            case "fn", "function": f.insert(.maskSecondaryFn)
+            default: break
+            }
+        }
+        return f
+    }
+
+    // MARK: - Type with delay (type-to-select pattern)
+
+    public static func typeWithDelay(text: String, intervalMs: Int = 30) throws {
+        for ch in text {
+            let s = String(ch)
+            try type(text: s)
+            usleep(useconds_t(intervalMs * 1000))
+        }
+    }
+
+    // MARK: - Key repeat
+
+    public static func keyRepeat(combo: String, count: Int) throws {
+        for _ in 0..<count { try key(combo: combo) }
+    }
+
+    // MARK: - Magnify (pinch approximation)
+
+    /// Approximated pinch / magnify via Option+scroll, which SwiftUI's
+    /// `MagnificationGesture` and AppKit's pinch path both observe in many
+    /// apps. Real two-finger pinch via private HID events is intentionally not
+    /// in scope for v1 — the call below is a portable, public-API-only
+    /// replacement that handles the common case.
+    ///
+    /// `delta` > 0 → zoom in, < 0 → zoom out.
+    public static func magnify(at point: CGPoint, delta: Int32) throws {
+        try move(to: point)
+        usleep(5_000)
+        guard let e = CGEvent(scrollWheelEvent2Source: source,
+                              units: .pixel,
+                              wheelCount: 1,
+                              wheel1: delta,
+                              wheel2: 0,
+                              wheel3: 0) else {
+            throw InjectError.eventCreateFailed("scrollWheelEvent (magnify)")
+        }
+        e.flags = [.maskAlternate]
+        e.post(tap: .cgSessionEventTap)
     }
 
     // MARK: - Keyboard

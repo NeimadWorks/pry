@@ -204,6 +204,35 @@ actor MCPServer {
             let out = try await PryTools.scroll(input)
             return try jsonString(out)
 
+        case "pry_clock_get":
+            let input = try decoder.decode(PryTools.ClockGetInput.self, from: arguments)
+            return try jsonString(try await PryTools.clockGet(input))
+        case "pry_clock_set":
+            let input = try decoder.decode(PryTools.ClockSetInput.self, from: arguments)
+            return try jsonString(try await PryTools.clockSet(input))
+        case "pry_clock_advance":
+            let input = try decoder.decode(PryTools.ClockAdvanceInput.self, from: arguments)
+            return try jsonString(try await PryTools.clockAdvance(input))
+        case "pry_set_animations":
+            let input = try decoder.decode(PryTools.AnimationsInput.self, from: arguments)
+            return try jsonString(try await PryTools.setAnimations(input))
+        case "pry_pasteboard_read":
+            let input = try decoder.decode(PryTools.PasteboardReadInput.self, from: arguments)
+            return try jsonString(try await PryTools.pasteboardRead(input))
+        case "pry_pasteboard_write":
+            let input = try decoder.decode(PryTools.PasteboardWriteInput.self, from: arguments)
+            return try jsonString(try await PryTools.pasteboardWrite(input))
+
+        case "pry_long_press":
+            let input = try decoder.decode(PryTools.LongPressInput.self, from: arguments)
+            return try jsonString(try await PryTools.longPress(input))
+        case "pry_magnify":
+            let input = try decoder.decode(PryTools.MagnifyInput.self, from: arguments)
+            return try jsonString(try await PryTools.magnify(input))
+        case "pry_select_menu":
+            let input = try decoder.decode(PryTools.SelectMenuInput.self, from: arguments)
+            return try jsonString(try await PryTools.selectMenu(input))
+
         default:
             throw PryTools.ToolError.kinded(kind: "method_not_found", message: "no such tool: \(tool)")
         }
@@ -394,6 +423,49 @@ enum ToolCatalog {
                 "target": targetSchema,
                 "direction": ["type": "string", "enum": ["up", "down", "left", "right"]],
                 "amount": ["type": "integer", "description": "Number of line units. Default 3."],
+            ]),
+        ],
+        [
+            "name": "pry_clock_advance",
+            "description": "Advance the harness virtual clock by N seconds, firing all scheduled work whose deadline falls within the window. Requires the app to use PryClock for its time-dependent logic. (ADR-007)",
+            "inputSchema": objectSchema(required: ["app", "seconds"], properties: [
+                "app": ["type": "string"],
+                "seconds": ["type": "number"],
+            ]),
+        ],
+        [
+            "name": "pry_clock_set",
+            "description": "Set the virtual clock to an absolute ISO 8601 timestamp.",
+            "inputSchema": objectSchema(required: ["app", "iso8601"], properties: [
+                "app": ["type": "string"],
+                "iso8601": ["type": "string"],
+                "paused": ["type": "boolean"],
+            ]),
+        ],
+        [
+            "name": "pry_clock_get",
+            "description": "Read the virtual clock.",
+            "inputSchema": objectSchema(required: ["app"], properties: ["app": ["type": "string"]]),
+        ],
+        [
+            "name": "pry_set_animations",
+            "description": "Enable or disable app-wide animations. Use `enabled: false` for deterministic snapshots and to remove transition flake. (ADR-009)",
+            "inputSchema": objectSchema(required: ["app", "enabled"], properties: [
+                "app": ["type": "string"],
+                "enabled": ["type": "boolean"],
+            ]),
+        ],
+        [
+            "name": "pry_pasteboard_read",
+            "description": "Read the system pasteboard via the harness.",
+            "inputSchema": objectSchema(required: ["app"], properties: ["app": ["type": "string"]]),
+        ],
+        [
+            "name": "pry_pasteboard_write",
+            "description": "Write a string to the system pasteboard via the harness.",
+            "inputSchema": objectSchema(required: ["app", "string"], properties: [
+                "app": ["type": "string"],
+                "string": ["type": "string"],
             ]),
         ],
     ] }

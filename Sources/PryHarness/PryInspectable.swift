@@ -23,3 +23,21 @@ public protocol PryInspectable: AnyObject {
 public extension PryInspectable {
     static var pryName: String { String(describing: Self.self) }
 }
+
+/// Optional conformance: VMs that adopt this can push state-change
+/// notifications to subscribers without requiring polling.
+///
+/// The closure passed in is called on the main actor. Pass it the diff between
+/// the previous snapshot and the new one (or just the new full snapshot — the
+/// harness diffs internally).
+@MainActor
+public protocol PryStateBroadcaster: PryInspectable {
+    /// Called by the registry to start observing changes. Implementations
+    /// should call `notify()` whenever any prySnapshot key value changes.
+    /// Return a cancellation handle.
+    func prySubscribeStateChanges(_ notify: @escaping @MainActor () -> Void) -> PryStateSubscription
+}
+
+public protocol PryStateSubscription {
+    func cancel()
+}

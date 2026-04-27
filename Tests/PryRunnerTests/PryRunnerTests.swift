@@ -29,7 +29,7 @@ final class SpecParserTests: XCTestCase {
         if case .launch(let args, let env) = spec.steps[0] {
             XCTAssertTrue(args.isEmpty); XCTAssertTrue(env.isEmpty)
         } else { XCTFail("step 0 not launch") }
-        if case .click(let target) = spec.steps[1], case .id(let s) = target {
+        if case .click(let target, _) = spec.steps[1], case .id(let s) = target {
             XCTAssertEqual(s, "go")
         } else { XCTFail("step 1 not click(id:go)") }
     }
@@ -92,7 +92,7 @@ final class SpecParserTests: XCTestCase {
         """
         let spec = try SpecParser.parse(source: src)
         XCTAssertEqual(spec.steps.count, 2)
-        if case .drag(_, _, let n) = spec.steps[0] { XCTAssertEqual(n, 20) }
+        if case .drag(_, _, let n, _) = spec.steps[0] { XCTAssertEqual(n, 20) }
         else { XCTFail("step 0 not drag") }
         if case .scroll(_, let dir, let amt) = spec.steps[1] {
             XCTAssertEqual(dir, .down)
