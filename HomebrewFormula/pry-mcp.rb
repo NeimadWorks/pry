@@ -12,7 +12,7 @@
 class PryMcp < Formula
   desc "Markdown-driven test runner for macOS apps"
   homepage "https://github.com/neimad/pry"
-  version "0.1.0"
+  version "0.2.0"
   license "MIT"
 
   on_macos do
