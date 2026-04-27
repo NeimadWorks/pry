@@ -13,23 +13,40 @@ on:
 jobs:
   build-and-test:
     name: Build & Test (macOS)
-    runs-on: macos-14
+    # macOS-15 runners ship with Xcode 16 (Swift 6) by default. macOS-14 ships
+    # with Xcode 15 (Swift 5.9), which does not understand
+    # swift-tools-version: 6.0 — the build would fail with a parse error on
+    # Package.swift before even reaching code.
+    runs-on: macos-15
     timeout-minutes: 20
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Pin the Xcode toolchain — the macos-15 default may shift over time
+      # and we want Swift 6 reliably. `latest-stable` keeps us on the newest
+      # released Xcode (≥ 16 today).
+      - name: Select Xcode (latest-stable)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
       - name: Show toolchain
         run: |
           swift --version
           xcodebuild -version
+          which swift
+          xcrun --find swift
 
       - name: Build root package
         run: swift build -c debug
 
+      # NOTE: `swift test` (no `--parallel`) — several unit tests (PryRegistry,
+      # state-broadcaster wiring) share the `PryRegistry.shared` singleton. Run
+      # them serially. Suite is tiny (33 tests), the cost is < 100 ms.
       - name: Run unit tests
-        run: swift test --parallel
+        run: swift test
 
       - name: Build DemoApp fixture
         working-directory: Fixtures/DemoApp
@@ -48,7 +65,7 @@ jobs:
 
   release-artifacts:
     name: Package release artifacts
-    runs-on: macos-14
+    runs-on: macos-15
     needs: build-and-test
     # Run when:
     #   - a tag matching v* is pushed (push event with refs/tags/v...)
@@ -59,6 +76,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Select Xcode (latest-stable)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
       - name: Build release binary
         run: swift build -c release --product pry-mcp
