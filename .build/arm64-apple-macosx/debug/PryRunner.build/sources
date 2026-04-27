@@ -1,0 +1,14 @@
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/AXTreeWalker.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/ElementResolver.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/EventInjector.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/WindowCapture.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/AppDriver.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/HarnessClient.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Pry.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Spec.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/SpecParser.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/SpecRunner.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Step.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/YAMLFlow.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/Verdict.swift
+/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictReporter.swift

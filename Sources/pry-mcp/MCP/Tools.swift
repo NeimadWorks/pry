@@ -2,6 +2,7 @@ import Foundation
 import CoreGraphics
 import PryWire
 import PryHarness
+import PryRunner
 
 /// The implementation of each pry_* MCP tool. Stateless: every call takes
 /// `app` (bundle ID) and opens a short-lived harness connection.

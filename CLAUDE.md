@@ -20,7 +20,7 @@
 
 ## Current state
 
-**Phase:** Phases 0-3 **COMPLETE**. Grammar v1 is now fully implemented (drag, scroll, expect_change added 2026-04-27 — closing the gap that would have blocked apps like Carnet, where piece drag is the central interaction). Phase 4 delivered as docs + templates (signed-binary / Homebrew tap publication is deferred to the human operator). Phase 5 dogfooding across Proof / Probe / Narrow / Harald is the only remaining item — requires those apps' source, which lives outside this repo.
+**Phase:** Phases 0-3 **COMPLETE**. Grammar v1 is now fully implemented (drag, scroll, expect_change added 2026-04-27). The package was restructured the same day to expose `PryRunner` as a real public Swift library — `pry-mcp` is now a thin MCP wrapper around it. You can now use Pry from any Swift code (XCTest, Swift Testing, custom CLIs) without going through the MCP daemon. Phase 4 delivered as docs + templates (signed-binary / Homebrew tap publication is deferred to the human operator). Phase 5 dogfooding across Proof / Probe / Narrow / Harald / Carnet requires those apps' source, which lives outside this repo.
 
 **What works today:**
 - Spec runner: `pry-mcp run --spec flows/new-document.md` → verdict with full diagnostic context (AX tree snippet, registered VM state, auto-PNG on failure, step-by-step timings).

@@ -2,6 +2,7 @@ import Foundation
 import ApplicationServices
 import CoreGraphics
 import PryWire
+import PryRunner
 
 /// CLI mode for hand-driven testing. Mirrors the MCP tools one-to-one.
 ///

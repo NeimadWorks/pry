@@ -2,9 +2,22 @@
 
 > Companion to [PROJECT-BIBLE §6](../../PROJECT-BIBLE.md#6-architecture). Read that first.
 
-## The two components
+## The four products
 
-Pry is deliberately two processes. One lives **inside** the target app (`PryHarness`), one lives **outside** (`pry-mcp`). They communicate over a Unix-domain socket using plain JSON-RPC 2.0.
+Pry ships as four SwiftPM products in one package:
+
+| Product | Process | Purpose |
+|---|---|---|
+| `PryHarness` | In the target app | Passive socket server + `PryInspectable` protocol + `PryRegistry`. `#if DEBUG`-gated. |
+| `PryWire` | Both sides | Codable JSON-RPC types. No logic, no dependencies. |
+| `PryRunner` | Out-of-process | Runner library: spec parser, runner, verdict reporter, AX walker, event injector, `Pry` ergonomic actor API. Linkable from any Swift code. |
+| `pry-mcp` | Out-of-process | Thin stdio MCP wrapper around `PryRunner`. Plus a CLI mode for hand-driven testing. |
+
+`PryHarness` and `PryRunner` are the two *real* halves. `PryWire` is the contract glue between them. `pry-mcp` is just the daemon that exposes `PryRunner` over the MCP protocol — anything `pry-mcp` does, you can also do by `import PryRunner` directly.
+
+## The two processes
+
+Pry is deliberately two processes. One lives **inside** the target app (`PryHarness`), one lives **outside** (`PryRunner` — embedded in `pry-mcp` or in your own Swift code). They communicate over a Unix-domain socket using plain JSON-RPC 2.0.
 
 | Concern | Location | Why there |
 |---|---|---|
@@ -58,11 +71,17 @@ Forbidden: event injection, spec parsing, verdict formatting, MCP protocol, any 
 
 Contains only Codable message types that flow on the socket. No logic. No dependencies. Imported by both `PryHarness` and `pry-mcp` so the wire contract is enforced at compile time.
 
+### `PryRunner` (out-of-process library)
+
+Allowed: app lifecycle (`AppDriver`), AX queries (`ElementResolver`, `AXTreeWalker`), CGEvent injection (`EventInjector`), spec parsing (`SpecParser`), spec running (`SpecRunner`), verdict formatting (`VerdictReporter`), window capture (`WindowCapture`), client side of the harness socket (`HarnessClient`), top-level ergonomic API (`Pry`).
+
+Forbidden: any UI code, any `Mirror` reflection on the target's types, MCP protocol concerns.
+
 ### `pry-mcp` (out-of-process binary)
 
-Allowed: MCP stdio server, app lifecycle, AX queries, CGEvent composition, spec parsing, spec running, verdict formatting.
+Allowed: stdio MCP server (`MCPServer`), tool dispatch (`PryTools`), CLI subcommand parser (`CLI`). Imports `PryRunner` and exposes it.
 
-Forbidden: any UI code, any `Mirror` reflection on the target's types, anything that would need to run inside the target.
+Forbidden: any logic that should be reusable from non-MCP callers — that goes in `PryRunner` instead.
 
 ## Repo layout
 
@@ -80,16 +99,20 @@ pry/
 │   │   ├── PryRegistry.swift
 │   │   ├── PrySocketServer.swift
 │   │   ├── PryInspector.swift
+│   │   ├── PryInspectable.swift
 │   │   └── PryLogTap.swift
 │   ├── PryWire/
 │   │   └── Messages.swift
+│   ├── PryRunner/
+│   │   ├── Pry.swift                    # ergonomic actor API
+│   │   ├── Spec/{Spec,Step,SpecParser,SpecRunner,YAMLFlow}.swift
+│   │   ├── Verdict/{Verdict,VerdictReporter}.swift
+│   │   ├── Control/{ElementResolver,EventInjector,AXTreeWalker,WindowCapture}.swift
+│   │   └── Driver/{AppDriver,HarnessClient}.swift
 │   └── pry-mcp/
 │       ├── main.swift
-│       ├── MCP/MCPServer.swift
-│       ├── Driver/{AppDriver,HarnessClient}.swift
-│       ├── Control/{ElementResolver,EventInjector}.swift
-│       ├── Spec/{SpecParser,SpecRunner}.swift
-│       └── Verdict/VerdictReporter.swift
+│       ├── CLI.swift
+│       └── MCP/{MCPServer,Tools}.swift
 │
 ├── Tests/
 │   ├── PryHarnessTests/

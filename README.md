@@ -35,10 +35,19 @@ One MCP tool call in. One parseable report out.
 
 ## How it works
 
-Pry is two components:
+Pry ships as **four products** in one SwiftPM package:
 
-- **PryHarness** — a Swift package you link into your app under `#if DEBUG`. Exposes a passive Unix-socket server for state reads, log tails, and snapshots. Zero effect on RELEASE builds.
-- **pry-mcp** — an out-of-process CLI + MCP server. Launches your app, resolves targets via the Accessibility API, injects real `CGEvent`s, runs Markdown specs, writes verdicts.
+| Product | Used by | What it is |
+|---|---|---|
+| `PryHarness` | The app under test, `#if DEBUG` | Passive Unix-socket server, `PryInspectable` protocol, `PryRegistry`. Zero effect on RELEASE builds. |
+| `PryWire` | Both sides | Shared Codable JSON-RPC types. No logic. |
+| `PryRunner` | Tests / CLIs / custom Swift code | The runner library. Spec parser, runner, verdict reporter, AX walker, event injector, app driver, `Pry` ergonomic actor API. |
+| `pry-mcp` | Claude Code / interactive CLI | A thin wrapper that exposes `PryRunner` over stdio MCP and a CLI. |
+
+**You can use Pry two ways:**
+
+1. **Through MCP** — register `pry-mcp` in Claude Code's settings; the agent calls `pry_run_spec`, `pry_click`, etc. The story in this README so far.
+2. **Directly from Swift** — `import PryRunner` in any Swift project (a SwiftPM CLI, an XCTest target, your own custom test orchestrator). No daemon, no protocol, just a normal Swift API.
 
 They talk over `/tmp/pry-<bundleID>.sock`. No network. No cloud. No telemetry.
 
@@ -149,6 +158,41 @@ Or register `pry-mcp` as an MCP server and let Claude Code call `pry_run_spec` d
 
 A Pry test is a Markdown file with YAML frontmatter and fenced `pry` code blocks containing steps. The grammar is documented in [docs/design/spec-format.md](docs/design/spec-format.md). Verdict format: [docs/design/verdict-format.md](docs/design/verdict-format.md).
 
+## Using as a Swift library (no MCP)
+
+Add `PryRunner` to your `Package.swift`:
+
+```swift
+.package(url: "https://github.com/neimad/pry", from: "0.1.0"),
+
+.target(name: "MyAppTests", dependencies: [
+    .product(name: "PryRunner", package: "pry")
+])
+```
+
+Then drive your app directly:
+
+```swift
+import PryRunner
+
+// Spec-driven: read a Markdown spec, get a structured Verdict back.
+let verdict = try await Pry.runSpec(atPath: "Tests/Flows/opening.md")
+XCTAssertEqual(verdict.status, .passed, VerdictReporter.render(verdict))
+
+// Programmatic: launch, drive, observe.
+let pry = try await Pry.launch(
+    app: "fr.neimad.carnet",
+    executablePath: carnetBinaryPath
+)
+try await pry.click(.id("sq_e2"))
+try await pry.click(.id("sq_e4"))
+let ply: Int? = try await pry.state(of: "BoardVM", path: "ply")
+XCTAssertEqual(ply, 1)
+await pry.terminate()
+```
+
+Use this when you want Pry inside an XCTest target, a Swift Testing suite, your own CI tooling, or any Swift project that doesn't want to spawn `pry-mcp` as a subprocess.
+
 ## Using from Claude Code
 
 Register `pry-mcp` as an MCP server in your Claude Code settings:
@@ -194,9 +238,10 @@ Full non-goals list in [PROJECT-BIBLE §15](PROJECT-BIBLE.md#15-non-goals).
 
 ```
 Sources/
-  PryHarness/   in-process Swift library (linked into your app, DEBUG only)
+  PryHarness/   in-process library (linked into your app, DEBUG only)
   PryWire/      shared JSON-RPC message types
-  pry-mcp/      out-of-process CLI + MCP server
+  PryRunner/    out-of-process runner library — usable from any Swift code
+  pry-mcp/      thin stdio MCP + CLI wrapper around PryRunner
 Tests/
 Fixtures/
   DemoApp/      tiny SwiftUI app for dogfooding

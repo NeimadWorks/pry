@@ -262,6 +262,331 @@
       "tempsPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarnessTests.build",
       "wholeModuleOptimization" : false
     },
+    "C.PryRunner-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/sources",
+      "importPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/AXTreeWalker.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/ElementResolver.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/EventInjector.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/WindowCapture.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/AppDriver.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/HarnessClient.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Pry.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Spec.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/SpecParser.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/SpecRunner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Step.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/YAMLFlow.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/Verdict.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictReporter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarness.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "PryRunner",
+      "moduleOutputPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryRunner.swiftmodule",
+      "objects" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AXTreeWalker.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ElementResolver.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/EventInjector.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/WindowCapture.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AppDriver.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/HarnessClient.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Pry.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Spec.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/SpecParser.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/SpecRunner.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Step.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/YAMLFlow.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Verdict.swift.o",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/include/PryRunner-Swift.h",
+        "-swift-version",
+        "6",
+        "-enable-upcoming-feature",
+        "StrictConcurrency",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "pry"
+      ],
+      "outputFileMapPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AXTreeWalker.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ElementResolver.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/EventInjector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/WindowCapture.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AppDriver.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/HarnessClient.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Pry.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Spec.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/SpecParser.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/SpecRunner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Step.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/YAMLFlow.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Verdict.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryRunner.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/AXTreeWalker.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/ElementResolver.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/EventInjector.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/WindowCapture.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/AppDriver.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/HarnessClient.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Pry.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Spec.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/SpecParser.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/SpecRunner.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Step.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/YAMLFlow.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/Verdict.swift",
+        "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictReporter.swift"
+      ],
+      "tempsPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.PryRunnerTests-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunnerTests.build/sources",
+      "importPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Tests/PryRunnerTests/PryRunnerTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryRunner.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunnerTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "PryRunnerTests",
+      "moduleOutputPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryRunnerTests.swiftmodule",
+      "objects" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunnerTests.build/PryRunnerTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "pry"
+      ],
+      "outputFileMapPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunnerTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunnerTests.build/PryRunnerTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryRunnerTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/Dom/Projects/NeimadWorks/pry/Tests/PryRunnerTests/PryRunnerTests.swift"
+      ],
+      "tempsPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunnerTests.build",
+      "wholeModuleOptimization" : false
+    },
     "C.PryWire-arm64-apple-macosx-debug.module" : {
       "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "fileList" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/sources",
@@ -460,63 +785,11 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/AXTreeWalker.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/ElementResolver.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/EventInjector.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/WindowCapture.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/AppDriver.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/HarnessClient.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/MCP/MCPServer.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/MCP/Tools.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/Spec.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/SpecParser.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/SpecRunner.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/Step.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/YAMLFlow.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Verdict/Verdict.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Verdict/VerdictReporter.swift"
         },
         {
           "kind" : "file",
@@ -528,11 +801,7 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWire.swiftmodule"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryHarness.swiftmodule"
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryRunner.swiftmodule"
         },
         {
           "kind" : "file",
@@ -544,21 +813,8 @@
       "moduleOutputPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/pry_mcp.swiftmodule",
       "objects" : [
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/CLI.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AXTreeWalker.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/ElementResolver.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/EventInjector.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/WindowCapture.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AppDriver.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/HarnessClient.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/MCPServer.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Tools.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Spec.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecParser.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecRunner.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Step.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/YAMLFlow.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Verdict.swift.o",
-        "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/VerdictReporter.swift.o",
         "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/main.swift.o"
       ],
       "otherArguments" : [
@@ -620,63 +876,11 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AXTreeWalker.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/ElementResolver.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/EventInjector.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/WindowCapture.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AppDriver.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/HarnessClient.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/MCPServer.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Tools.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Spec.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecParser.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecRunner.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Step.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/YAMLFlow.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Verdict.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/VerdictReporter.swift.o"
         },
         {
           "kind" : "file",
@@ -690,21 +894,8 @@
       "prepareForIndexing" : false,
       "sources" : [
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/CLI.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/AXTreeWalker.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/ElementResolver.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/EventInjector.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/WindowCapture.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/AppDriver.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/HarnessClient.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/MCP/MCPServer.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/MCP/Tools.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/Spec.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/SpecParser.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/SpecRunner.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/Step.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/YAMLFlow.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Verdict/Verdict.swift",
-        "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Verdict/VerdictReporter.swift",
         "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/main.swift"
       ],
       "tempsPath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build",
@@ -726,6 +917,10 @@
         {
           "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryWireTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules/PryRunnerTests.swiftmodule"
         },
         {
           "kind" : "file",
@@ -889,6 +1084,140 @@
       "pry",
       "-c",
       "/Users/Dom/Projects/NeimadWorks/pry/Tests/PryHarnessTests/PryHarnessTests.swift",
+      "-I",
+      "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "pry",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "PryRunner" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "PryRunner",
+      "-package-name",
+      "pry",
+      "-c",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/AXTreeWalker.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/ElementResolver.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/EventInjector.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/WindowCapture.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/AppDriver.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/HarnessClient.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Pry.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Spec.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/SpecParser.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/SpecRunner.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Step.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/YAMLFlow.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/Verdict.swift",
+      "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictReporter.swift",
+      "-I",
+      "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/include/PryRunner-Swift.h",
+      "-swift-version",
+      "6",
+      "-enable-upcoming-feature",
+      "StrictConcurrency",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "pry",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "PryRunnerTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "PryRunnerTests",
+      "-package-name",
+      "pry",
+      "-c",
+      "/Users/Dom/Projects/NeimadWorks/pry/Tests/PryRunnerTests/PryRunnerTests.swift",
       "-I",
       "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules",
       "-target",
@@ -1129,21 +1458,8 @@
       "pry",
       "-c",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/CLI.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/AXTreeWalker.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/ElementResolver.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/EventInjector.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/WindowCapture.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/AppDriver.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/HarnessClient.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/MCP/MCPServer.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/MCP/Tools.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/Spec.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/SpecParser.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/SpecRunner.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/Step.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/YAMLFlow.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Verdict/Verdict.swift",
-      "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Verdict/VerdictReporter.swift",
       "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/main.swift",
       "-I",
       "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/Modules",
@@ -1208,6 +1524,15 @@
       "PryHarness",
       "PryWire"
     ],
+    "PryRunner" : [
+      "PryHarness",
+      "PryWire"
+    ],
+    "PryRunnerTests" : [
+      "PryRunner",
+      "PryHarness",
+      "PryWire"
+    ],
     "PryWire" : [
 
     ],
@@ -1216,11 +1541,14 @@
     ],
     "pryPackageTests" : [
       "PryHarnessTests",
+      "PryRunnerTests",
+      "PryRunner",
       "PryHarness",
       "PryWireTests",
       "PryWire"
     ],
     "pry_mcp" : [
+      "PryRunner",
       "PryHarness",
       "PryWire"
     ]
@@ -1294,6 +1622,86 @@
         }
       ],
       "outputFilePath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryHarnessTests.build/sources"
+    },
+    "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/AXTreeWalker.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/ElementResolver.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/EventInjector.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Control/WindowCapture.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/AppDriver.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Driver/HarnessClient.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Pry.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Spec.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/SpecParser.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/SpecRunner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/Step.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Spec/YAMLFlow.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/Verdict.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/PryRunner/Verdict/VerdictReporter.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/sources"
+    },
+    "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunnerTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Tests/PryRunnerTests/PryRunnerTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunnerTests.build/sources"
     },
     "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/sources" : {
       "alwaysOutOfDate" : false,
@@ -1370,15 +1778,63 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AXTreeWalker.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AppDriver.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ElementResolver.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/EventInjector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/HarnessClient.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Pry.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Spec.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/SpecParser.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/SpecRunner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Step.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Verdict.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/WindowCapture.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/YAMLFlow.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AXTreeWalker.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/AppDriver.swift.o"
         },
         {
           "kind" : "file",
@@ -1386,55 +1842,11 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/ElementResolver.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/EventInjector.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/HarnessClient.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/MCPServer.swift.o"
         },
         {
           "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Spec.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecParser.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/SpecRunner.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Step.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Tools.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/Verdict.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/VerdictReporter.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/WindowCapture.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/pry_mcp.build/YAMLFlow.swift.o"
         },
         {
           "kind" : "file",
@@ -1494,6 +1906,66 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AXTreeWalker.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/AppDriver.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/ElementResolver.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/EventInjector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/HarnessClient.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Pry.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Spec.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/SpecParser.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/SpecRunner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Step.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/Verdict.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/VerdictReporter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/WindowCapture.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunner.build/YAMLFlow.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryRunnerTests.build/PryRunnerTests.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/.build/arm64-apple-macosx/debug/PryWire.build/Messages.swift.o"
         },
         {
@@ -1520,63 +1992,11 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/AXTreeWalker.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/ElementResolver.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/EventInjector.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Control/WindowCapture.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/AppDriver.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Driver/HarnessClient.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/MCP/MCPServer.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/MCP/Tools.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/Spec.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/SpecParser.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/SpecRunner.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/Step.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Spec/YAMLFlow.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Verdict/Verdict.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/Dom/Projects/NeimadWorks/pry/Sources/pry-mcp/Verdict/VerdictReporter.swift"
         },
         {
           "kind" : "file",

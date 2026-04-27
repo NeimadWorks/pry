@@ -5,12 +5,12 @@ import CoreGraphics
 /// CGEvent-based event injection. All events go through `cgSessionEventTap` so
 /// they exercise the real OS → AppKit → SwiftUI path. Spike 2 (2026-04-22)
 /// validated this approach.
-enum EventInjector {
-    enum InjectError: Error, CustomStringConvertible {
+public enum EventInjector {
+    public enum InjectError: Error, CustomStringConvertible {
         case eventCreateFailed(String)
         case unknownKey(String)
 
-        var description: String {
+        public var description: String {
             switch self {
             case .eventCreateFailed(let what): return "CGEvent creation failed for: \(what)"
             case .unknownKey(let k): return "unknown key name: \(k)"
@@ -20,19 +20,19 @@ enum EventInjector {
 
     // MARK: - Mouse
 
-    static func click(at point: CGPoint) throws {
+    public static func click(at point: CGPoint) throws {
         try press(.leftMouseDown, .leftMouseUp, at: point)
     }
 
-    static func doubleClick(at point: CGPoint) throws {
+    public static func doubleClick(at point: CGPoint) throws {
         try press(.leftMouseDown, .leftMouseUp, at: point, clickCount: 2)
     }
 
-    static func rightClick(at point: CGPoint) throws {
+    public static func rightClick(at point: CGPoint) throws {
         try press(.rightMouseDown, .rightMouseUp, at: point, button: .right)
     }
 
-    static func move(to point: CGPoint) throws {
+    public static func move(to point: CGPoint) throws {
         guard let e = CGEvent(mouseEventSource: source, mouseType: .mouseMoved,
                               mouseCursorPosition: point, mouseButton: .left) else {
             throw InjectError.eventCreateFailed("mouseMoved")
@@ -43,7 +43,7 @@ enum EventInjector {
     /// Drag from one point to another. Posts mouseDown at `from`, a sequence of
     /// interpolated mouseDragged events to look human-ish, then mouseUp at `to`.
     /// `steps` controls the number of intermediate moves (>= 1).
-    static func drag(from: CGPoint, to: CGPoint, steps: Int = 12, dwellMicros: useconds_t = 12_000) throws {
+    public static func drag(from: CGPoint, to: CGPoint, steps: Int = 12, dwellMicros: useconds_t = 12_000) throws {
         guard let down = CGEvent(mouseEventSource: source, mouseType: .leftMouseDown,
                                  mouseCursorPosition: from, mouseButton: .left) else {
             throw InjectError.eventCreateFailed("leftMouseDown")
@@ -74,7 +74,7 @@ enum EventInjector {
     /// Scroll wheel events at a given on-screen point. Direction is encoded as
     /// signed deltas in the scroll vector; `amount` is the number of "lines".
     /// On macOS the wheel coordinate space is flipped: positive Y scrolls up.
-    static func scroll(at point: CGPoint, dx: Int32, dy: Int32) throws {
+    public static func scroll(at point: CGPoint, dx: Int32, dy: Int32) throws {
         // Move cursor first so the target window receives the scroll.
         try move(to: point)
         usleep(5_000)
@@ -112,7 +112,7 @@ enum EventInjector {
 
     /// Type arbitrary text into the currently focused element. Uses the
     /// unicode string attribute of CGEvent so we avoid keycode mapping.
-    static func type(text: String) throws {
+    public static func type(text: String) throws {
         let utf16 = Array(text.utf16)
         guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
               let up = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else {
@@ -128,7 +128,7 @@ enum EventInjector {
 
     /// Post a keyboard shortcut. Accepts `"return"`, `"escape"`, `"tab"`, `"space"`,
     /// `"cmd+s"`, `"shift+cmd+n"`, etc.
-    static func key(combo: String) throws {
+    public static func key(combo: String) throws {
         let (flags, keyCode) = try parseCombo(combo)
         guard let down = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true),
               let up = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false) else {

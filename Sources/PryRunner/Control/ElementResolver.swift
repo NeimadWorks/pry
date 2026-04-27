@@ -5,7 +5,7 @@ import CoreGraphics
 
 /// Out-of-process AX target resolution. The `Target` cases mirror the spec
 /// grammar from `docs/design/spec-format.md §4`.
-enum Target: Sendable {
+public enum Target: Sendable {
     case id(String)
     case roleLabel(role: String, label: String)
     case label(String)
@@ -14,26 +14,26 @@ enum Target: Sendable {
     case point(x: CGFloat, y: CGFloat)
 }
 
-struct Resolved: Sendable {
-    let element: AXUIElementWrapper
-    let frame: CGRect?
-    let role: String
-    let label: String?
-    let identifier: String?
+public struct Resolved: Sendable {
+    public let element: AXUIElementWrapper
+    public let frame: CGRect?
+    public let role: String
+    public let label: String?
+    public let identifier: String?
 }
 
 /// Sendable wrapper around AXUIElement (which is CFTypeRef).
-struct AXUIElementWrapper: @unchecked Sendable {
-    let element: AXUIElement
+public struct AXUIElementWrapper: @unchecked Sendable {
+    public let element: AXUIElement
 }
 
-enum ResolveError: Error, CustomStringConvertible {
+public enum ResolveError: Error, CustomStringConvertible {
     case accessibilityNotTrusted
     case windowNotFound
     case noMatch(Target)
     case ambiguous(Target, candidates: [String])
 
-    var description: String {
+    public var description: String {
         switch self {
         case .accessibilityNotTrusted:
             return "pry-mcp is not trusted for Accessibility. Grant in System Settings → Privacy & Security → Accessibility, then relaunch the parent process."
@@ -47,15 +47,15 @@ enum ResolveError: Error, CustomStringConvertible {
     }
 }
 
-enum ElementResolver {
+public enum ElementResolver {
 
-    static func requireTrust() throws {
+    public static func requireTrust() throws {
         guard AXIsProcessTrusted() else { throw ResolveError.accessibilityNotTrusted }
     }
 
     /// Resolves a target to exactly one AX element in the given app. Multiple matches
     /// for a same-precedence form is an error (the resolver never silent-picks the first).
-    static func resolve(target: Target, in pid: pid_t) throws -> Resolved {
+    public static func resolve(target: Target, in pid: pid_t) throws -> Resolved {
         try requireTrust()
         let app = AXUIElementCreateApplication(pid)
 
@@ -138,7 +138,7 @@ enum ElementResolver {
         axAttr(el, attr) as? String
     }
 
-    static func axFrame(_ el: AXUIElement) -> CGRect? {
+    public static func axFrame(_ el: AXUIElement) -> CGRect? {
         guard let pos = axAttr(el, kAXPositionAttribute),
               let size = axAttr(el, kAXSizeAttribute) else { return nil }
         var origin = CGPoint.zero

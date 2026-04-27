@@ -4,8 +4,8 @@ import PryWire
 
 /// Unix-socket client for PryHarness. Serializes requests via actor isolation
 /// so JSON-RPC IDs match 1:1 with responses.
-actor HarnessClient {
-    enum ClientError: Error, CustomStringConvertible {
+public actor HarnessClient {
+    public enum ClientError: Error, CustomStringConvertible {
         case socketCreate(errno: Int32)
         case socketPathTooLong(String)
         case connect(errno: Int32, path: String)
@@ -14,7 +14,7 @@ actor HarnessClient {
         case decodeFailed(String)
         case rpcError(PryWire.RPCError)
 
-        var description: String {
+        public var description: String {
             switch self {
             case .socketCreate(let e): return "socket(AF_UNIX) failed: errno=\(e)"
             case .socketPathTooLong(let p): return "socket path too long: \(p)"
@@ -35,7 +35,7 @@ actor HarnessClient {
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
-    init(connectingTo path: String) throws {
+    public init(connectingTo path: String) throws {
         let fd = socket(AF_UNIX, SOCK_STREAM, 0)
         guard fd >= 0 else { throw ClientError.socketCreate(errno: errno) }
 
@@ -70,19 +70,19 @@ actor HarnessClient {
 
     // MARK: - Method API
 
-    func hello(client: String, version: String) throws -> PryWire.HelloResult {
+    public func hello(client: String, version: String) throws -> PryWire.HelloResult {
         try call(method: .hello, params: PryWire.HelloParams(client: client, version: version))
     }
 
-    func readState(viewmodel: String, path: String?) throws -> PryWire.ReadStateResult {
+    public func readState(viewmodel: String, path: String?) throws -> PryWire.ReadStateResult {
         try call(method: .readState, params: PryWire.ReadStateParams(viewmodel: viewmodel, path: path))
     }
 
-    func readLogs(since: String?, subsystem: String?) throws -> PryWire.ReadLogsResult {
+    public func readLogs(since: String?, subsystem: String?) throws -> PryWire.ReadLogsResult {
         try call(method: .readLogs, params: PryWire.ReadLogsParams(since: since, subsystem: subsystem))
     }
 
-    func goodbye() throws {
+    public func goodbye() throws {
         let _: PryWire.GoodbyeResult = try call(method: .goodbye, params: PryWire.GoodbyeParams())
     }
 
