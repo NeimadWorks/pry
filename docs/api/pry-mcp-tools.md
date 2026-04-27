@@ -294,6 +294,44 @@ Discover specs under a directory.
 → { "specs": [ { "path": "...", "id": "...", "tags": [...] }, ... ] }
 ```
 
+### `pry_lint`
+
+Parse every `.md` under `path` as a Pry spec without launching any app.
+Cheap CI gate — catches frontmatter typos, unknown commands, malformed
+targets/predicates.
+
+```json
+{ "path": "flows", "verbose": false? }
+→ {
+  "total": 9,
+  "ok": 9,
+  "failed": 0,
+  "issues": [
+    { "spec": "...", "line": 12, "kind": "unknown_command", "message": "unknown command 'aseert_state'" },
+    ...
+  ]
+}
+```
+
+### `pry_init`
+
+Scaffold (or extend) a `.pry/config.yaml` mapping a bundle ID to a
+SwiftPM product's build path.
+
+```json
+{
+  "bundleID": "fr.neimad.demo",
+  "product": "DemoApp",
+  "directory": "."?,           // default: current working directory
+  "force": false?              // override existing entry for this bundle
+}
+→ {
+  "configPath": "/abs/.pry/config.yaml",
+  "written": true,
+  "contents": "apps:\n  fr.neimad.demo:\n    executable_path: ${swift_bin}/DemoApp\n"
+}
+```
+
 ---
 
 ## Target spec shape
@@ -382,6 +420,11 @@ pry-mcp run-suite  --dir flows [--tag smoke] [--parallel 4] [--retry-failed 2]
                    [--junit junit.xml] [--tap out.tap] [--summary-md out.md]
 pry-mcp list-specs --dir flows
 pry-mcp watch      --dir flows                # re-run on change
+pry-mcp lint       --dir flows [--json]       # parse-only validation; CI gate
+pry-mcp init       --bundle-id fr.neimad.x --product MyApp [--directory .] [--force]
+                                              # scaffold .pry/config.yaml
+pry-mcp report     --build pry-verdicts [--out pry-verdicts/index.html]
+                                              # self-contained HTML dashboard with embedded PNGs
 ```
 
 `pry-mcp` with no args (or `pry-mcp mcp`) starts stdio MCP mode — register

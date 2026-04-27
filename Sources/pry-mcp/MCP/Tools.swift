@@ -592,7 +592,7 @@ enum PryTools {
         )
         let runner = SpecRunner(spec: spec, options: opts)
         let verdict = await runner.run()
-        let md = VerdictReporter.render(verdict)
+        let md = VerdictReporter.render(verdict, embedScreenshots: spec.screenshotsEmbed)
 
         var verdictPath: String?
         if let dir = verdict.attachmentsDir {
@@ -672,6 +672,127 @@ enum PryTools {
         }
         return RunSuiteOutput(total: verdicts.count, passed: passed, failed: failed,
                               errored: errored, verdicts: entries)
+    }
+
+    // MARK: - Lint / init
+
+    struct LintInput: Codable {
+        var path: String
+        var verbose: Bool?
+    }
+    struct LintIssue: Codable {
+        var spec: String
+        var line: Int?
+        var kind: String
+        var message: String
+    }
+    struct LintOutput: Codable {
+        var total: Int
+        var ok: Int
+        var failed: Int
+        var issues: [LintIssue]
+    }
+    /// Validate every `.md` file under `path` as a Pry spec without launching
+    /// any app. Catches frontmatter typos, unknown commands, malformed
+    /// targets/predicates. Cheap CI gate.
+    static func lint(_ input: LintInput) async throws -> LintOutput {
+        let dir = URL(fileURLWithPath: input.path)
+        var paths: [URL] = []
+        let enumerator = FileManager.default.enumerator(at: dir, includingPropertiesForKeys: nil)
+        while let u = enumerator?.nextObject() as? URL {
+            if u.pathExtension.lowercased() == "md" { paths.append(u) }
+        }
+        paths.sort { $0.path < $1.path }
+
+        var issues: [LintIssue] = []
+        var ok = 0
+        for url in paths {
+            guard let src = try? String(contentsOf: url, encoding: .utf8) else {
+                issues.append(LintIssue(spec: url.path, line: nil, kind: "io_error",
+                                        message: "could not read file"))
+                continue
+            }
+            do {
+                _ = try SpecParser.parse(source: src, sourcePath: url.path)
+                ok += 1
+            } catch let e as SpecParseError {
+                let (line, msg) = self.linePart(of: e)
+                issues.append(LintIssue(spec: url.path, line: line, kind: kind(of: e), message: msg))
+            } catch {
+                issues.append(LintIssue(spec: url.path, line: nil, kind: "internal",
+                                        message: "\(error)"))
+            }
+        }
+        return LintOutput(total: paths.count, ok: ok, failed: paths.count - ok, issues: issues)
+    }
+
+    private static func linePart(of e: SpecParseError) -> (Int?, String) {
+        switch e {
+        case .missingFrontmatter: return (nil, e.description)
+        case .frontmatterMalformed(let s): return (nil, s)
+        case .missingRequiredField(let f): return (nil, "missing required field: \(f)")
+        case .unknownCommand(let c, let l): return (l, "unknown command '\(c)'")
+        case .invalidArgument(let m, let l): return (l, m)
+        case .unterminatedBlock(let l): return (l, "unterminated ```pry block")
+        }
+    }
+    private static func kind(of e: SpecParseError) -> String {
+        switch e {
+        case .missingFrontmatter: return "missing_frontmatter"
+        case .frontmatterMalformed: return "frontmatter_malformed"
+        case .missingRequiredField: return "missing_required_field"
+        case .unknownCommand: return "unknown_command"
+        case .invalidArgument: return "invalid_argument"
+        case .unterminatedBlock: return "unterminated_block"
+        }
+    }
+
+    struct InitInput: Codable {
+        var bundleID: String
+        var product: String
+        var directory: String?       // defaults to current directory
+        var force: Bool?
+    }
+    struct InitOutput: Codable {
+        var configPath: String
+        var written: Bool
+        var contents: String
+    }
+    /// Scaffold `.pry/config.yaml` mapping a bundle ID to a SwiftPM product's
+    /// build path via `${swift_bin}`. Idempotent — append-or-merge.
+    static func initConfig(_ input: InitInput) async throws -> InitOutput {
+        let baseDir = URL(fileURLWithPath: input.directory ?? FileManager.default.currentDirectoryPath)
+        let pryDir = baseDir.appendingPathComponent(".pry")
+        try FileManager.default.createDirectory(at: pryDir, withIntermediateDirectories: true)
+        let configURL = pryDir.appendingPathComponent("config.yaml")
+
+        var existing: String = ""
+        if FileManager.default.fileExists(atPath: configURL.path) {
+            existing = (try? String(contentsOf: configURL, encoding: .utf8)) ?? ""
+            if !(input.force ?? false), existing.contains(input.bundleID) {
+                // Already mapped — return the existing contents.
+                return InitOutput(configPath: configURL.path, written: false, contents: existing)
+            }
+        }
+
+        let entry = """
+            \(input.bundleID):
+              executable_path: ${swift_bin}/\(input.product)
+        """
+
+        let merged: String
+        if existing.contains("apps:") {
+            // Append a new bundle entry under the existing apps: block.
+            merged = existing.trimmingCharacters(in: .whitespacesAndNewlines) + "\n" + entry + "\n"
+        } else {
+            merged = """
+            # Generated by `pry-mcp init`. Edit freely.
+            apps:
+            \(entry)
+            """
+        }
+        try merged.write(to: configURL, atomically: true, encoding: .utf8)
+        return InitOutput(configPath: configURL.path, written: true, contents: merged)
     }
 
     struct ListSpecsInput: Codable {

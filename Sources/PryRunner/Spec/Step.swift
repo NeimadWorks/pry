@@ -25,7 +25,14 @@ public enum Step: Sendable {
 
     case assertTree(predicate: Predicate)
     case assertState(viewmodel: String, path: String, expect: StateExpectation)
+    case assertFocus(target: TargetRef)
     case expectChange(action: ExpectChangeAction, viewmodel: String, path: String, to: YAMLValue, timeout: Duration)
+    /// Like `assertState` but accumulates failures instead of bailing out.
+    /// All soft failures are reported at the end of the spec.
+    case softAssertState(viewmodel: String, path: String, expect: StateExpectation)
+    /// Like `wait_for` but, on failure, the verdict frames it as an
+    /// assertion (expected/observed) rather than a wait-timeout.
+    case assertEventually(predicate: Predicate, timeout: Duration)
 
     case snapshot(name: String)
     case dumpTree(name: String)
@@ -54,6 +61,23 @@ public enum Step: Sendable {
     case forEach(varName: String, items: [YAMLValue], body: [Step])
     case repeatN(count: Int, body: [Step])
     case callFlow(name: String, args: [String: YAMLValue])
+    /// Run `body`; on any failure, retry up to `count` more times with a
+    /// short backoff between attempts.
+    case withRetry(count: Int, body: [Step])
+
+    // Selection helpers
+    case selectRange(from: TargetRef, to: TargetRef)
+    case multiSelect(targets: [TargetRef])
+
+    // Capture pasteboard / VM state into a runtime variable for later use.
+    case copyToVar(name: String, source: CaptureSource)
+}
+
+/// Source for `copy_to`. Captures the pasteboard or a single registered VM
+/// state path into a runtime variable usable in subsequent steps as `${name}`.
+public enum CaptureSource: Sendable {
+    case pasteboard
+    case state(viewmodel: String, path: String)
 }
 
 public enum StateExpectation: Sendable {

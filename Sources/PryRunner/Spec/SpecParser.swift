@@ -78,6 +78,10 @@ public enum SpecParser {
             withFS: fm.withFS,
             withDefaults: fm.withDefaults,
             screenshotsPolicy: fm.screenshotsPolicy,
+            slowWarnMs: fm.slowWarnMs,
+            stateDeltaPolicy: fm.stateDeltaPolicy,
+            axTreeDiffPolicy: fm.axTreeDiffPolicy,
+            screenshotsEmbed: fm.screenshotsEmbed,
             steps: main,
             sourceText: source
         )
@@ -289,6 +293,10 @@ public enum SpecParser {
         var withFS: FilesystemFixture? = nil
         var withDefaults: [String: YAMLValue] = [:]
         var screenshotsPolicy: ScreenshotsPolicy = .onFailure
+        var slowWarnMs: Int? = nil
+        var stateDeltaPolicy: StateDeltaPolicy = .onFailure
+        var axTreeDiffPolicy: AxTreeDiffPolicy = .onFailure
+        var screenshotsEmbed: Bool = false
     }
 
     private static func splitFrontmatter(_ source: String) throws -> (yaml: String, body: String) {
@@ -380,6 +388,22 @@ public enum SpecParser {
             if let parsed = try? YAMLFlow.parse(raw), case .object(let kvs) = parsed {
                 fm.withFS = parseFsFixture(kvs)
             }
+        }
+
+        if let raw = map["slow_warn_ms"], let n = Int(raw) {
+            fm.slowWarnMs = n
+        }
+        if let raw = map["state_delta"] {
+            let v = unquote(raw).lowercased()
+            if let p = StateDeltaPolicy(rawValue: v) { fm.stateDeltaPolicy = p }
+        }
+        if let raw = map["ax_tree_diff"] {
+            let v = unquote(raw).lowercased()
+            if let p = AxTreeDiffPolicy(rawValue: v) { fm.axTreeDiffPolicy = p }
+        }
+        if let raw = map["screenshots_embed"] {
+            let v = unquote(raw).lowercased()
+            fm.screenshotsEmbed = (v == "true" || v == "yes" || v == "on" || v == "1")
         }
 
         return fm
@@ -753,7 +777,31 @@ public enum SpecParser {
             guard case .object(let kvs)? = mergedYAML else {
                 throw SpecParseError.invalidArgument("assert_state needs { viewmodel, path, equals|matches|any_of }", line: lineNumber)
             }
-            return try buildAssertState(kvs, line: lineNumber)
+            return try buildAssertState(kvs, line: lineNumber, soft: false)
+        case "soft_assert_state", "assert.soft_state":
+            guard case .object(let kvs)? = mergedYAML else {
+                throw SpecParseError.invalidArgument("soft_assert_state needs { viewmodel, path, ... }", line: lineNumber)
+            }
+            return try buildAssertState(kvs, line: lineNumber, soft: true)
+        case "assert_focus":
+            return .assertFocus(target: try parseTarget(mergedYAML, line: lineNumber))
+        case "assert_eventually":
+            // Form: assert_eventually: PRED + indented `timeout: 1s` (mirrors wait_for).
+            guard let yaml = mergedYAML else {
+                throw SpecParseError.invalidArgument("assert_eventually needs a predicate", line: lineNumber)
+            }
+            var timeout = Duration.defaultWaitFor
+            var predYAML: YAMLValue = yaml
+            if case .object(let kvs) = yaml, kvs.contains(where: { $0.0 == "timeout" }) {
+                var kept: [(String, YAMLValue)] = []
+                for (k, v) in kvs {
+                    if k == "timeout" {
+                        if let s = v.asSeconds { timeout = Duration(seconds: s) }
+                    } else { kept.append((k, v)) }
+                }
+                predYAML = .object(kept)
+            }
+            return .assertEventually(predicate: try parsePredicate(predYAML, line: lineNumber), timeout: timeout)
 
         case "expect_change":
             guard case .object(let kvs)? = mergedYAML else {
@@ -875,6 +923,63 @@ public enum SpecParser {
             return try buildRepeat(rhs: rhs, block: block, line: lineNumber)
         case "call":
             return try buildCall(mergedYAML, line: lineNumber)
+
+        case "with_retry":
+            // with_retry: 3
+            //   - <step>
+            //   - <step>
+            guard let yaml = mergedYAML, let n = yaml.asInt, n > 0 else {
+                throw SpecParseError.invalidArgument("with_retry needs an integer count > 0", line: lineNumber)
+            }
+            let body = try parseDashedSteps(block, line: lineNumber)
+            return .withRetry(count: n, body: body)
+
+        case "select_range":
+            guard case .object(let kvs)? = mergedYAML else {
+                throw SpecParseError.invalidArgument("select_range needs { from, to }", line: lineNumber)
+            }
+            var fromY: YAMLValue?; var toY: YAMLValue?
+            for (k, v) in kvs {
+                if k == "from" { fromY = v }
+                if k == "to" { toY = v }
+            }
+            return .selectRange(from: try parseTarget(fromY, line: lineNumber),
+                                to: try parseTarget(toY, line: lineNumber))
+
+        case "multi_select":
+            guard case .array(let arr)? = mergedYAML else {
+                throw SpecParseError.invalidArgument("multi_select needs an array of targets", line: lineNumber)
+            }
+            let targets = try arr.map { try parseTarget($0, line: lineNumber) }
+            return .multiSelect(targets: targets)
+
+        case "copy_to":
+            // copy_to: { var: name, from: pasteboard }
+            // copy_to: { var: name, from: { viewmodel: VM, path: x } }
+            guard case .object(let kvs)? = mergedYAML else {
+                throw SpecParseError.invalidArgument("copy_to needs { var, from: pasteboard | { viewmodel, path } }", line: lineNumber)
+            }
+            var varName: String?
+            var source: CaptureSource = .pasteboard
+            for (k, v) in kvs {
+                if k == "var" { varName = v.asString }
+                if k == "from" {
+                    if v.asString == "pasteboard" {
+                        source = .pasteboard
+                    } else if case .object(let sk) = v {
+                        var vm: String?; var p: String?
+                        for (sk2, sv) in sk {
+                            if sk2 == "viewmodel" { vm = sv.asString }
+                            if sk2 == "path" { p = sv.asString }
+                        }
+                        if let vm, let p { source = .state(viewmodel: vm, path: p) }
+                    }
+                }
+            }
+            guard let varName else {
+                throw SpecParseError.invalidArgument("copy_to needs `var`", line: lineNumber)
+            }
+            return .copyToVar(name: varName, source: source)
 
         default:
             throw SpecParseError.unknownCommand(command, line: lineNumber)
@@ -1117,7 +1222,7 @@ public enum SpecParser {
         return .expectChange(action: action, viewmodel: vm, path: path, to: toValue, timeout: timeout)
     }
 
-    private static func buildAssertState(_ kvs: [(String, YAMLValue)], line: Int) throws -> Step {
+    private static func buildAssertState(_ kvs: [(String, YAMLValue)], line: Int, soft: Bool = false) throws -> Step {
         var vm: String?
         var path: String?
         var expect: StateExpectation?
@@ -1153,7 +1258,8 @@ public enum SpecParser {
         guard let expect else {
             throw SpecParseError.invalidArgument("assert_state missing equals/matches/any_of/gt/gte/lt/lte/between", line: line)
         }
-        return .assertState(viewmodel: vm, path: path, expect: expect)
+        return soft ? .softAssertState(viewmodel: vm, path: path, expect: expect)
+                    : .assertState(viewmodel: vm, path: path, expect: expect)
     }
 
     // MARK: - Target / Predicate parsing

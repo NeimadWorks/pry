@@ -30,6 +30,13 @@ public actor SpecRunner {
     private var fixtureBaseURL: URL?
     private var defaultsSnapshot: DefaultsFixtures.Snapshot?
 
+    // v0.2: runtime variables (mutated by `copy_to`), soft-assert accumulator,
+    // launch-time AX tree (for failure diff), per-step state snapshots.
+    private var runtimeVars: [String: YAMLValue] = [:]
+    private var softFailures: [(stepIndex: Int, source: String, summary: String)] = []
+    private var launchTreeYAML: String?
+    private var stateDeltas: [(stepIndex: Int, snapshot: [String: [String: String]])] = []
+
     public init(spec: Spec, options: Options = .init()) {
         self.spec = spec
         self.options = options
@@ -106,17 +113,35 @@ public actor SpecRunner {
                 let idx = stepIndexOffset + i + 1
                 let stepStart = Date()
                 let source = renderStep(step)
+
+                // Capture launch-time AX tree once we're past launch (so tree diff
+                // works against a stable post-launch baseline instead of pre-launch zero).
+                if launchTreeYAML == nil, launchHandle != nil {
+                    let tree = AXTreeWalker.snapshot(pid: launchHandle!.pid)
+                    launchTreeYAML = AXTreeWalker.renderYAML(tree)
+                }
+
                 do {
                     try await execute(step, stepIndex: idx, source: source)
+                    let durSec = Date().timeIntervalSince(stepStart)
+                    var msg: String? = nil
+                    if let warnMs = spec.slowWarnMs, durSec * 1000 > Double(warnMs) {
+                        msg = "⚠️ slow step (>\(warnMs)ms threshold)"
+                    }
                     stepResults.append(StepResult(
                         index: idx, line: nil, source: source,
-                        outcome: .passed, duration: Date().timeIntervalSince(stepStart), message: nil
+                        outcome: .passed, duration: durSec, message: msg
                     ))
                     // Per-step screenshot policy
                     if spec.screenshotsPolicy == .everyStep || spec.screenshotsPolicy == .always {
                         if let att = try? await captureSnapshot(name: "step-\(idx)") {
                             attachments.append(att)
                         }
+                    }
+                    // State delta: every-step capture. We snapshot the union of
+                    // all VMs touched so far in the spec.
+                    if spec.stateDeltaPolicy == .everyStep {
+                        await captureStateSnapshot(stepIndex: idx)
                     }
                 } catch let e as StepFailure {
                     stepResults.append(StepResult(
@@ -163,6 +188,21 @@ public actor SpecRunner {
         // Fixtures cleanup (always runs)
         if let snap = defaultsSnapshot { DefaultsFixtures.restore(snap) }
         if let url = fixtureBaseURL { FilesystemFixtures.cleanup(url) }
+
+        // Promote soft failures to a real failure if the spec would otherwise pass.
+        if status == .passed, !softFailures.isEmpty {
+            status = .failed
+            let lines = softFailures.map { "  - step \($0.stepIndex) [\($0.source)]: \($0.summary)" }
+                .joined(separator: "\n")
+            failure = FailureContext(
+                stepIndex: softFailures[0].stepIndex,
+                stepSource: softFailures[0].source,
+                expected: "all soft assertions hold",
+                observed: "\(softFailures.count) soft failure(s):\n\(lines)",
+                suggestion: "Fix the listed soft assertions, or convert them to plain assert_state to fail-fast.",
+                axTreeSnippet: nil, registeredState: nil, relevantLogs: nil, attachments: []
+            )
+        }
 
         let finished = Date()
 
@@ -332,6 +372,51 @@ public actor SpecRunner {
             if Self.treeContainsPanelOpen(c, titleMatches: titleMatches) { return true }
         }
         return false
+    }
+
+    /// Capture a snapshot of every VM referenced by `assert_state` /
+    /// `assert.soft_state` / `expect_change` steps for the state-delta timeline.
+    private func captureStateSnapshot(stepIndex: Int) async {
+        guard let h = harness else { return }
+        var vms: Set<String> = []
+        for s in spec.steps {
+            switch s {
+            case .assertState(let vm, _, _): vms.insert(vm)
+            case .softAssertState(let vm, _, _): vms.insert(vm)
+            case .expectChange(_, let vm, _, _, _): vms.insert(vm)
+            default: break
+            }
+        }
+        var snap: [String: [String: String]] = [:]
+        for vm in vms {
+            if let r = try? await h.readState(viewmodel: vm, path: nil), let keys = r.keys {
+                snap[vm] = keys.mapValues { "\($0.value)" }
+            }
+        }
+        stateDeltas.append((stepIndex: stepIndex, snapshot: snap))
+    }
+
+    /// Compute a textual diff between two AX tree YAML dumps.
+    /// Returns nil when the trees are byte-identical.
+    nonisolated private static func diffAxTrees(launch: String, failure: String) -> String? {
+        guard launch != failure else { return nil }
+        let a = Set(launch.components(separatedBy: "\n"))
+        let b = Set(failure.components(separatedBy: "\n"))
+        let added = b.subtracting(a).sorted()
+        let removed = a.subtracting(b).sorted()
+        if added.isEmpty && removed.isEmpty { return nil }
+        var out = ""
+        if !removed.isEmpty {
+            out += "Removed since launch:\n"
+            for line in removed.prefix(20) { out += "- \(line)\n" }
+            if removed.count > 20 { out += "  … (\(removed.count - 20) more lines)\n" }
+        }
+        if !added.isEmpty {
+            out += "\nAdded since launch:\n"
+            for line in added.prefix(20) { out += "+ \(line)\n" }
+            if added.count > 20 { out += "  … (\(added.count - 20) more lines)\n" }
+        }
+        return out
     }
 
     private func collectAllIdentifiers(_ node: AXNode) -> [String] {
@@ -507,6 +592,57 @@ public actor SpecRunner {
             try await assertStateNow(viewmodel: vm, path: path, expect: expect,
                                      stepIndex: stepIndex, source: source)
 
+        case .softAssertState(let vm, let path, let expect):
+            do {
+                try await assertStateNow(viewmodel: vm, path: path, expect: expect,
+                                         stepIndex: stepIndex, source: source)
+            } catch let f as StepFailure {
+                softFailures.append((stepIndex: stepIndex, source: source, summary: f.summary))
+            }
+            // Don't propagate — soft asserts never abort the spec.
+
+        case .assertFocus(let target):
+            try ElementResolver.requireTrust()
+            guard let h = launchHandle else {
+                throw StepError(kind: "not_launched", message: "no running app")
+            }
+            // Resolve target. If it's an AXIdentifier-based target, also try
+            // matching the focused element's identifier directly — more robust
+            // when SwiftUI proxies focus to a child.
+            let r = try ElementResolver.resolve(target: convert(target), in: h.pid)
+            let focusedID = focusedElementIdentifier(pid: h.pid)
+            let resolvedID = r.identifier
+            if let resolvedID, let focusedID, resolvedID == focusedID { /* ok */ }
+            else if focusedID == nil {
+                throw StepFailure(expected: "target focused",
+                                  observed: "no element currently has AX focus",
+                                  suggestion: nil)
+            }
+            else if resolvedID != focusedID {
+                throw StepFailure(
+                    expected: "focused = \(resolvedID ?? "(target without id)")",
+                    observed: "focused = \(focusedID ?? "(unknown)")",
+                    suggestion: "Use `wait_for: { focused: <target> }` if focus is async."
+                )
+            }
+
+        case .assertEventually(let pred, let timeout):
+            // Same polling as wait_for but the failure is framed as an
+            // assertion: shows the predicate's expected/observed at the last
+            // attempt instead of "predicate did not hold".
+            let deadline = Date().addingTimeInterval(timeout.seconds)
+            var last: String?
+            while Date() < deadline {
+                do { try await evaluatePredicate(pred); return }
+                catch let e as PredicateFailure { last = e.description }
+                try? await Task.sleep(nanoseconds: 80_000_000)
+            }
+            throw StepFailure(
+                expected: "assertion holds within \(timeout.seconds)s",
+                observed: last ?? "predicate never satisfied",
+                suggestion: nil
+            )
+
         case .snapshot(let name):
             if let att = try? await captureSnapshot(name: name) { attachments.append(att) }
 
@@ -621,7 +757,75 @@ public actor SpecRunner {
             for (j, s) in interpolated.enumerated() {
                 try await execute(s, stepIndex: stepIndex * 10000 + j, source: renderStep(s))
             }
+
+        case .withRetry(let count, let body):
+            var attempt = 0
+            while true {
+                do {
+                    for (j, s) in body.enumerated() {
+                        try await execute(s, stepIndex: stepIndex * 10000 + attempt * 100 + j, source: renderStep(s))
+                    }
+                    return
+                } catch let e as StepFailure {
+                    attempt += 1
+                    if attempt > count { throw e }
+                    try? await Task.sleep(nanoseconds: 200_000_000) // 200ms backoff
+                }
+            }
+
+        case .selectRange(let from, let to):
+            try ElementResolver.requireTrust()
+            try await injectClick(target: from, kind: .single, modifiers: [], stepIndex: stepIndex, source: source)
+            try await injectClick(target: to, kind: .single,
+                                  modifiers: [.maskShift], stepIndex: stepIndex, source: source)
+
+        case .multiSelect(let targets):
+            try ElementResolver.requireTrust()
+            guard let first = targets.first else { return }
+            try await injectClick(target: first, kind: .single, modifiers: [], stepIndex: stepIndex, source: source)
+            for t in targets.dropFirst() {
+                try await injectClick(target: t, kind: .single,
+                                      modifiers: [.maskCommand], stepIndex: stepIndex, source: source)
+            }
+
+        case .copyToVar(let name, let src):
+            switch src {
+            case .pasteboard:
+                guard let h = harness else {
+                    throw StepError(kind: "not_launched", message: "no running app")
+                }
+                let r = try await h.readPasteboard()
+                runtimeVars[name] = .string(r.string ?? "")
+            case .state(let vm, let path):
+                guard let h = harness else {
+                    throw StepError(kind: "not_launched", message: "no running app")
+                }
+                let r = try await h.readState(viewmodel: vm, path: path)
+                if let v = r.value?.value as? String {
+                    runtimeVars[name] = .string(v)
+                } else if let v = r.value?.value as? Int {
+                    runtimeVars[name] = .integer(v)
+                } else if let v = r.value?.value as? Double {
+                    runtimeVars[name] = .double(v)
+                } else if let v = r.value?.value as? Bool {
+                    runtimeVars[name] = .bool(v)
+                } else {
+                    runtimeVars[name] = .string("\(r.value?.value ?? "")")
+                }
+            }
         }
+    }
+
+    /// AX-focused element identifier helper — used by `assert_focus`.
+    nonisolated private func focusedElementIdentifier(pid: pid_t) -> String? {
+        let app = AXUIElementCreateApplication(pid)
+        var attr: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(app, kAXFocusedUIElementAttribute as CFString, &attr) == .success,
+              let ref = attr else { return nil }
+        let el = ref as! AXUIElement
+        var idAttr: CFTypeRef?
+        AXUIElementCopyAttributeValue(el, "AXIdentifier" as CFString, &idAttr)
+        return idAttr as? String
     }
 
     // MARK: - Wave 1 helpers
@@ -948,8 +1152,12 @@ public actor SpecRunner {
     }
 
     private func interpolateString(_ s: String, vars: [String: YAMLValue]) -> String {
+        // Merge runtime vars (set by `copy_to`) on top of supplied vars so that
+        // a `for:` loop variable can shadow a captured pasteboard, etc.
+        var merged = runtimeVars
+        for (k, v) in vars { merged[k] = v }
         var out = s
-        for (k, v) in vars {
+        for (k, v) in merged {
             let needle = "${\(k)}"
             let replacement: String
             switch v {
@@ -974,6 +1182,11 @@ public actor SpecRunner {
             //  1. Explicit `executable_path:` in spec frontmatter
             //  2. `.pry/config.yaml` apps[<bundle-id>].executable_path (or env override)
             //  3. NSWorkspace lookup by bundle ID
+            //
+            // Note: the closure carries an explicit `() -> String?` annotation.
+            // Swift can't always infer the return type when the closure feeds
+            // an `??` whose RHS is an `Optional<String>` — reported as a Pry
+            // bug while adopting on Narrow.
             let resolvedExec: String? = spec.executablePath ?? { () -> String? in
                 guard let sourcePath = spec.sourcePath else { return nil }
                 let cfg = PryConfig.discover(from: URL(fileURLWithPath: sourcePath))
@@ -1549,6 +1762,27 @@ public actor SpecRunner {
                 ctx.axTreeSnippet = truncated
             }
 
+            // AX tree diff (only on failure, only if enabled)
+            if spec.axTreeDiffPolicy == .onFailure, let launchYAML = launchTreeYAML {
+                let failureYAML = AXTreeWalker.renderYAML(tree)
+                ctx.axTreeDiff = Self.diffAxTrees(launch: launchYAML, failure: failureYAML)
+            }
+
+            // State-delta timeline if we accumulated snapshots.
+            if !stateDeltas.isEmpty {
+                var timeline = ""
+                for entry in stateDeltas {
+                    timeline += "Step \(entry.stepIndex):\n"
+                    for (vm, kv) in entry.snapshot.sorted(by: { $0.key < $1.key }) {
+                        timeline += "  \(vm):\n"
+                        for (k, v) in kv.sorted(by: { $0.key < $1.key }) {
+                            timeline += "    \(k): \(v)\n"
+                        }
+                    }
+                }
+                ctx.stateDeltaTimeline = timeline
+            }
+
             // Registered state: union across any VMs referenced in the spec.
             var vms: Set<String> = []
             for s in spec.steps {
@@ -1637,6 +1871,19 @@ public actor SpecRunner {
         case .saveFile(let p): return "save_file \"\(p)\""
         case .panelAccept(let b): return "panel_accept\(b.map { " \"\($0)\"" } ?? "")"
         case .panelCancel: return "panel_cancel"
+        case .softAssertState(let vm, let p, let e):
+            return "soft assert_state \(vm).\(p) \(renderExpectation(e))"
+        case .assertFocus(let t): return "assert_focus \(renderTarget(t))"
+        case .assertEventually(let p, let t):
+            return "assert_eventually (within \(t.seconds)s): \(renderPredicate(p))"
+        case .withRetry(let n, _): return "with_retry \(n)"
+        case .selectRange(let f, let t): return "select_range \(renderTarget(f))..\(renderTarget(t))"
+        case .multiSelect(let ts): return "multi_select [\(ts.count) items]"
+        case .copyToVar(let name, let src):
+            switch src {
+            case .pasteboard: return "copy_to ${\(name)} from pasteboard"
+            case .state(let vm, let p): return "copy_to ${\(name)} from \(vm).\(p)"
+            }
 
         // Wave 2
         case .if(let p, _, _): return "if \(renderPredicate(p))"

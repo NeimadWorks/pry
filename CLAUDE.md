@@ -321,3 +321,63 @@ app). The DX trail blazed by the post-v0.1 commit means the first
 adoption flow should be cheap to write. After Narrow validates, pick the
 next backlog item from [`docs/ROADMAP.md`](docs/ROADMAP.md) "Next" section
 — likely `pry-mcp lint` or `assert.soft_state`.
+
+## Session 2026-04-28 — v0.2 DX iteration
+
+**Worked on:** Implemented every item from ROADMAP "Next — likely v0.2"
+(spec authoring, runner/observation, verdict richness, distribution).
+Plus a closure-type-inference bug from the Narrow run. All backward
+compatible — `pry_spec_version: 1` still frozen.
+
+**Landed (16 items, in roadmap rows 11–26):**
+
+- **CLI** — `pry-mcp lint --dir <dir>` (parse-only validation, CI gate),
+  `pry-mcp init --bundle-id ... --product ...` (`.pry/config.yaml`
+  scaffold), `pry-mcp report --build <verdicts-dir>` (self-contained HTML
+  dashboard, base64-embedded PNGs).
+- **Spec language** — `assert_focus: TARGET`, `assert_eventually: PRED
+  [timeout: 1s]`, `soft_assert_state: ...` (accumulates), `select_range`,
+  `multi_select`, `with_retry: N + body`, `copy_to: { var, from }`
+  (runtime variable capture).
+- **Frontmatter knobs** — `slow_warn_ms`, `state_delta`, `ax_tree_diff`,
+  `screenshots_embed`.
+- **Verdict** — `axTreeDiff` + `stateDeltaTimeline` fields and renderer
+  sections; embedded base64 PNGs when `screenshots_embed: true`.
+- **CI** — tag-triggered release with conditional codesign+notarize when
+  secrets are configured, fallback unsigned tarball, automatic Homebrew
+  tap bump (gated on `HOMEBREW_TAP_TOKEN`). Lint of DemoApp specs runs
+  on every PR.
+- **Bug fix** — `SpecRunner.doLaunch` closure carries explicit
+  `() -> String?` annotation (Narrow report).
+
+**Decisions:**
+
+- `with_retry: N + body` rather than per-step `@retry: N` — reuses
+  existing block-with-body parsing infra and keeps the wrapping explicit.
+- `soft_assert_state` as a separate command rather than a `soft:` flag
+  on `assert_state` — keeps the per-command verdict label tidy
+  ("⚠️ N soft failures" vs the regular "FAILED at step X").
+- `assert_eventually` as an alias of `wait_for` with verdict-side
+  reframing rather than a brand-new evaluation engine — same retry
+  loop, different failure phrasing.
+- HTML report is `--build`, not `--serve`. Self-contained file is
+  better than a daemon. `--watch` lives in the v0.3 backlog.
+
+**Tests / smoke:**
+- `swift test` — 33/33 (7 new parser tests for the new step kinds /
+  frontmatter fields).
+- DemoApp suite — 9/9 PASS unchanged.
+- `pry-mcp lint --dir Fixtures/DemoApp/flows` — `9/9 specs OK`, exit 0.
+- `pry-mcp report --build pry-verdicts --out /tmp/pry-report.html` —
+  generated 363 KB self-contained HTML with all verdicts inlined.
+
+**Open questions:** None new. ROADMAP "Next — likely v0.3" carries the
+follow-ups (`pry-mcp doctor`, per-step retry policy, watch-mode HTML,
+fan-in suite report, multi-spec coverage).
+
+**Blocked on:** nothing.
+
+**Next single action:** real-world adoption on Narrow with the new toolset
+(`pry-mcp init` → `.pry/config.yaml`, run-suite with `screenshots_embed:
+true` for shareable verdicts, `lint` in CI). After that, tag `v0.2.0`
+when the field signal validates the additions.

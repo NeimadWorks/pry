@@ -183,6 +183,48 @@ enum CLI {
                 let out = try await PryTools.listSpecs(.init(path: required(rest, "--dir")))
                 print(try jsonPretty(out))
 
+            case "lint":
+                let out = try await PryTools.lint(.init(
+                    path: required(rest, "--dir"),
+                    verbose: rest.contains("--verbose") ? true : nil
+                ))
+                if rest.contains("--json") {
+                    print(try jsonPretty(out))
+                } else {
+                    if out.failed == 0 {
+                        FileHandle.standardError.write(Data("\(out.ok)/\(out.total) specs OK\n".utf8))
+                    } else {
+                        FileHandle.standardError.write(Data("\(out.failed)/\(out.total) specs FAILED:\n\n".utf8))
+                        for issue in out.issues {
+                            let lineStr = issue.line.map { ":\($0)" } ?? ""
+                            print("\(issue.spec)\(lineStr): \(issue.kind): \(issue.message)")
+                        }
+                    }
+                }
+                return out.failed == 0 ? 0 : 1
+
+            case "init":
+                let out = try await PryTools.initConfig(.init(
+                    bundleID: try required(rest, "--bundle-id"),
+                    product: try required(rest, "--product"),
+                    directory: optional(rest, "--directory"),
+                    force: rest.contains("--force") ? true : nil
+                ))
+                if out.written {
+                    FileHandle.standardError.write(Data("Wrote \(out.configPath)\n".utf8))
+                } else {
+                    FileHandle.standardError.write(Data("\(out.configPath) already maps that bundle (use --force to override)\n".utf8))
+                }
+                print(out.contents)
+
+            case "report":
+                // pry-mcp report --build <verdicts-dir> [--out <html-file>]
+                let dir = try required(rest, "--build")
+                let outFile = optional(rest, "--out") ?? "\(dir)/index.html"
+                let html = try generateVerdictsReport(dir: dir)
+                try html.write(toFile: outFile, atomically: true, encoding: .utf8)
+                FileHandle.standardError.write(Data("Wrote \(outFile)\n".utf8))
+
             case "logs":
                 let out = try await PryTools.logs(.init(
                     app: required(rest, "--app"),
@@ -226,6 +268,113 @@ enum CLI {
     }
 
     // MARK: - Arg helpers
+
+    /// Build a self-contained HTML dashboard from a verdicts directory.
+    /// Each subdirectory of the form `<spec-id>-<timestamp>/` becomes one
+    /// row in a table; the verdict.md is inlined and any PNG attachments are
+    /// base64-embedded so the resulting file works without a web server.
+    private static func generateVerdictsReport(dir: String) throws -> String {
+        let url = URL(fileURLWithPath: dir).standardizedFileURL
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw NSError(domain: "PryReport", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "no such directory: \(url.path)"])
+        }
+        var rows: [(spec: String, status: String, when: String, html: String)] = []
+
+        let entries = (try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)) ?? []
+        for entry in entries.sorted(by: { $0.lastPathComponent > $1.lastPathComponent }) {
+            let verdictMd = entry.appendingPathComponent("verdict.md")
+            guard let body = try? String(contentsOf: verdictMd, encoding: .utf8) else { continue }
+            let (status, specID, finishedAt) = parseVerdictFrontmatter(body)
+            // Convert markdown to a minimal HTML — for v1 we keep it as <pre>
+            // wrapped in a details/summary so the report stays compact.
+            // Inline images by replacing PNG attachment refs with base64.
+            var inlined = body
+            for imgURL in (try? FileManager.default.contentsOfDirectory(at: entry, includingPropertiesForKeys: nil)) ?? [] {
+                guard imgURL.pathExtension.lowercased() == "png",
+                      let data = try? Data(contentsOf: imgURL) else { continue }
+                let b64 = data.base64EncodedString()
+                let mention = imgURL.lastPathComponent
+                inlined = inlined.replacingOccurrences(
+                    of: "- `\(imgURL.path)`",
+                    with: "- `\(imgURL.path)`\n\n  ![\(mention)](data:image/png;base64,\(b64))\n"
+                )
+            }
+            let escaped = inlined
+                .replacingOccurrences(of: "&", with: "&amp;")
+                .replacingOccurrences(of: "<", with: "&lt;")
+                .replacingOccurrences(of: ">", with: "&gt;")
+            let detailHTML = "<pre style=\"white-space: pre-wrap;\">\(escaped)</pre>"
+            rows.append((spec: specID, status: status, when: finishedAt, html: detailHTML))
+        }
+
+        var out = """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <title>Pry verdicts</title>
+          <style>
+            body { font-family: -apple-system, system-ui, sans-serif; margin: 2em auto; max-width: 1100px; padding: 0 1em; color: #1d1d1f; }
+            h1 { margin-bottom: 0.2em; }
+            .summary { color: #6e6e73; margin-bottom: 1.5em; }
+            table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
+            th, td { padding: 0.5em 0.7em; border-bottom: 1px solid #e0e0e0; text-align: left; }
+            th { background: #f5f5f7; font-weight: 600; }
+            .pass { color: #1f9b3a; }
+            .fail { color: #d80027; }
+            .errored { color: #b97500; }
+            details { margin-bottom: 1em; padding: 0.6em 0.9em; background: #f7f7f7; border-radius: 6px; }
+            summary { cursor: pointer; font-weight: 500; }
+            summary .meta { color: #6e6e73; font-weight: 400; margin-left: 0.6em; }
+            pre { font-size: 12px; line-height: 1.5; }
+            img { max-width: 100%; border: 1px solid #e0e0e0; border-radius: 4px; margin: 0.4em 0; }
+          </style>
+        </head>
+        <body>
+          <h1>Pry verdicts</h1>
+        """
+        let total = rows.count
+        let passed = rows.filter { $0.status == "passed" }.count
+        let failed = rows.filter { $0.status == "failed" }.count
+        let errored = rows.filter { $0.status == "errored" || $0.status == "timed_out" }.count
+        out += "  <div class=\"summary\"><b>\(passed)</b> passed · <b>\(failed)</b> failed · <b>\(errored)</b> errored — \(total) total runs</div>\n"
+
+        for r in rows {
+            let cls: String
+            switch r.status {
+            case "passed": cls = "pass"
+            case "failed": cls = "fail"
+            default: cls = "errored"
+            }
+            out += """
+              <details>
+                <summary><span class="\(cls)">\(r.status.uppercased())</span>
+                <code>\(r.spec)</code><span class="meta">— \(r.when)</span></summary>
+                \(r.html)
+              </details>
+            """
+        }
+        out += "</body></html>\n"
+        return out
+    }
+
+    private static func parseVerdictFrontmatter(_ md: String) -> (status: String, specID: String, finishedAt: String) {
+        var status = "?", specID = "?", finished = ""
+        guard md.hasPrefix("---") else { return (status, specID, finished) }
+        let lines = md.components(separatedBy: "\n")
+        for line in lines.dropFirst() {
+            if line.trimmingCharacters(in: .whitespaces) == "---" { break }
+            if let colon = line.firstIndex(of: ":") {
+                let k = String(line[..<colon]).trimmingCharacters(in: .whitespaces)
+                let v = String(line[line.index(after: colon)...]).trimmingCharacters(in: .whitespaces)
+                if k == "status" { status = v }
+                if k == "id" { specID = v }
+                if k == "finished_at" { finished = v }
+            }
+        }
+        return (status, specID, finished)
+    }
 
     private static func directoryFingerprint(_ path: String) -> String {
         var fp = ""

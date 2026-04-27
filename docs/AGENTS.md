@@ -133,7 +133,13 @@ All click/drag steps accept `modifiers: [shift, cmd, opt, ctrl]`.
 
 **File panels (Open/Save dialogs)** — `open_file: "/abs/path"`, `save_file: "/abs/path"`, `panel_accept: "Open"?`, `panel_cancel`. Drive `NSOpenPanel` / `NSSavePanel` via Cmd+Shift+G + type + accept; works for both sheet and dialog-window forms. After `open_file` / `save_file`, assert the resulting URL with `matches:` (macOS canonicalizes `/etc` → `/private/etc`).
 
-**Assertions** — `assert_tree: PREDICATE`, `assert_state: { viewmodel, path, equals|matches|any_of }`, `expect_change: { action: { click: ... }, in: { viewmodel, path }, to: VALUE, timeout? }`
+**Assertions** — `assert_tree: PREDICATE`, `assert_state: { viewmodel, path, equals|matches|any_of|gt|gte|lt|lte|between }`, `soft_assert_state` (accumulating), `assert_focus: TARGET`, `assert_eventually: PRED [timeout: 1s]`, `expect_change: { action: { click: ... }, in: { viewmodel, path }, to: VALUE, timeout? }`
+
+**Selection** — `select_range: { from, to }` (shift-click), `multi_select: [TARGET, ...]` (cmd-click chain)
+
+**Capture** — `copy_to: { var: NAME, from: pasteboard }` or `from: { viewmodel, path }`. Then `${NAME}` interpolates in subsequent steps.
+
+**Resilience** — `with_retry: N` + indented body retries the body on failure
 
 **Debug** — `snapshot: name`, `dump_tree: name`, `dump_state: name`
 

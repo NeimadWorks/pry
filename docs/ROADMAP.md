@@ -67,67 +67,58 @@ spec grammar.
 | 9 | AX context fallback when `AXTreeWalker.snapshot` is empty | verdict |
 | 10 | "SwiftUI gotchas" section (accessibilityIdentifier propagation, AX role map, custom tap-zone traits) | [writing-specs](guides/writing-specs.md#swiftui-gotchas) |
 
+### `v0.2`-track DX additions (on `main`, 2026-04-28)
+
+Targets the entirety of the previous "Next" section. Backward-compatible,
+all opt-in. Pre-v0.2 tag.
+
+| # | Improvement | Where |
+|---|---|---|
+| 11 | `pry-mcp lint --dir flows` — parse-only validation, CI gate | [pry-mcp-tools](api/pry-mcp-tools.md#pry_lint) |
+| 12 | `pry-mcp init --bundle-id ... --product ...` — scaffold `.pry/config.yaml` | [pry-mcp-tools](api/pry-mcp-tools.md#pry_init) |
+| 13 | `pry-mcp report --build <verdicts-dir>` — self-contained HTML dashboard with embedded PNGs | [pry-mcp-tools](api/pry-mcp-tools.md#cli-mirror) |
+| 14 | `assert_focus: <target>` first-class step | [spec-format](design/spec-format.md#assertions) |
+| 15 | `assert_eventually: PRED [timeout: 1s]` (assertion-framed wait) | [spec-format](design/spec-format.md#assertions) |
+| 16 | `soft_assert_state: ...` accumulates failures, reported at the end | [spec-format](design/spec-format.md#assertions) |
+| 17 | `select_range: { from, to }` and `multi_select: [...]` selection helpers | [spec-format](design/spec-format.md#selection-helpers) |
+| 18 | `with_retry: N` + body — retry-on-failure block with backoff | [spec-format](design/spec-format.md#control-flow-wave-2) |
+| 19 | `copy_to: { var, from: pasteboard \| { viewmodel, path } }` — runtime variables | [spec-format](design/spec-format.md#capturing-into-runtime-variables) |
+| 20 | `slow_warn_ms` frontmatter — flags slow steps in verdict | [spec-format §2](design/spec-format.md#2-frontmatter) |
+| 21 | `state_delta: every_step` — multi-step VM snapshot timeline | [spec-format §2](design/spec-format.md#2-frontmatter) |
+| 22 | `ax_tree_diff: on_failure` — diff vs launch-time tree | [spec-format §2](design/spec-format.md#2-frontmatter) |
+| 23 | `screenshots_embed: true` — base64-inline PNGs in `verdict.md` | [spec-format §2](design/spec-format.md#2-frontmatter) |
+| 24 | Closure-type-inference fix in `SpecRunner.doLaunch` (Narrow report) | bug |
+| 25 | CI: tag-trigger release + Homebrew tap auto-bump (gated on secrets) | [.github/workflows/ci.yml](../.github/workflows/ci.yml) |
+| 26 | CI: `pry-mcp lint` runs against `Fixtures/DemoApp/flows` on every PR | [.github/workflows/ci.yml](../.github/workflows/ci.yml) |
+
 ---
 
 ## Now
 
-Nothing in flight. Waiting for the next field run to produce the next
-priority signal. If you're working on this and pick something up, set its
-status here.
+Nothing in flight. The previous "Next" bucket has been delivered (rows
+11–26 in the table above). Next field run will produce the next priority
+signal.
 
 ---
 
-## Next — likely v0.2
+## Next — likely v0.3
 
-These are the items most likely to land next. They follow naturally from
-the v0.1 architecture and have at least one validated demand from a real
-user / real app.
+Pending field validation, the "ready-but-not-yet-pulled" items live here.
+Each follows naturally from current architecture; none requires an ADR.
 
-### Spec authoring
-
-- **Mode `pry-mcp lint specs/`** — validate syntax (frontmatter, fenced
-  blocks, target shapes, predicate forms) without launching any app.
-  Cheap CI gate.
-- **`pry-mcp init`** — scaffold a `.pry/config.yaml` from a SwiftPM
-  manifest by inspecting `swift package describe --type json` for the
-  bundle ID and binary path.
-- **`assert_focus: <target>`** as a first-class step (currently only via
-  `focused:` predicate inside `wait_for`/`assert_tree`).
-- **`select_range: { from, to }`** and **`multi_select: [<target>, ...]`**
-  — sugar for the `cmd+click` chain.
-- **`copy_to: var_name`** — capture pasteboard / state into a variable
-  for later assertion.
-
-### Runner / observation
-
-- **Soft assertions** — `assert.soft_state: ...` accumulates failures
-  instead of bailing. The verdict reports all of them at the end.
-- **`@retry: N` on a single step** — narrower than `--retry-failed M`
-  at the suite level. Useful for known-flaky animation-bound steps.
-- **`assert_eventually: PRED within: 1s`** — explicit "predicate must
-  hold within window, also captures the time it took". Conceptually
-  distinct from `wait_for` (waiting until) and `assert` (must hold now).
-- **Step-level annotations**: `@warn_if_slower: 500ms` to flag perf
-  regressions without failing.
-
-### Verdict richness
-
-- **Inline-embedded screenshots** (base64) so the `verdict.md` is fully
-  self-contained for sharing in PR comments / chat.
-- **State delta between steps**, not just at failure — useful timeline.
-- **AX tree diff** between launch and failure (requires snapshotting at
-  launch, currently only done on failure).
-- **`pry-mcp report --serve`** — serve a small HTML dashboard over the
-  verdicts directory: per-spec timeline with screenshots + state.
-
-### Distribution
-
-- **Tagged release pipeline** — `./scripts/release.sh v0.1.0` works
-  locally with Apple Developer ID + notarytool but the CI workflow
-  doesn't run it yet (no automated signing). Worth wiring once the cert
-  + secrets story is settled.
-- **Homebrew tap** — formula template ready; need the separate
-  `NeimadWorks/homebrew-tap` repo, the URL + sha256 update.
+- **Multi-spec coverage report** — coverage of `prySnapshot()` keys hit
+  during a suite. "Are we asserting on every key our VMs expose, or are
+  some never observed?"
+- **`pry-mcp doctor`** — environment self-test: AX permission status,
+  socket cleanliness, harness handshake against any registered app.
+- **Per-step retry policy in frontmatter** — `retry: { steps: ["click *", "wait_for *"], count: 2 }`
+  to apply `with_retry` semantics to whole categories of steps without
+  wrapping each one.
+- **Watch-mode HTML dashboard** — `pry-mcp report --watch` rebuilds the
+  HTML on verdict-dir changes. Killer for local TDD.
+- **Fan-in suite report** — combine multiple `pry-mcp run-suite` outputs
+  into one aggregate dashboard (matrix CI: macOS 14 vs 15, debug vs
+  release).
 
 ---
 

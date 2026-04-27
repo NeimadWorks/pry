@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Tags trigger the release-artifacts job (gated below).
+  release:
+    types: [published]
 
 jobs:
   build-and-test:
@@ -30,10 +33,13 @@ jobs:
         working-directory: Fixtures/DemoApp
         run: swift build -c debug
 
+      - name: Lint specs
+        run: .build/debug/pry-mcp lint --dir Fixtures/DemoApp/flows
+
       # Integration tests that drive the UI need Accessibility permission,
       # which isn't available on GitHub runners. They are gated behind the
       # PRY_INTEGRATION env var so local runs can still execute them.
-      # On CI we verify build + unit tests only.
+      # On CI we verify build + unit tests + lint only.
       - name: Verify pry-mcp CLI boots
         run: |
           .build/debug/pry-mcp version
@@ -46,16 +52,77 @@ jobs:
     needs: build-and-test
     steps:
       - uses: actions/checkout@v4
+
       - name: Build release binary
         run: swift build -c release --product pry-mcp
-      - name: Package
+
+      # Codesign + notarize only when secrets are configured. Skipped silently
+      # otherwise so the workflow can still produce an unsigned artifact for
+      # local testing.
+      - name: Codesign + notarize (if secrets configured)
+        if: env.DEVELOPER_ID_APPLICATION != ''
+        env:
+          DEVELOPER_ID_APPLICATION: ${{ secrets.DEVELOPER_ID_APPLICATION }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: ./scripts/release.sh "$GITHUB_REF_NAME"
+
+      - name: Package (unsigned fallback)
+        if: env.DEVELOPER_ID_APPLICATION == ''
         run: |
           mkdir -p dist
           cp .build/release/pry-mcp dist/pry-mcp
-          tar -czf dist/pry-mcp-${GITHUB_REF_NAME}-arm64.tar.gz -C dist pry-mcp
-          shasum -a 256 dist/pry-mcp-${GITHUB_REF_NAME}-arm64.tar.gz > dist/SHA256SUMS
+          chmod +x dist/pry-mcp
+          tar -czf "dist/pry-mcp-${GITHUB_REF_NAME}-arm64.tar.gz" -C dist pry-mcp
+          shasum -a 256 "dist/pry-mcp-${GITHUB_REF_NAME}-arm64.tar.gz" > dist/SHA256SUMS
+
+      - name: Attach to GitHub release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/pry-mcp-${{ github.ref_name }}-arm64.tar.gz
+            dist/SHA256SUMS
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: pry-mcp-release-${{ github.ref_name }}
           path: dist/
+
+  # Bumps the Homebrew tap (NeimadWorks/homebrew-tap) on release. Requires
+  # HOMEBREW_TAP_TOKEN secret with `repo` scope on that tap.
+  homebrew-tap:
+    name: Bump Homebrew tap
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && env.HOMEBREW_TAP_TOKEN != ''
+    needs: release-artifacts
+    env:
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update formula in tap
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          ASSET_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/pry-mcp-${GITHUB_REF_NAME}-arm64.tar.gz"
+          # Download to compute the sha256 (we don't trust the workflow's
+          # local copy because the asset may have been signed by a separate job).
+          curl -sL "$ASSET_URL" -o /tmp/pry.tgz
+          SHA=$(shasum -a 256 /tmp/pry.tgz | awk '{print $1}')
+
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/NeimadWorks/homebrew-tap" tap
+          cd tap
+          # Substitute version + url + sha into the formula.
+          sed -i.bak \
+            -e "s|version \".*\"|version \"$VERSION\"|" \
+            -e "s|url \".*\"|url \"$ASSET_URL\"|" \
+            -e "s|sha256 \".*\"|sha256 \"$SHA\"|" \
+            Formula/pry-mcp.rb
+          rm Formula/pry-mcp.rb.bak
+          git config user.name  "pry-bot"
+          git config user.email "pry-bot@users.noreply.github.com"
+          git add Formula/pry-mcp.rb
+          git commit -m "pry-mcp ${GITHUB_REF_NAME}"
+          git push

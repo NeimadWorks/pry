@@ -52,4 +52,28 @@ public struct FailureContext: Sendable {
     public var registeredState: String?
     public var relevantLogs: String?
     public var attachments: [String] // relative paths
+    public var axTreeDiff: String?   // diff vs launch-time tree (when enabled)
+    public var stateDeltaTimeline: String?  // multi-step state evolution
+
+    public init(stepIndex: Int, stepSource: String,
+                expected: String, observed: String,
+                suggestion: String? = nil,
+                axTreeSnippet: String? = nil,
+                registeredState: String? = nil,
+                relevantLogs: String? = nil,
+                attachments: [String] = [],
+                axTreeDiff: String? = nil,
+                stateDeltaTimeline: String? = nil) {
+        self.stepIndex = stepIndex
+        self.stepSource = stepSource
+        self.expected = expected
+        self.observed = observed
+        self.suggestion = suggestion
+        self.axTreeSnippet = axTreeSnippet
+        self.registeredState = registeredState
+        self.relevantLogs = relevantLogs
+        self.attachments = attachments
+        self.axTreeDiff = axTreeDiff
+        self.stateDeltaTimeline = stateDeltaTimeline
+    }
 }

@@ -6,7 +6,7 @@ import Foundation
 public enum VerdictReporter {
     public static let pryVersion = "0.1.0"
 
-    public static func render(_ v: Verdict) -> String {
+    public static func render(_ v: Verdict, embedScreenshots: Bool = false) -> String {
         var out = ""
         out += renderFrontmatter(v)
         out += "\n"
@@ -19,7 +19,7 @@ public enum VerdictReporter {
         case .failed:
             if let f = v.failure {
                 out += "**Status: FAILED at step \(f.stepIndex)**\n\n"
-                out += renderFailureSection(f)
+                out += renderFailureSection(f, embedScreenshots: embedScreenshots)
                 out += "\n## Preceding steps\n\n"
                 out += renderStepList(v.stepResults, successMode: false)
             } else {
@@ -68,7 +68,7 @@ public enum VerdictReporter {
 
     // MARK: - Failure section
 
-    private static func renderFailureSection(_ f: FailureContext) -> String {
+    private static func renderFailureSection(_ f: FailureContext, embedScreenshots: Bool = false) -> String {
         var out = ""
         out += "## Step \(f.stepIndex) — `\(f.stepSource)`\n\n"
         out += "**Expected:** \(f.expected)\n"
@@ -79,15 +79,28 @@ public enum VerdictReporter {
         if let snippet = f.axTreeSnippet {
             out += "### AX tree context at failure\n\n```yaml\n\(snippet)\n```\n\n"
         }
+        if let diff = f.axTreeDiff {
+            out += "### AX tree diff (launch → failure)\n\n```diff\n\(diff)\n```\n\n"
+        }
         if let state = f.registeredState {
             out += "### Registered state at failure\n\n```yaml\n\(state)\n```\n\n"
+        }
+        if let timeline = f.stateDeltaTimeline {
+            out += "### State delta timeline\n\n\(timeline)\n\n"
         }
         if let logs = f.relevantLogs {
             out += "### Relevant logs\n\n```\n\(logs)\n```\n\n"
         }
         if !f.attachments.isEmpty {
             out += "### Attachments\n\n"
-            for a in f.attachments { out += "- `\(a)`\n" }
+            for a in f.attachments {
+                out += "- `\(a)`\n"
+                if embedScreenshots, a.hasSuffix(".png"),
+                   let data = try? Data(contentsOf: URL(fileURLWithPath: a)) {
+                    let b64 = data.base64EncodedString()
+                    out += "  ![](data:image/png;base64,\(b64))\n"
+                }
+            }
             out += "\n"
         }
         return out

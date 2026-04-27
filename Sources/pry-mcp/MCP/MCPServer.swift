@@ -189,6 +189,13 @@ actor MCPServer {
             let out = try await PryTools.listSpecs(input)
             return try jsonString(out)
 
+        case "pry_lint":
+            let input = try decoder.decode(PryTools.LintInput.self, from: arguments)
+            return try jsonString(try await PryTools.lint(input))
+        case "pry_init":
+            let input = try decoder.decode(PryTools.InitInput.self, from: arguments)
+            return try jsonString(try await PryTools.initConfig(input))
+
         case "pry_logs":
             let input = try decoder.decode(PryTools.LogsInput.self, from: arguments)
             let out = try await PryTools.logs(input)

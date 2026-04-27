@@ -165,6 +165,135 @@ final class SpecParserTests: XCTestCase {
         } else { XCTFail("not count gte") }
     }
 
+    func testParseSoftAssert() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        soft_assert_state: { viewmodel: VM, path: x, equals: 1 }
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .softAssertState = spec.steps[0] {} else { XCTFail("not softAssertState") }
+    }
+
+    func testParseAssertFocus() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        assert_focus: { id: "name_field" }
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .assertFocus(let t) = spec.steps[0], case .id(let s) = t {
+            XCTAssertEqual(s, "name_field")
+        } else { XCTFail("not assertFocus") }
+    }
+
+    func testParseAssertEventually() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        assert_eventually: { contains: { id: "x" } }
+          timeout: 1s
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .assertEventually(_, let t) = spec.steps[0] {
+            XCTAssertEqual(t.seconds, 1)
+        } else { XCTFail("not assertEventually") }
+    }
+
+    func testParseSelectRangeAndMultiSelect() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        select_range: { from: { id: "a" }, to: { id: "b" } }
+        multi_select: [{ id: "a" }, { id: "b" }, { id: "c" }]
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .selectRange = spec.steps[0] {} else { XCTFail("not selectRange") }
+        if case .multiSelect(let arr) = spec.steps[1] {
+            XCTAssertEqual(arr.count, 3)
+        } else { XCTFail("not multiSelect") }
+    }
+
+    func testParseWithRetry() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        with_retry: 3
+          - click: { id: "flaky" }
+          - assert_state: { viewmodel: VM, path: x, equals: 1 }
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .withRetry(let n, let body) = spec.steps[0] {
+            XCTAssertEqual(n, 3)
+            XCTAssertEqual(body.count, 2)
+        } else { XCTFail("not withRetry") }
+    }
+
+    func testParseCopyToVar() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        copy_to: { var: clip, from: pasteboard }
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .copyToVar(let name, let src) = spec.steps[0] {
+            XCTAssertEqual(name, "clip")
+            if case .pasteboard = src {} else { XCTFail("not pasteboard source") }
+        } else { XCTFail("not copyToVar") }
+    }
+
+    func testParseFrontmatterSlowWarn() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        slow_warn_ms: 500
+        state_delta: every_step
+        ax_tree_diff: on_failure
+        screenshots_embed: true
+        ---
+
+        ```pry
+        launch
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        XCTAssertEqual(spec.slowWarnMs, 500)
+        XCTAssertEqual(spec.stateDeltaPolicy, .everyStep)
+        XCTAssertEqual(spec.axTreeDiffPolicy, .onFailure)
+        XCTAssertTrue(spec.screenshotsEmbed)
+    }
+
     func testParseExpectChange() throws {
         let src = """
         ---

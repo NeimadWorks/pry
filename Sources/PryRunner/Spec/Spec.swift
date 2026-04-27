@@ -23,6 +23,12 @@ public struct Spec: Sendable {
     public var withDefaults: [String: YAMLValue]
     public var screenshotsPolicy: ScreenshotsPolicy
 
+    // v0.2 verdict-richness knobs
+    public var slowWarnMs: Int?            // step duration warning threshold
+    public var stateDeltaPolicy: StateDeltaPolicy
+    public var axTreeDiffPolicy: AxTreeDiffPolicy
+    public var screenshotsEmbed: Bool      // base64-embed PNGs into verdict.md
+
     public var steps: [Step]
 
     /// Raw source text for error reporting.
@@ -39,6 +45,10 @@ public struct Spec: Sendable {
                 withFS: FilesystemFixture? = nil,
                 withDefaults: [String: YAMLValue] = [:],
                 screenshotsPolicy: ScreenshotsPolicy = .onFailure,
+                slowWarnMs: Int? = nil,
+                stateDeltaPolicy: StateDeltaPolicy = .onFailure,
+                axTreeDiffPolicy: AxTreeDiffPolicy = .onFailure,
+                screenshotsEmbed: Bool = false,
                 steps: [Step], sourceText: String) {
         self.id = id; self.app = app; self.description = description
         self.tags = tags; self.timeout = timeout
@@ -53,9 +63,24 @@ public struct Spec: Sendable {
         self.withFS = withFS
         self.withDefaults = withDefaults
         self.screenshotsPolicy = screenshotsPolicy
+        self.slowWarnMs = slowWarnMs
+        self.stateDeltaPolicy = stateDeltaPolicy
+        self.axTreeDiffPolicy = axTreeDiffPolicy
+        self.screenshotsEmbed = screenshotsEmbed
         self.steps = steps
         self.sourceText = sourceText
     }
+}
+
+public enum StateDeltaPolicy: String, Sendable, Equatable {
+    case off
+    case onFailure = "on_failure"
+    case everyStep = "every_step"
+}
+
+public enum AxTreeDiffPolicy: String, Sendable, Equatable {
+    case off
+    case onFailure = "on_failure"
 }
 
 public struct FilesystemFixture: Sendable {

@@ -58,6 +58,10 @@ YAML between `---` markers at the very top of the file.
 | `timeout` | duration | no | `60s` | whole-spec budget |
 | `animations` | `on` \| `off` | no | `on` | calls `set_animations` after launch (ADR-009) |
 | `screenshots` | `never` \| `on_failure` \| `every_step` \| `always` | no | `on_failure` | per-step screenshot policy (ADR-011) |
+| `screenshots_embed` | bool | no | `false` | inline PNGs as base64 data URLs in `verdict.md` so the report is self-contained |
+| `state_delta` | `off` \| `on_failure` \| `every_step` | no | `on_failure` | capture VM snapshots after each step; multi-step timeline rendered in failure context |
+| `ax_tree_diff` | `off` \| `on_failure` | no | `on_failure` | record the AX tree at launch and diff vs the failure-time tree |
+| `slow_warn_ms` | int | no | — | flag any step slower than this threshold with a `⚠️` note in the verdict |
 | `vars` | object | no | `{}` | `${name}` substitutions in step bodies |
 | `with_fs` | object | no | — | filesystem fixture (Wave 4) |
 | `with_defaults` | object | no | `{}` | NSUserDefaults overrides per-bundle |
@@ -225,6 +229,9 @@ mapped per US keyboard.
 |---|---|
 | `assert_tree: PREDICATE` | fail if AX tree doesn't satisfy |
 | `assert_state: { viewmodel, path, equals \| matches \| any_of \| gt \| gte \| lt \| lte \| between }` | fail if VM state mismatches |
+| `soft_assert_state: { ... }` | same shape as `assert_state`, but accumulates failures across the spec instead of bailing; all surfaced at the end if anything failed |
+| `assert_focus: <target>` | fail unless `target` is the AX-focused element |
+| `assert_eventually: PREDICATE` (+ `timeout: 1s`) | like `wait_for` but on failure the verdict frames it as an assertion (expected/observed) rather than a wait timeout |
 | `expect_change: { action: { click: TARGET }, in: { viewmodel, path }, to: VALUE, timeout?: 2s }` | atomic do-then-observe |
 | `assert_pasteboard: "substring"` | NSPasteboard contains substring |
 
@@ -277,6 +284,25 @@ driving keystrokes. Real macOS canonicalizes paths through symlinks
 | `repeat: N` + indented `- STEP` lines | run the body N times |
 | `call: NAME` | invoke a flow defined by ` ```pry flow NAME ` |
 | `call: { name: NAME, args: { ... } }` | with arguments (forwarded as variables) |
+| `with_retry: N` + indented `- STEP` lines | run the body once; on failure, retry up to N more times with a 200 ms backoff |
+
+### Selection helpers
+
+| Command | Notes |
+|---|---|
+| `select_range: { from: TARGET, to: TARGET }` | click `from`, then shift-click `to` (range selection) |
+| `multi_select: [TARGET, TARGET, ...]` | click first, cmd-click each subsequent (additive selection) |
+
+### Capturing into runtime variables
+
+| Command | Notes |
+|---|---|
+| `copy_to: { var: NAME, from: pasteboard }` | snapshot the pasteboard into `${NAME}` |
+| `copy_to: { var: NAME, from: { viewmodel: VM, path: P } }` | snapshot a single VM value into `${NAME}` |
+
+Once captured, runtime vars interpolate the same way frontmatter `vars:`
+do (`${NAME}` in any string field). Useful for "click copy, then verify
+that the same string lands somewhere else later."
 
 ### Debug aids
 

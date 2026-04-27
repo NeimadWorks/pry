@@ -15,7 +15,7 @@ Pry runs Markdown test scripts against macOS apps and returns verdicts [Claude C
 └──────────┘                 └─────────────┘
 ```
 
-**Status:** `v0.1.0` tagged + post-feedback DX iteration on `main`. Phase 0 spikes green; Waves 1–4 delivered (virtual clock, control flow, modifier-clicks, magnify, pasteboard, async handlers, fixtures, parallel run-suite, JUnit/TAP/markdown exporters, file panels). Spec grammar `pry_spec_version: 1` frozen. Runner exposes 25+ MCP tools and a public Swift library (`PryRunner`). 9 DemoApp specs PASS, 26 unit tests pass. Per-project `.pry/config.yaml`, numeric comparators (`gt`/`gte`/`between`), `nth:` selector, panel predicates, and SwiftUI gotchas docs added post-tag. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's next.
+**Status:** `v0.1.0` tagged + two DX iterations on `main` (`v0.2`-track). Phase 0 spikes green; Waves 1–4 delivered (virtual clock, control flow, modifier-clicks, magnify, pasteboard, async handlers, fixtures, parallel run-suite, JUnit/TAP/markdown exporters, file panels). Spec grammar `pry_spec_version: 1` frozen. Runner exposes 25+ MCP tools and a public Swift library (`PryRunner`). 9 DemoApp specs PASS, **33 unit tests** pass. Latest additions: `pry-mcp lint`, `pry-mcp init`, `pry-mcp report`, `assert_focus` / `assert_eventually` / `soft_assert_state`, `select_range` / `multi_select` / `with_retry` / `copy_to`, embedded screenshots, AX tree diff, state-delta timeline, slow-step warnings, CI release pipeline + Homebrew tap auto-bump. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's next.
 
 **For AI agents** opening this repo: read [`docs/AGENTS.md`](docs/AGENTS.md) first — it indexes the docs by intent and includes a grammar + API cheat sheet.
 
