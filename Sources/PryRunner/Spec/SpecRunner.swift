@@ -974,7 +974,7 @@ public actor SpecRunner {
             //  1. Explicit `executable_path:` in spec frontmatter
             //  2. `.pry/config.yaml` apps[<bundle-id>].executable_path (or env override)
             //  3. NSWorkspace lookup by bundle ID
-            let resolvedExec: String? = spec.executablePath ?? {
+            let resolvedExec: String? = spec.executablePath ?? { () -> String? in
                 guard let sourcePath = spec.sourcePath else { return nil }
                 let cfg = PryConfig.discover(from: URL(fileURLWithPath: sourcePath))
                 return cfg?.resolveExecutablePath(for: spec.app)
