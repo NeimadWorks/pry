@@ -1,10 +1,12 @@
 name: CI
 
 on:
+  # Run on every push to main, every PR, and every tag push starting with v.
+  # The release-artifacts job is gated below so it only runs on tag/release.
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
-  # Tags trigger the release-artifacts job (gated below).
   release:
     types: [published]
 
@@ -36,10 +38,9 @@ jobs:
       - name: Lint specs
         run: .build/debug/pry-mcp lint --dir Fixtures/DemoApp/flows
 
-      # Integration tests that drive the UI need Accessibility permission,
-      # which isn't available on GitHub runners. They are gated behind the
-      # PRY_INTEGRATION env var so local runs can still execute them.
-      # On CI we verify build + unit tests + lint only.
+      # Integration tests need Accessibility permission, which isn't available
+      # on GitHub runners. Gated by PRY_INTEGRATION env var locally; CI does
+      # build + unit tests + lint only.
       - name: Verify pry-mcp CLI boots
         run: |
           .build/debug/pry-mcp version
@@ -48,34 +49,45 @@ jobs:
   release-artifacts:
     name: Package release artifacts
     runs-on: macos-14
-    if: startsWith(github.ref, 'refs/tags/v')
     needs: build-and-test
+    # Run when:
+    #   - a tag matching v* is pushed (push event with refs/tags/v...)
+    #   - a release is published via the GitHub UI
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'release'
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Build release binary
         run: swift build -c release --product pry-mcp
 
-      # Codesign + notarize only when secrets are configured. Skipped silently
-      # otherwise so the workflow can still produce an unsigned artifact for
-      # local testing.
-      - name: Codesign + notarize (if secrets configured)
-        if: env.DEVELOPER_ID_APPLICATION != ''
+      # Codesign + notarize when secrets are configured. The check moves into
+      # the step's bash because GitHub Actions `if:` expressions can't read
+      # `secrets.*` directly — we'd need to bind via env at this scope, and
+      # then a missing-secret yields an empty string we can guard on.
+      - name: Build & sign artifact
         env:
           DEVELOPER_ID_APPLICATION: ${{ secrets.DEVELOPER_ID_APPLICATION }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-        run: ./scripts/release.sh "$GITHUB_REF_NAME"
-
-      - name: Package (unsigned fallback)
-        if: env.DEVELOPER_ID_APPLICATION == ''
         run: |
-          mkdir -p dist
-          cp .build/release/pry-mcp dist/pry-mcp
-          chmod +x dist/pry-mcp
-          tar -czf "dist/pry-mcp-${GITHUB_REF_NAME}-arm64.tar.gz" -C dist pry-mcp
-          shasum -a 256 "dist/pry-mcp-${GITHUB_REF_NAME}-arm64.tar.gz" > dist/SHA256SUMS
+          set -euo pipefail
+          if [ -n "${DEVELOPER_ID_APPLICATION:-}" ]; then
+            echo "::notice::DEVELOPER_ID_APPLICATION present — running codesign + notarize."
+            chmod +x scripts/release.sh
+            ./scripts/release.sh "${GITHUB_REF_NAME}"
+          else
+            echo "::notice::DEVELOPER_ID_APPLICATION not set — producing unsigned tarball."
+            mkdir -p dist
+            cp .build/release/pry-mcp dist/pry-mcp
+            chmod +x dist/pry-mcp
+            tar -czf "dist/pry-mcp-${GITHUB_REF_NAME}-arm64.tar.gz" -C dist pry-mcp
+            shasum -a 256 "dist/pry-mcp-${GITHUB_REF_NAME}-arm64.tar.gz" > dist/SHA256SUMS
+          fi
+          ls -lh dist/
 
       - name: Attach to GitHub release
         if: github.event_name == 'release'
@@ -85,42 +97,51 @@ jobs:
             dist/pry-mcp-${{ github.ref_name }}-arm64.tar.gz
             dist/SHA256SUMS
 
-      - name: Upload artifacts
+      - name: Upload artifacts (always)
         uses: actions/upload-artifact@v4
         with:
           name: pry-mcp-release-${{ github.ref_name }}
           path: dist/
 
-  # Bumps the Homebrew tap (NeimadWorks/homebrew-tap) on release. Requires
-  # HOMEBREW_TAP_TOKEN secret with `repo` scope on that tap.
   homebrew-tap:
     name: Bump Homebrew tap
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && env.HOMEBREW_TAP_TOKEN != ''
     needs: release-artifacts
-    env:
-      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    # Only on release-published; on tag-only push, no GH release exists yet,
+    # so the formula's url would 404 until the release is created.
+    if: github.event_name == 'release'
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Update formula in tap
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           set -euo pipefail
+          if [ -z "${HOMEBREW_TAP_TOKEN:-}" ]; then
+            echo "::warning::HOMEBREW_TAP_TOKEN not set — skipping tap bump."
+            exit 0
+          fi
+
           VERSION="${GITHUB_REF_NAME#v}"
           ASSET_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/pry-mcp-${GITHUB_REF_NAME}-arm64.tar.gz"
-          # Download to compute the sha256 (we don't trust the workflow's
-          # local copy because the asset may have been signed by a separate job).
-          curl -sL "$ASSET_URL" -o /tmp/pry.tgz
+
+          # Fetch the published asset to compute the canonical sha256.
+          curl -fsSL --retry 4 --retry-delay 5 "$ASSET_URL" -o /tmp/pry.tgz
           SHA=$(shasum -a 256 /tmp/pry.tgz | awk '{print $1}')
 
           git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/NeimadWorks/homebrew-tap" tap
           cd tap
+
           # Substitute version + url + sha into the formula.
           sed -i.bak \
             -e "s|version \".*\"|version \"$VERSION\"|" \
             -e "s|url \".*\"|url \"$ASSET_URL\"|" \
             -e "s|sha256 \".*\"|sha256 \"$SHA\"|" \
             Formula/pry-mcp.rb
-          rm Formula/pry-mcp.rb.bak
+          rm -f Formula/pry-mcp.rb.bak
+
           git config user.name  "pry-bot"
           git config user.email "pry-bot@users.noreply.github.com"
           git add Formula/pry-mcp.rb
