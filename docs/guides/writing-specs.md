@@ -309,6 +309,66 @@ If the panel is non-standard (third-party file picker, a custom dialog with
 its own button labels), drive it with the lower-level `key`/`type`/`click`
 primitives plus `panel_accept: "<button>"` / `panel_cancel`.
 
+## SwiftUI gotchas
+
+If you're testing a SwiftUI app, three things will bite you. Document them
+in the host-app's own README too.
+
+### `.accessibilityIdentifier` propagates to descendants
+
+Putting `.accessibilityIdentifier("foo")` on a `VStack` sets `AXIdentifier=foo`
+on the container **and on every descendant** (`Text`, `Image`, etc). When
+your spec says `click: { id: "foo" }`, Pry resolves it to multiple AX
+elements and fails with `resolution_ambiguous`.
+
+Three ways to fix it:
+
+```pry
+# 1) Disambiguate with nth: (0-indexed, tree pre-order — the container is usually [0])
+click: { id: "foo", nth: 0 }
+
+# 2) Add a tighter constraint in the host app — use a more specific identifier
+#    on the actual interactive child (Button), not the container.
+
+# 3) Use { role: ..., label: ... } to narrow by AX role.
+click: { role: AXButton, label: "Save" }
+```
+
+The cleanest answer is option 2 — give identifiers only to the elements you
+want to test against. Containers shouldn't carry them.
+
+### `List` surfaces as `AXOutline`, `Toggle` as `AXCheckBox`
+
+The SwiftUI → AX role map is non-obvious on macOS:
+
+| SwiftUI | AX role |
+|---|---|
+| `Button` | `AXButton` |
+| `Toggle` | `AXCheckBox` |
+| `Text` | `AXStaticText` |
+| `TextField` | `AXTextField` |
+| `List` | `AXOutline` (not `AXList`) |
+| `Slider` | `AXSlider` |
+| `Stepper` | `AXIncrementor` |
+
+When you write `{ role: AXButton, ... }`, use the AX side, not the SwiftUI
+side. Run `pry-mcp tree --app <bundle>` once to inspect what your app
+actually exposes.
+
+### Custom tap zones need explicit AX traits
+
+A `Rectangle().onTapGesture { ... }` does not surface as `AXButton` by
+default — it shows up as `AXGroup` and Pry's role-based resolvers won't
+find it:
+
+```swift
+Rectangle()
+    .onTapGesture { ... }
+    .accessibilityAddTraits(.isButton)        // ← required
+    .contentShape(Rectangle())                // ← so the whole rect responds
+    .accessibilityIdentifier("tap_zone")
+```
+
 ### Disable animations for snapshot determinism
 
 In frontmatter:

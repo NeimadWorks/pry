@@ -52,7 +52,7 @@ YAML between `---` markers at the very top of the file.
 |---|---|---|---|---|
 | `id` | string | yes | — | unique identifier; appears in verdicts |
 | `app` | string | yes | — | bundle identifier of the target |
-| `executable_path` | string | no | — | absolute path; useful for SwiftPM-built fixtures |
+| `executable_path` | string | no | — | absolute path; useful for SwiftPM-built fixtures. Falls back to `.pry/config.yaml` and then NSWorkspace lookup. See "Project config" below. |
 | `description` | string | no | — | one-liner |
 | `tags` | [string] | no | `[]` | for `--tag` filtering |
 | `timeout` | duration | no | `60s` | whole-spec budget |
@@ -224,7 +224,7 @@ mapped per US keyboard.
 | Command | Notes |
 |---|---|
 | `assert_tree: PREDICATE` | fail if AX tree doesn't satisfy |
-| `assert_state: { viewmodel, path, equals \| matches \| any_of }` | fail if VM state mismatches |
+| `assert_state: { viewmodel, path, equals \| matches \| any_of \| gt \| gte \| lt \| lte \| between }` | fail if VM state mismatches |
 | `expect_change: { action: { click: TARGET }, in: { viewmodel, path }, to: VALUE, timeout?: 2s }` | atomic do-then-observe |
 | `assert_pasteboard: "substring"` | NSPasteboard contains substring |
 
@@ -304,6 +304,22 @@ Resolution order (highest precedence first):
 **Ambiguity is an error**, not silent first-match. Two equally-precedent
 matches throw `resolution_ambiguous` with the candidate list in the verdict.
 
+### Disambiguating with `nth:`
+
+Add `nth: N` to any target to pick the N-th match (0-indexed, tree pre-order):
+
+```yaml
+{ id: "row", nth: 0 }                       # first match — common in SwiftUI
+{ label: "Save", nth: 2 }                   # third button labelled "Save"
+```
+
+This is the standard escape hatch for the SwiftUI propagation gotcha:
+`.accessibilityIdentifier` on a container leaks to every descendant, so
+`{ id: "container" }` matches multiple elements. See the SwiftUI gotchas in
+[`writing-specs.md`](../guides/writing-specs.md#swiftui-gotchas).
+
+### Modifier keys on click/drag
+
 Any target object can carry a `modifiers: [shift, cmd]` array, used by
 `click`, `double_click`, `right_click`, and `drag`.
 
@@ -314,7 +330,7 @@ Any target object can carry a `modifiers: [shift, cmd]` array, used by
 ```yaml
 contains: <target>
 not_contains: <target>
-count: { of: <target>, equals: <n> }
+count: { of: <target>, equals|gt|gte|lt|lte|between: <n> | [<lo>, <hi>] }
 visible: <target>
 enabled: <target>
 focused: <target>
@@ -322,12 +338,23 @@ focused: <target>
 state:
   viewmodel: <name>
   path: <keypath>
-  equals: <value>           # — or —
-  matches: <regex>          # — or —
+  equals: <value>                  # — or —
+  matches: <regex>                 # auto-coerces Int/Double to string
   any_of: [<v>, <v>, ...]
+  gt:  <n>                         # numeric > n
+  gte: <n>                         # numeric >= n
+  lt:  <n>
+  lte: <n>
+  between: [<low>, <high>]         # inclusive range
 
 window: { title_matches: "..." }   # window-existence shortcut
+panel: any                         # any open NSOpenPanel/NSSavePanel/AXSheet
+panel: { title_matches: "Save.*" } # panel filtered by title regex
 ```
+
+`matches:` auto-coerces numeric values to their string representation, so
+`matches: "^[0-9]+$"` works against an Int `symbolCount` without needing
+the host VM to expose a String wrapper.
 
 Composition:
 
@@ -369,7 +396,36 @@ These remain non-goals or land behind a new ADR.
 
 ---
 
-## 9. Versioning
+## 9. Project config (`.pry/config.yaml`)
+
+For repo-wide settings — particularly app `executable_path` so each spec
+doesn't have to hardcode a per-machine absolute path. The runner walks up
+from the spec's directory, looking for `.pry/config.yaml` (max 8 levels).
+
+```yaml
+apps:
+  fr.neimad.works.narrow:
+    executable_path: ./.build/arm64-apple-macosx/debug/Narrow
+  fr.neimad.proof:
+    executable_path: ~/Apps/Proof.app/Contents/MacOS/Proof
+```
+
+Path resolution rules:
+
+- Relative paths resolve against the config file's directory
+- `~` expands to `$HOME`
+- `${swift_bin}` expands to `swift build --show-bin-path` run from the
+  config file's directory (useful for SwiftPM apps)
+
+Override hierarchy (highest first):
+
+1. **Spec frontmatter** `executable_path:`
+2. **Env var** `PRY_EXEC_<UPPERCASED_BUNDLE_ID>` with `.` and `-` replaced
+   by `_`. Example: `PRY_EXEC_FR_NEIMAD_NARROW=/path/to/Narrow`
+3. **`.pry/config.yaml`** `apps[<bundle-id>].executable_path`
+4. **NSWorkspace** lookup by bundle ID (catches installed `.app`s)
+
+## 10. Versioning
 
 - `pry_spec_version: 1` is implicit. Specs may set it explicitly to fail
   fast on a future incompatible runner.

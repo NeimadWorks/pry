@@ -5,13 +5,15 @@ import CoreGraphics
 
 /// Out-of-process AX target resolution. The `Target` cases mirror the spec
 /// grammar from `docs/design/spec-format.md §4`.
-public enum Target: Sendable {
+public indirect enum Target: Sendable {
     case id(String)
     case roleLabel(role: String, label: String)
     case label(String)
     case labelMatches(String)
     case treePath(String)
     case point(x: CGFloat, y: CGFloat)
+    /// nth match of `base`. 0-indexed, in tree pre-order.
+    case nth(base: Target, index: Int)
 }
 
 public struct Resolved: Sendable {
@@ -59,6 +61,29 @@ public enum ElementResolver {
         try requireTrust()
         let app = AXUIElementCreateApplication(pid)
 
+        // nth wrapper: collect all matches of base, return index-th.
+        if case .nth(let base, let idx) = target {
+            var candidates: [AXUIElement] = []
+            switch base {
+            case .point:
+                throw ResolveError.noMatch(target)
+            default:
+                walk(app) { el in
+                    if matches(el, base) { candidates.append(el) }
+                }
+            }
+            guard !candidates.isEmpty else { throw ResolveError.noMatch(target) }
+            guard idx >= 0 && idx < candidates.count else {
+                throw ResolveError.noMatch(target)
+            }
+            let el = candidates[idx]
+            return Resolved(element: AXUIElementWrapper(element: el),
+                            frame: axFrame(el),
+                            role: axString(el, kAXRoleAttribute) ?? "?",
+                            label: anyLabel(el),
+                            identifier: axString(el, "AXIdentifier"))
+        }
+
         // Collect candidates; their set depends on the target form.
         var candidates: [AXUIElement] = []
 
@@ -78,6 +103,7 @@ public enum ElementResolver {
             walk(app) { el in
                 if matches(el, target) { candidates.append(el) }
             }
+        case .nth: break // handled above
         }
 
         if candidates.isEmpty { throw ResolveError.noMatch(target) }
@@ -91,6 +117,23 @@ public enum ElementResolver {
                         role: axString(el, kAXRoleAttribute) ?? "?",
                         label: axString(el, kAXTitleAttribute),
                         identifier: axString(el, "AXIdentifier"))
+    }
+
+    /// Like `resolve` but never errors on ambiguity — returns the count of matches.
+    /// Used by tree-count predicates.
+    public static func count(matching target: Target, in pid: pid_t) throws -> Int {
+        try requireTrust()
+        let app = AXUIElementCreateApplication(pid)
+        var n = 0
+        switch target {
+        case .point: return 0
+        case .nth(let base, _):
+            // Count of base, ignore index in count semantics.
+            walk(app) { if matches($0, base) { n += 1 } }
+        default:
+            walk(app) { if matches($0, target) { n += 1 } }
+        }
+        return n
     }
 
     // MARK: - Matching
@@ -111,10 +154,14 @@ public enum ElementResolver {
             return false // not implemented in v1
         case .point:
             return false
+        case .nth:
+            // Nth is resolved at the resolve(...) layer; never used as a leaf
+            // matcher.
+            return false
         }
     }
 
-    private static func anyLabel(_ el: AXUIElement) -> String? {
+    static func anyLabel(_ el: AXUIElement) -> String? {
         axString(el, kAXTitleAttribute)
             ?? axString(el, kAXDescriptionAttribute)
             ?? axString(el, "AXValueDescription")

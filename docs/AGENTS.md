@@ -147,6 +147,8 @@ All click/drag steps accept `modifiers: [shift, cmd, opt, ctrl]`.
 { point: { x: 120, y: 340 } }            # last resort
 
 # Any of the above can carry: modifiers: [shift, cmd]
+# And: nth: N to disambiguate multi-match (SwiftUI propagation gotcha)
+{ id: "container", nth: 0 }
 ```
 
 ### Predicates
@@ -154,12 +156,14 @@ All click/drag steps accept `modifiers: [shift, cmd, opt, ctrl]`.
 ```yaml
 contains: <target>
 not_contains: <target>
-count: { of: <target>, equals: 3 }
+count: { of: <target>, equals|gt|gte|lt|lte|between: <n> | [<lo>, <hi>] }
 visible: <target>
 enabled: <target>
 focused: <target>
-state: { viewmodel: "VM", path: "x", equals: 1 }
+state: { viewmodel: "VM", path: "x", equals|matches|any_of|gt|gte|lt|lte|between: ... }
 window: { title_matches: "Compose.*" }    # window-shortcut
+panel: any                                # NSOpenPanel/NSSavePanel/AXSheet
+panel: { title_matches: "Save.*" }
 all_of: [PRED, PRED]
 any_of: [PRED, PRED]
 not: PRED

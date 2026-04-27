@@ -1130,6 +1130,20 @@ public enum SpecParser {
                 if let s = v.asString { expect = .matches(s) }
             case "any_of":
                 if case .array(let arr) = v { expect = .anyOf(arr) }
+            case "gt":
+                if let n = v.asSeconds ?? v.asInt.map(Double.init) { expect = .gt(n) }
+            case "gte":
+                if let n = v.asSeconds ?? v.asInt.map(Double.init) { expect = .gte(n) }
+            case "lt":
+                if let n = v.asSeconds ?? v.asInt.map(Double.init) { expect = .lt(n) }
+            case "lte":
+                if let n = v.asSeconds ?? v.asInt.map(Double.init) { expect = .lte(n) }
+            case "between":
+                if case .array(let arr) = v, arr.count == 2,
+                   let lo = arr[0].asSeconds ?? arr[0].asInt.map(Double.init),
+                   let hi = arr[1].asSeconds ?? arr[1].asInt.map(Double.init) {
+                    expect = .between(low: lo, high: hi)
+                }
             default: break
             }
         }
@@ -1137,7 +1151,7 @@ public enum SpecParser {
             throw SpecParseError.invalidArgument("assert_state missing viewmodel or path", line: line)
         }
         guard let expect else {
-            throw SpecParseError.invalidArgument("assert_state missing equals/matches/any_of", line: line)
+            throw SpecParseError.invalidArgument("assert_state missing equals/matches/any_of/gt/gte/lt/lte/between", line: line)
         }
         return .assertState(viewmodel: vm, path: path, expect: expect)
     }
@@ -1174,22 +1188,37 @@ public enum SpecParser {
         var map: [String: YAMLValue] = [:]
         for (k, v) in kvs { map[k] = v }
 
-        if let id = map["id"]?.asString { return .id(id) }
-        if let role = map["role"]?.asString, let label = map["label"]?.asString {
-            return .roleLabel(role: role, label: label)
-        }
-        if let label = map["label"]?.asString { return .label(label) }
-        if let lm = map["label_matches"]?.asString { return .labelMatches(lm) }
-        if let tp = map["tree_path"]?.asString { return .treePath(tp) }
-        if case .object(let pkvs)? = map["point"] {
+        let base: TargetRef
+        if let id = map["id"]?.asString {
+            base = .id(id)
+        } else if let role = map["role"]?.asString, let label = map["label"]?.asString {
+            base = .roleLabel(role: role, label: label)
+        } else if let label = map["label"]?.asString {
+            base = .label(label)
+        } else if let lm = map["label_matches"]?.asString {
+            base = .labelMatches(lm)
+        } else if let tp = map["tree_path"]?.asString {
+            base = .treePath(tp)
+        } else if case .object(let pkvs)? = map["point"] {
             var x: Double?; var y: Double?
             for (k, v) in pkvs {
                 if k == "x" { x = v.asSeconds ?? Double(v.asInt ?? 0) }
                 if k == "y" { y = v.asSeconds ?? Double(v.asInt ?? 0) }
             }
-            if let x, let y { return .point(x: x, y: y) }
+            guard let x, let y else {
+                throw SpecParseError.invalidArgument("point target needs { x, y }", line: line)
+            }
+            base = .point(x: x, y: y)
+        } else {
+            throw SpecParseError.invalidArgument("target has no recognized form (id / role+label / label / label_matches / tree_path / point)", line: line)
         }
-        throw SpecParseError.invalidArgument("target has no recognized form (id / role+label / label / label_matches / tree_path / point)", line: line)
+
+        // Optional disambiguator. `nth: 0` picks the first match; useful when
+        // SwiftUI propagates `accessibilityIdentifier` to descendants.
+        if let n = map["nth"]?.asInt {
+            return .nth(base: base, index: n)
+        }
+        return base
     }
 
     static func parsePredicate(_ yaml: YAMLValue, line: Int) throws -> Predicate {
@@ -1209,6 +1238,25 @@ public enum SpecParser {
             return .window(title: title, titleMatches: titleMatches)
         }
 
+        // Panel-shortcut: { panel: any } or { panel: { title_matches: "Save.*" } }
+        // Matches both AXSheet and modal AXWindow forms (NSOpenPanel / NSSavePanel
+        // surface as one or the other depending on .begin vs .beginSheet).
+        if let panel = kvs.first(where: { $0.0 == "panel" }) {
+            switch panel.1 {
+            case .identifier(let s) where s == "any":
+                return .panelOpen(titleMatches: nil)
+            case .object(let pkvs):
+                var tm: String?
+                for (k, v) in pkvs {
+                    if k == "title_matches" { tm = v.asString }
+                    if k == "title", let s = v.asString { tm = "^\(NSRegularExpression.escapedPattern(for: s))$" }
+                }
+                return .panelOpen(titleMatches: tm)
+            default:
+                return .panelOpen(titleMatches: nil)
+            }
+        }
+
         // Delegate by key.
         for (k, v) in kvs {
             switch k {
@@ -1221,14 +1269,20 @@ public enum SpecParser {
             case "count":
                 if case .object(let ckvs) = v {
                     var ofTarget: TargetRef? = nil
-                    var count: Int? = nil
+                    var op: NumOp? = nil
                     for (kk, vv) in ckvs {
                         if kk == "of" { ofTarget = try? parseTarget(vv, line: line) }
-                        if kk == "equals" { count = vv.asInt }
+                        if kk == "equals", let n = vv.asInt { op = .eq(n) }
+                        if kk == "gt", let n = vv.asInt { op = .gt(n) }
+                        if kk == "gte", let n = vv.asInt { op = .gte(n) }
+                        if kk == "lt", let n = vv.asInt { op = .lt(n) }
+                        if kk == "lte", let n = vv.asInt { op = .lte(n) }
+                        if kk == "between", case .array(let arr) = vv, arr.count == 2,
+                           let a = arr[0].asInt, let b = arr[1].asInt { op = .between(a, b) }
                     }
-                    if let ofTarget, let count { return .countOf(ofTarget, equals: count) }
+                    if let ofTarget, let op { return .countOf(ofTarget, op: op) }
                 }
-                throw SpecParseError.invalidArgument("count needs { of: <target>, equals: N }", line: line)
+                throw SpecParseError.invalidArgument("count needs { of: <target>, equals|gt|gte|lt|lte|between: ... }", line: line)
             case "visible":
                 return .visible(try parseTarget(v, line: line))
             case "enabled":
@@ -1272,10 +1326,24 @@ public enum SpecParser {
                 if let s = v.asString { return .matches(s) }
             case "any_of":
                 if case .array(let arr) = v { return .anyOf(arr) }
+            case "gt":
+                if let n = v.asSeconds ?? v.asInt.map(Double.init) { return .gt(n) }
+            case "gte":
+                if let n = v.asSeconds ?? v.asInt.map(Double.init) { return .gte(n) }
+            case "lt":
+                if let n = v.asSeconds ?? v.asInt.map(Double.init) { return .lt(n) }
+            case "lte":
+                if let n = v.asSeconds ?? v.asInt.map(Double.init) { return .lte(n) }
+            case "between":
+                if case .array(let arr) = v, arr.count == 2,
+                   let lo = arr[0].asSeconds ?? arr[0].asInt.map(Double.init),
+                   let hi = arr[1].asSeconds ?? arr[1].asInt.map(Double.init) {
+                    return .between(low: lo, high: hi)
+                }
             default: continue
             }
         }
-        throw SpecParseError.invalidArgument("state predicate needs equals / matches / any_of", line: line)
+        throw SpecParseError.invalidArgument("state predicate needs equals / matches / any_of / gt / gte / lt / lte / between", line: line)
     }
 
     private static func requireString(_ kvs: [(String, YAMLValue)], _ key: String, line: Int) throws -> String {

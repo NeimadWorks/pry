@@ -276,11 +276,35 @@ public enum EventInjector {
         case "k": return 0x28
         case "n": return 0x2D
         case "m": return 0x2E
+        // Digits (top row)
+        case "0": return 0x1D
+        case "1": return 0x12
+        case "2": return 0x13
+        case "3": return 0x14
+        case "4": return 0x15
+        case "5": return 0x17
+        case "6": return 0x16
+        case "7": return 0x1A
+        case "8": return 0x1C
+        case "9": return 0x19
+        // Punctuation (US keyboard layout)
+        case "[", "leftbracket":   return 0x21
+        case "]", "rightbracket":  return 0x1E
+        case ";", "semicolon":     return 0x29
+        case ",", "comma":         return 0x2B
+        case ".", "period", "dot": return 0x2F
+        case "/", "slash":         return 0x2C
+        case "'", "quote":         return 0x27
+        case "\\", "backslash":    return 0x2A
+        case "`", "backtick", "grave": return 0x32
+        case "=", "equals":        return 0x18
+        case "-", "minus", "dash": return 0x1B
         // Named
         case "return", "enter", "ret": return 0x24
         case "tab": return 0x30
         case "space", "spc": return 0x31
         case "delete", "backspace", "bs": return 0x33
+        case "forwarddelete", "fwddelete": return 0x75
         case "escape", "esc": return 0x35
         case "up", "uparrow": return 0x7E
         case "down", "downarrow": return 0x7D
@@ -290,6 +314,18 @@ public enum EventInjector {
         case "end": return 0x77
         case "pageup": return 0x74
         case "pagedown": return 0x79
+        case "f1": return 0x7A
+        case "f2": return 0x78
+        case "f3": return 0x63
+        case "f4": return 0x76
+        case "f5": return 0x60
+        case "f6": return 0x61
+        case "f7": return 0x62
+        case "f8": return 0x64
+        case "f9": return 0x65
+        case "f10": return 0x6D
+        case "f11": return 0x67
+        case "f12": return 0x6F
         default: return nil
         }
     }

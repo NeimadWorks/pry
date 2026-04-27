@@ -60,6 +60,12 @@ public enum StateExpectation: Sendable {
     case equals(YAMLValue)
     case matches(String)
     case anyOf([YAMLValue])
+    // Numeric comparators
+    case gt(Double)
+    case gte(Double)
+    case lt(Double)
+    case lte(Double)
+    case between(low: Double, high: Double)
 }
 
 public enum ScrollDirection: String, Sendable {
@@ -69,7 +75,7 @@ public enum ScrollDirection: String, Sendable {
 /// Restricted action vocabulary for `expect_change`. We deliberately do not
 /// allow arbitrary nested steps — composition lives in `wait_for` chained with
 /// regular steps. expect_change is the atomic do-then-observe shortcut.
-public enum ExpectChangeAction: Sendable {
+public indirect enum ExpectChangeAction: Sendable {
     case click(TargetRef)
     case doubleClick(TargetRef)
     case rightClick(TargetRef)
@@ -77,13 +83,17 @@ public enum ExpectChangeAction: Sendable {
     case type(String)
 }
 
-public enum TargetRef: Sendable {
+public indirect enum TargetRef: Sendable {
     case id(String)
     case roleLabel(role: String, label: String)
     case label(String)
     case labelMatches(String)
     case treePath(String)
     case point(x: Double, y: Double)
+    /// Disambiguator: when the same target form would match multiple
+    /// elements (e.g. SwiftUI propagates a container's `accessibilityIdentifier`
+    /// to every descendant), `nth:` picks the n-th match in tree order.
+    case nth(base: TargetRef, index: Int)
 }
 
 public struct PointSpec: Sendable {
@@ -96,7 +106,7 @@ public struct PointSpec: Sendable {
 public indirect enum Predicate: Sendable {
     case contains(TargetRef)
     case notContains(TargetRef)
-    case countOf(TargetRef, equals: Int)
+    case countOf(TargetRef, op: NumOp)
     case visible(TargetRef)
     case enabled(TargetRef)
     case focused(TargetRef)
@@ -106,6 +116,30 @@ public indirect enum Predicate: Sendable {
     case not(Predicate)
     /// Window-existence shortcut: wait_for: { role: Window, title_matches: "..." }
     case window(title: String?, titleMatches: String?)
+    /// Panel-shaped UI: NSOpenPanel/NSSavePanel can be sheets OR modal windows;
+    /// this matches both forms.
+    case panelOpen(titleMatches: String?)
+}
+
+/// Integer comparison shared by tree counts and (later) other numeric predicates.
+public enum NumOp: Sendable, Equatable {
+    case eq(Int)
+    case gt(Int)
+    case gte(Int)
+    case lt(Int)
+    case lte(Int)
+    case between(Int, Int)
+
+    public func matches(_ n: Int) -> Bool {
+        switch self {
+        case .eq(let x): return n == x
+        case .gt(let x): return n > x
+        case .gte(let x): return n >= x
+        case .lt(let x): return n < x
+        case .lte(let x): return n <= x
+        case .between(let a, let b): return n >= a && n <= b
+        }
+    }
 }
 
 /// Simple time budget used by `wait_for` and per-spec `timeout` frontmatter.

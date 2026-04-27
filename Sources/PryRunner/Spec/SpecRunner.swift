@@ -314,6 +314,47 @@ public actor SpecRunner {
         return rx.firstMatch(in: t, range: NSRange(t.startIndex..., in: t)) != nil
     }
 
+    nonisolated private static func treeContainsPanelOpen(_ node: AXNode, titleMatches: String?) -> Bool {
+        // AXSheet — sheet attached to a parent window.
+        if node.role == "AXSheet" {
+            if let p = titleMatches { return Self.matchTitle(node.label, pattern: p) }
+            return true
+        }
+        // Modal AXWindow with a panel-y title (NSOpenPanel/NSSavePanel surface
+        // as separate windows when run via .begin instead of .beginSheet).
+        if node.role == "AXWindow", let l = node.label?.lowercased(),
+           l.contains("open") || l.contains("save") || l.contains("choose")
+            || l.contains("import") || l.contains("export") {
+            if let p = titleMatches { return Self.matchTitle(node.label, pattern: p) }
+            return true
+        }
+        for c in node.children {
+            if Self.treeContainsPanelOpen(c, titleMatches: titleMatches) { return true }
+        }
+        return false
+    }
+
+    private func collectAllIdentifiers(_ node: AXNode) -> [String] {
+        var out: [String] = []
+        func walk(_ n: AXNode) {
+            if let id = n.identifier { out.append("\(n.role) #\(id)") }
+            for c in n.children { walk(c) }
+        }
+        walk(node)
+        return out
+    }
+
+    private func renderNumOp(_ op: NumOp) -> String {
+        switch op {
+        case .eq(let n): return "= \(n)"
+        case .gt(let n): return "> \(n)"
+        case .gte(let n): return ">= \(n)"
+        case .lt(let n): return "< \(n)"
+        case .lte(let n): return "<= \(n)"
+        case .between(let a, let b): return "in [\(a), \(b)]"
+        }
+    }
+
     nonisolated private static func treeContainsSheet(_ node: AXNode, titleMatches: String?) -> Bool {
         if node.role == "AXSheet" {
             if let p = titleMatches { return Self.matchTitle(node.label, pattern: p) }
@@ -902,6 +943,7 @@ public actor SpecRunner {
         case .roleLabel(let r, let l): return .roleLabel(role: r, label: interpolateString(l, vars: vars))
         case .treePath(let s): return .treePath(interpolateString(s, vars: vars))
         case .point: return t
+        case .nth(let base, let i): return .nth(base: interpolateTarget(base, vars: vars), index: i)
         }
     }
 
@@ -928,7 +970,16 @@ public actor SpecRunner {
     private func doLaunch(args: [String], env: [String: String]) async throws {
         do {
             let handle: AppDriver.Handle
-            if let path = spec.executablePath {
+            // Resolution order for executablePath:
+            //  1. Explicit `executable_path:` in spec frontmatter
+            //  2. `.pry/config.yaml` apps[<bundle-id>].executable_path (or env override)
+            //  3. NSWorkspace lookup by bundle ID
+            let resolvedExec: String? = spec.executablePath ?? {
+                guard let sourcePath = spec.sourcePath else { return nil }
+                let cfg = PryConfig.discover(from: URL(fileURLWithPath: sourcePath))
+                return cfg?.resolveExecutablePath(for: spec.app)
+            }()
+            if let path = resolvedExec {
                 handle = try AppDriver.launchByPath(
                     executablePath: path, bundleID: spec.app, args: args, env: env)
             } else {
@@ -1047,6 +1098,7 @@ public actor SpecRunner {
         case .labelMatches(let s): return .labelMatches(s)
         case .treePath(let s): return .treePath(s)
         case .point(let x, let y): return .point(x: CGFloat(x), y: CGFloat(y))
+        case .nth(let base, let i): return .nth(base: convert(base), index: i)
         }
     }
 
@@ -1155,9 +1207,19 @@ public actor SpecRunner {
                 throw PredicateFailure(description: "element \(target) is present, expected absent")
             }
 
-        case .countOf(let target, let n):
+        case .countOf(let target, let op):
             let count = countMatches(target)
-            if count != n { throw PredicateFailure(description: "count(\(target)) = \(count), expected \(n)") }
+            if !op.matches(count) {
+                throw PredicateFailure(description: "count(\(target)) = \(count), expected \(renderNumOp(op))")
+            }
+
+        case .panelOpen(let titleMatches):
+            guard let h = launchHandle else { throw PredicateFailure(description: "no running app") }
+            let tree = AXTreeWalker.snapshot(pid: h.pid)
+            let found = Self.treeContainsPanelOpen(tree, titleMatches: titleMatches)
+            if !found {
+                throw PredicateFailure(description: "no open NSOpenPanel/NSSavePanel/AXSheet found")
+            }
 
         case .visible(let target):
             let r = try resolveTargetForPredicate(target)
@@ -1229,6 +1291,10 @@ public actor SpecRunner {
         case .labelMatches(let re):
             guard let label = node.label, let rx = try? NSRegularExpression(pattern: re) else { return false }
             return rx.firstMatch(in: label, range: NSRange(label.startIndex..., in: label)) != nil
+        case .nth(let base, _):
+            // Count semantics treat nth as base — we want "how many match the
+            // base form", not "is this exactly the nth".
+            return nodeMatches(node, base)
         default: return false
         }
     }
@@ -1286,7 +1352,11 @@ public actor SpecRunner {
                 )
             }
         case .matches(let pattern):
-            guard let s = value as? String, let rx = try? NSRegularExpression(pattern: pattern) else {
+            // Auto-coerce numerics to their string form so `matches: "^[0-9]+$"`
+            // works against an Int/Double field without forcing the host VM
+            // to expose a String wrapper.
+            let str = stringForMatch(value)
+            guard let s = str, let rx = try? NSRegularExpression(pattern: pattern) else {
                 throw StepFailure(expected: "string matching /\(pattern)/",
                                   observed: "\(renderAny(value))", suggestion: nil)
             }
@@ -1301,7 +1371,67 @@ public actor SpecRunner {
                 observed: renderAny(value),
                 suggestion: nil
             )
+        case .gt(let n):
+            guard let v = doubleValue(value) else {
+                throw StepFailure(expected: "numeric value > \(n)", observed: renderAny(value), suggestion: nil)
+            }
+            if !(v > n) {
+                throw StepFailure(expected: "\(viewmodel).\(path) > \(n)",
+                                  observed: "got \(v)", suggestion: nil)
+            }
+        case .gte(let n):
+            guard let v = doubleValue(value) else {
+                throw StepFailure(expected: "numeric value >= \(n)", observed: renderAny(value), suggestion: nil)
+            }
+            if !(v >= n) {
+                throw StepFailure(expected: "\(viewmodel).\(path) >= \(n)",
+                                  observed: "got \(v)", suggestion: nil)
+            }
+        case .lt(let n):
+            guard let v = doubleValue(value) else {
+                throw StepFailure(expected: "numeric value < \(n)", observed: renderAny(value), suggestion: nil)
+            }
+            if !(v < n) {
+                throw StepFailure(expected: "\(viewmodel).\(path) < \(n)",
+                                  observed: "got \(v)", suggestion: nil)
+            }
+        case .lte(let n):
+            guard let v = doubleValue(value) else {
+                throw StepFailure(expected: "numeric value <= \(n)", observed: renderAny(value), suggestion: nil)
+            }
+            if !(v <= n) {
+                throw StepFailure(expected: "\(viewmodel).\(path) <= \(n)",
+                                  observed: "got \(v)", suggestion: nil)
+            }
+        case .between(let lo, let hi):
+            guard let v = doubleValue(value) else {
+                throw StepFailure(expected: "numeric value in [\(lo), \(hi)]",
+                                  observed: renderAny(value), suggestion: nil)
+            }
+            if !(v >= lo && v <= hi) {
+                throw StepFailure(expected: "\(viewmodel).\(path) in [\(lo), \(hi)]",
+                                  observed: "got \(v)", suggestion: nil)
+            }
         }
+    }
+
+    private func doubleValue(_ v: any Sendable) -> Double? {
+        if let i = v as? Int { return Double(i) }
+        if let d = v as? Double { return d }
+        if let f = v as? Float { return Double(f) }
+        if let n = v as? NSNumber { return n.doubleValue }
+        if let s = v as? String { return Double(s) }
+        return nil
+    }
+
+    private func stringForMatch(_ v: any Sendable) -> String? {
+        if let s = v as? String { return s }
+        if let i = v as? Int { return String(i) }
+        if let d = v as? Double { return String(d) }
+        if let f = v as? Float { return String(f) }
+        if let b = v as? Bool { return String(b) }
+        if let n = v as? NSNumber { return n.stringValue }
+        return nil
     }
 
     private func compareEquals(_ lhs: any Sendable, _ rhs: YAMLValue) -> Bool {
@@ -1406,7 +1536,18 @@ public actor SpecRunner {
         )
         if let h = launchHandle {
             let tree = AXTreeWalker.snapshot(pid: h.pid)
-            ctx.axTreeSnippet = AXTreeWalker.renderYAML(AXTreeWalker.truncated(tree))
+            // Truncated tree first; if that comes out empty (rare — e.g. AX query
+            // failed transiently), fall back to a list of registered IDs so the
+            // verdict isn't silently empty.
+            let truncated = AXTreeWalker.renderYAML(AXTreeWalker.truncated(tree))
+            if truncated.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                let ids = collectAllIdentifiers(tree)
+                ctx.axTreeSnippet = ids.isEmpty
+                    ? "(AX tree returned empty; check that the app is still running)"
+                    : "Registered AXIdentifiers in the tree:\n  - " + ids.joined(separator: "\n  - ")
+            } else {
+                ctx.axTreeSnippet = truncated
+            }
 
             // Registered state: union across any VMs referenced in the spec.
             var vms: Set<String> = []
@@ -1514,6 +1655,11 @@ public actor SpecRunner {
         case .equals(let v): return "equals \(renderYAMLValue(v))"
         case .matches(let s): return "matches /\(s)/"
         case .anyOf(let a): return "any_of [\(a.map(renderYAMLValue).joined(separator: ", "))]"
+        case .gt(let n): return "> \(n)"
+        case .gte(let n): return ">= \(n)"
+        case .lt(let n): return "< \(n)"
+        case .lte(let n): return "<= \(n)"
+        case .between(let lo, let hi): return "between [\(lo), \(hi)]"
         }
     }
 
@@ -1525,6 +1671,7 @@ public actor SpecRunner {
         case .labelMatches(let s): return "{ label_matches: \"\(s)\" }"
         case .treePath(let s): return "{ tree_path: \"\(s)\" }"
         case .point(let x, let y): return "{ point: { x: \(x), y: \(y) } }"
+        case .nth(let base, let i): return "\(renderTarget(base))[nth=\(i)]"
         }
     }
 
@@ -1536,7 +1683,7 @@ public actor SpecRunner {
             return "window"
         case .contains(let t): return "contains \(renderTarget(t))"
         case .notContains(let t): return "not_contains \(renderTarget(t))"
-        case .countOf(let t, let n): return "count(\(renderTarget(t))) == \(n)"
+        case .countOf(let t, let op): return "count(\(renderTarget(t))) \(renderNumOp(op))"
         case .visible(let t): return "visible \(renderTarget(t))"
         case .enabled(let t): return "enabled \(renderTarget(t))"
         case .focused(let t): return "focused \(renderTarget(t))"
@@ -1544,6 +1691,8 @@ public actor SpecRunner {
         case .allOf(let ps): return "all_of [\(ps.map(renderPredicate).joined(separator: ", "))]"
         case .anyOf(let ps): return "any_of [\(ps.map(renderPredicate).joined(separator: ", "))]"
         case .not(let p): return "not \(renderPredicate(p))"
+        case .panelOpen(let tm):
+            return "panel_open\(tm.map { " title_matches=\"\($0)\"" } ?? "")"
         }
     }
 
@@ -1559,12 +1708,22 @@ public actor SpecRunner {
     private func ensureAttachmentsDir() -> URL {
         if let d = attachmentsDir {
             try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
+            seedGitignore(at: d.deletingLastPathComponent())
             return d
         }
         let d = FileManager.default.temporaryDirectory.appendingPathComponent("pry-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
         self.attachmentsDir = d
         return d
+    }
+
+    /// Drop a `.gitignore` next to the verdicts root so attachments don't leak
+    /// into a project's git history. Idempotent — only writes if absent.
+    private nonisolated func seedGitignore(at verdictsRoot: URL) {
+        let gi = verdictsRoot.appendingPathComponent(".gitignore")
+        guard !FileManager.default.fileExists(atPath: gi.path) else { return }
+        let body = "# Auto-generated by Pry — verdicts are run artifacts.\n*\n!.gitignore\n"
+        try? body.write(to: gi, atomically: true, encoding: .utf8)
     }
 
     private func relativePath(_ url: URL) -> String {

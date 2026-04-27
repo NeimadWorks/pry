@@ -100,6 +100,71 @@ final class SpecParserTests: XCTestCase {
         } else { XCTFail("step 1 not scroll") }
     }
 
+    func testParseNumericComparators() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        assert_state: { viewmodel: VM, path: n, gt: 0 }
+        assert_state: { viewmodel: VM, path: n, gte: 1 }
+        assert_state: { viewmodel: VM, path: n, lt: 100 }
+        assert_state: { viewmodel: VM, path: n, lte: 99 }
+        assert_state: { viewmodel: VM, path: n, between: [10, 20] }
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        XCTAssertEqual(spec.steps.count, 5)
+        if case .assertState(_, _, let e) = spec.steps[0], case .gt(let v) = e { XCTAssertEqual(v, 0) }
+        else { XCTFail("not gt") }
+        if case .assertState(_, _, let e) = spec.steps[1], case .gte(let v) = e { XCTAssertEqual(v, 1) }
+        else { XCTFail("not gte") }
+        if case .assertState(_, _, let e) = spec.steps[4], case .between(let lo, let hi) = e {
+            XCTAssertEqual(lo, 10); XCTAssertEqual(hi, 20)
+        } else { XCTFail("not between") }
+    }
+
+    func testParseNthSelector() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        click: { id: "row", nth: 2 }
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .click(let target, _) = spec.steps[0],
+           case .nth(let base, let i) = target,
+           case .id(let s) = base {
+            XCTAssertEqual(s, "row")
+            XCTAssertEqual(i, 2)
+        } else { XCTFail("not nth-wrapped click") }
+    }
+
+    func testParseCountWithNumOp() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        assert_tree: { count: { of: { id: "row" }, gte: 1 } }
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .assertTree(let p) = spec.steps[0],
+           case .countOf(_, let op) = p,
+           case .gte(let n) = op {
+            XCTAssertEqual(n, 1)
+        } else { XCTFail("not count gte") }
+    }
+
     func testParseExpectChange() throws {
         let src = """
         ---

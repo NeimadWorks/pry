@@ -140,6 +140,7 @@ enum PryTools {
         var label_matches: String?
         var tree_path: String?
         var point: PointSpec?
+        var nth: Int?
     }
     struct PointSpec: Codable {
         var x: Double
@@ -147,14 +148,19 @@ enum PryTools {
     }
 
     static func parseTarget(_ spec: TargetSpec) throws -> Target {
-        if let id = spec.id { return .id(id) }
-        if let role = spec.role, let label = spec.label { return .roleLabel(role: role, label: label) }
-        if let label = spec.label { return .label(label) }
-        if let lm = spec.label_matches { return .labelMatches(lm) }
-        if let tp = spec.tree_path { return .treePath(tp) }
-        if let p = spec.point { return .point(x: CGFloat(p.x), y: CGFloat(p.y)) }
-        throw ToolError.kinded(kind: "invalid_params",
-                               message: "target must specify one of: id, role+label, label, label_matches, tree_path, point")
+        let base: Target
+        if let id = spec.id { base = .id(id) }
+        else if let role = spec.role, let label = spec.label { base = .roleLabel(role: role, label: label) }
+        else if let label = spec.label { base = .label(label) }
+        else if let lm = spec.label_matches { base = .labelMatches(lm) }
+        else if let tp = spec.tree_path { base = .treePath(tp) }
+        else if let p = spec.point { base = .point(x: CGFloat(p.x), y: CGFloat(p.y)) }
+        else {
+            throw ToolError.kinded(kind: "invalid_params",
+                                   message: "target must specify one of: id, role+label, label, label_matches, tree_path, point")
+        }
+        if let n = spec.nth { return .nth(base: base, index: n) }
+        return base
     }
 
     struct ClickInput: Codable {
@@ -434,8 +440,12 @@ enum PryTools {
     }
 
     private static func collectMatches(_ node: AXNode, target: Target, into out: inout [FindMatch]) {
+        // For find purposes, an `nth(base, _)` target is treated as its base —
+        // we want to expose all matches; the caller can index from there.
+        let effective: Target
+        if case .nth(let base, _) = target { effective = base } else { effective = target }
         let hit: Bool
-        switch target {
+        switch effective {
         case .id(let s): hit = node.identifier == s
         case .roleLabel(let r, let l): hit = node.role == r && node.label == l
         case .label(let l): hit = node.label == l
