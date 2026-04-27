@@ -312,6 +312,152 @@ public actor Pry {
         _ = try await client.writePasteboard(string: string)
     }
 
+    // MARK: - File panels (Open / Save dialogs)
+
+    /// Drive an open-file dialog: types the given absolute path via Cmd+Shift+G
+    /// "Go to folder", then accepts the default action ("Open"/"Choose"/etc).
+    /// Assumes the panel is already open (e.g. after `select_menu` or a click
+    /// that triggers `NSOpenPanel.begin`).
+    public func openFile(_ path: String) async throws {
+        try ElementResolver.requireTrust()
+        try await driveOpenLikePanel(path: path)
+    }
+
+    /// Drive a save-file dialog: navigates to the directory, fills the name
+    /// field, then accepts.
+    public func saveFile(_ path: String) async throws {
+        try ElementResolver.requireTrust()
+        try await driveSavePanel(path: path)
+    }
+
+    /// Click the panel's default action button ("Open"/"Save"/"Choose"/...).
+    /// If the panel exposes no clickable button (rare), falls back to Return.
+    public func acceptPanel(button: String? = nil) async throws {
+        try ElementResolver.requireTrust()
+        try await acceptPanelInternal(button: button)
+    }
+
+    /// Cancel the front panel (Esc).
+    public func cancelPanel() async throws {
+        try ElementResolver.requireTrust()
+        try EventInjector.key(combo: "esc")
+    }
+
+    // MARK: - Panel helpers (shared by openFile / saveFile)
+
+    private func driveOpenLikePanel(path: String) async throws {
+        try await waitPanel(timeout: 2)
+        try EventInjector.key(combo: "shift+cmd+g")
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        try EventInjector.type(text: path)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        try EventInjector.key(combo: "return")
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        try await acceptPanelInternal(button: nil)
+    }
+
+    private func driveSavePanel(path: String) async throws {
+        try await waitPanel(timeout: 2)
+        let url = URL(fileURLWithPath: path)
+        let dir = url.deletingLastPathComponent().path
+        let name = url.lastPathComponent
+        try EventInjector.key(combo: "shift+cmd+g")
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        try EventInjector.type(text: dir)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        try EventInjector.key(combo: "return")
+        try? await Task.sleep(nanoseconds: 300_000_000)
+
+        let tree = AXTreeWalker.snapshot(pid: handle.pid)
+        if let nameField = Self.findFirstTextField(in: tree, insidePanel: false),
+           let f = nameField.frame, f.count == 4 {
+            try EventInjector.click(at: CGPoint(x: f[0] + f[2] / 2, y: f[1] + f[3] / 2))
+            try? await Task.sleep(nanoseconds: 80_000_000)
+        }
+        try EventInjector.key(combo: "cmd+a")
+        try EventInjector.key(combo: "delete")
+        try EventInjector.type(text: name)
+        try? await Task.sleep(nanoseconds: 150_000_000)
+        try await acceptPanelInternal(button: nil)
+    }
+
+    private func acceptPanelInternal(button: String?) async throws {
+        let tree = AXTreeWalker.snapshot(pid: handle.pid)
+        let candidates = Self.collectPanelButtons(tree)
+        if candidates.isEmpty {
+            try EventInjector.key(combo: "return")
+            return
+        }
+        let want = button?.lowercased()
+        let pick: AXNode
+        if let want {
+            guard let m = candidates.first(where: { $0.label?.lowercased() == want }) else {
+                throw PryError.launchFailed(
+                    "panel button '\(button!)' not found; available: \(candidates.compactMap(\.label).joined(separator: ", "))"
+                )
+            }
+            pick = m
+        } else {
+            let preferred = ["open", "save", "choose", "ok", "done", "import", "export"]
+            pick = candidates.first(where: { n in
+                guard let l = n.label?.lowercased() else { return false }
+                return preferred.contains(l)
+            }) ?? candidates[0]
+        }
+        guard let f = pick.frame, f.count == 4 else {
+            try EventInjector.key(combo: "return"); return
+        }
+        try EventInjector.click(at: CGPoint(x: f[0] + f[2] / 2, y: f[1] + f[3] / 2))
+    }
+
+    private func waitPanel(timeout: TimeInterval) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            let tree = AXTreeWalker.snapshot(pid: handle.pid)
+            if Self.treeContainsPanel(tree) { return }
+            try? await Task.sleep(nanoseconds: 80_000_000)
+        }
+    }
+
+    nonisolated private static func treeContainsPanel(_ node: AXNode) -> Bool {
+        if node.role == "AXSheet" { return true }
+        if node.role == "AXWindow", let l = node.label?.lowercased(),
+           l.contains("open") || l.contains("save") || l.contains("choose")
+            || l.contains("import") || l.contains("export") {
+            return true
+        }
+        for c in node.children {
+            if Self.treeContainsPanel(c) { return true }
+        }
+        return false
+    }
+
+    nonisolated private static func collectPanelButtons(_ root: AXNode) -> [AXNode] {
+        var out: [AXNode] = []
+        func walk(_ n: AXNode, insidePanel: Bool) {
+            let here = insidePanel
+                || n.role == "AXSheet"
+                || (n.role == "AXWindow" && (n.label?.lowercased().contains("open") == true
+                    || n.label?.lowercased().contains("save") == true
+                    || n.label?.lowercased().contains("choose") == true
+                    || n.label?.lowercased().contains("import") == true
+                    || n.label?.lowercased().contains("export") == true))
+            if here, n.role == "AXButton" { out.append(n) }
+            for c in n.children { walk(c, insidePanel: here) }
+        }
+        walk(root, insidePanel: false)
+        return out
+    }
+
+    nonisolated private static func findFirstTextField(in node: AXNode, insidePanel: Bool) -> AXNode? {
+        let here = insidePanel || node.role == "AXSheet" || node.role == "AXWindow"
+        if here, node.role == "AXTextField" { return node }
+        for c in node.children {
+            if let f = findFirstTextField(in: c, insidePanel: here) { return f }
+        }
+        return nil
+    }
+
     // MARK: - Spec runner
 
     /// Run a parsed spec against the currently-launched app.

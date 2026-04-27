@@ -97,6 +97,41 @@ Walks an AX menu path by issuing `Press` actions on each level.
 { "app": "...", "path": ["File", "Open Recent", "foo.pgn"] }   →   { "ok": true }
 ```
 
+### `pry_open_file`
+
+Drive an `NSOpenPanel` to select a specific path. Sends Cmd+Shift+G,
+types the path, and accepts.
+
+```json
+{ "app": "...", "path": "/abs/path/to/file.pgn" }   →   { "ok": true }
+```
+
+### `pry_save_file`
+
+Drive an `NSSavePanel`: navigates to the path's directory, fills the name
+field, accepts.
+
+```json
+{ "app": "...", "path": "/abs/path/to/output.pdf" }   →   { "ok": true }
+```
+
+### `pry_panel_accept`
+
+Click the default action button on whatever panel is open
+(sheet-attached or modal dialog window). Optional `button` to choose by name.
+
+```json
+{ "app": "...", "button": "Open"? }   →   { "ok": true }
+```
+
+### `pry_panel_cancel`
+
+Sends Escape to the front panel.
+
+```json
+{ "app": "..." }   →   { "ok": true }
+```
+
 ---
 
 ## Observation

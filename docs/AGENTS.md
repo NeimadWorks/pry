@@ -130,6 +130,8 @@ All click/drag steps accept `modifiers: [shift, cmd, opt, ctrl]`.
 
 **Sheets/menus/copy/paste (Wave 1)** — `accept_sheet: "Save"`, `dismiss_alert`, `select_menu: "File > Open Recent > foo"`, `copy`, `paste`, `write_pasteboard: "..."`, `assert_pasteboard: "..."`
 
+**File panels (Open/Save dialogs)** — `open_file: "/abs/path"`, `save_file: "/abs/path"`, `panel_accept: "Open"?`, `panel_cancel`. Drive `NSOpenPanel` / `NSSavePanel` via Cmd+Shift+G + type + accept; works for both sheet and dialog-window forms. After `open_file` / `save_file`, assert the resulting URL with `matches:` (macOS canonicalizes `/etc` → `/private/etc`).
+
 **Assertions** — `assert_tree: PREDICATE`, `assert_state: { viewmodel, path, equals|matches|any_of }`, `expect_change: { action: { click: ... }, in: { viewmodel, path }, to: VALUE, timeout? }`
 
 **Debug** — `snapshot: name`, `dump_tree: name`, `dump_state: name`
@@ -207,6 +209,12 @@ try await pry.setAnimations(enabled: false)
 // Pasteboard
 try await pry.writePasteboard("hello")
 let s = try await pry.readPasteboard()
+
+// File panels
+try await pry.openFile("/abs/path/file.pgn")     // drive an NSOpenPanel
+try await pry.saveFile("/abs/path/out.pdf")      // drive an NSSavePanel
+try await pry.acceptPanel(button: "Open")        // generic accept
+try await pry.cancelPanel()
 
 // Cleanup
 await pry.terminate()

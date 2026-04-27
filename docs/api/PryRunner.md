@@ -151,6 +151,19 @@ public func readPasteboard() async throws -> String?
 public func writePasteboard(_ string: String) async throws
 ```
 
+### File panels (NSOpenPanel / NSSavePanel)
+
+```swift
+public func openFile(_ path: String) async throws       // drive open panel
+public func saveFile(_ path: String) async throws       // drive save panel
+public func acceptPanel(button: String? = nil) async throws
+public func cancelPanel() async throws
+```
+
+Use after triggering the panel (via `select_menu`, button click, or app
+action). The helpers wait up to 2s for the panel to surface in the AX tree.
+Works for both sheet-attached and modal-window panel forms.
+
 ### Spec running (statics)
 
 ```swift

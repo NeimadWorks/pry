@@ -280,6 +280,35 @@ marquee:
   to: { x: 400, y: 500 }
 ```
 
+### Drive Open / Save dialogs
+
+```pry
+# 1. Trigger the panel — usually via menu or button.
+select_menu: "File > Open…"
+
+# 2. Drive it. The helper handles Cmd+Shift+G + type + accept.
+open_file: "/Users/me/Documents/sample.pgn"
+
+# 3. Verify your VM saw the URL. Use `matches:` because macOS canonicalizes
+#    /etc → /private/etc and /tmp → /private/tmp.
+wait_for:
+  state: { viewmodel: DocVM, path: "lastImportedURL", matches: ".*/sample\\.pgn$" }
+  timeout: 3s
+```
+
+For exporting:
+
+```pry
+click: { id: "export_button" }
+save_file: "/tmp/exported.pdf"
+wait_for:
+  state: { viewmodel: DocVM, path: "lastExportedURL", matches: ".*/exported\\.pdf$" }
+```
+
+If the panel is non-standard (third-party file picker, a custom dialog with
+its own button labels), drive it with the lower-level `key`/`type`/`click`
+primitives plus `panel_accept: "<button>"` / `panel_cancel`.
+
 ### Disable animations for snapshot determinism
 
 In frontmatter:

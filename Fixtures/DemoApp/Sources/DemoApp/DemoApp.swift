@@ -59,6 +59,8 @@ final class DocumentListVM: ObservableObject, PryInspectable {
     @Published var debounceMessage: String = ""
     @Published var scheduledFiredCount: Int = 0
     @Published var scheduleRequestedCount: Int = 0
+    @Published var lastImportedURL: String = ""
+    @Published var lastExportedURL: String = ""
     @Published var verbose: Bool = false {
         didSet {
             guard oldValue != verbose else { return }
@@ -78,7 +80,37 @@ final class DocumentListVM: ObservableObject, PryInspectable {
             "debounceMessage": debounceMessage,
             "scheduledFiredCount": scheduledFiredCount,
             "scheduleRequestedCount": scheduleRequestedCount,
+            "lastImportedURL": lastImportedURL,
+            "lastExportedURL": lastExportedURL,
         ]
+    }
+
+    /// Open an NSOpenPanel and store the chosen URL.
+    func importDocument() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.title = "Import Document"
+        panel.begin { [weak self] response in
+            guard let self else { return }
+            if response == .OK, let url = panel.url {
+                self.lastImportedURL = url.path
+            }
+        }
+    }
+
+    /// Open an NSSavePanel and store the chosen URL.
+    func exportDocument() {
+        let panel = NSSavePanel()
+        panel.title = "Export Document"
+        panel.nameFieldStringValue = "untitled.txt"
+        panel.begin { [weak self] response in
+            guard let self else { return }
+            if response == .OK, let url = panel.url {
+                self.lastExportedURL = url.path
+            }
+        }
     }
 
     /// Demonstrates `PryClock.after(_:)` — adoption pattern for clock-driven code.
@@ -182,6 +214,27 @@ struct ContentView: View {
                 Text("Fired: \(vm.scheduledFiredCount)")
                     .accessibilityIdentifier("scheduled_count")
                     .monospacedDigit()
+            }
+            .padding(.horizontal)
+
+            HStack {
+                Button("Import…") { vm.importDocument() }
+                    .accessibilityIdentifier("import_button")
+                Button("Export…") { vm.exportDocument() }
+                    .accessibilityIdentifier("export_button")
+                Spacer()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Imported: \(vm.lastImportedURL)")
+                        .accessibilityIdentifier("imported_path_label")
+                        .font(.caption)
+                        .truncationMode(.middle)
+                        .lineLimit(1)
+                    Text("Exported: \(vm.lastExportedURL)")
+                        .accessibilityIdentifier("exported_path_label")
+                        .font(.caption)
+                        .truncationMode(.middle)
+                        .lineLimit(1)
+                }
             }
             .padding(.horizontal)
 

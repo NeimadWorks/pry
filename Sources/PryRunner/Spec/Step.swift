@@ -43,6 +43,11 @@ public enum Step: Sendable {
     case waitForIdle(timeout: Duration)
     case writePasteboard(text: String)
     case assertPasteboard(contains: String)
+    // File panels (Open/Save dialogs)
+    case openFile(path: String)
+    case saveFile(path: String)
+    case panelAccept(button: String?)
+    case panelCancel
 
     // Wave 2 — control flow
     case `if`(predicate: Predicate, then: [Step], `else`: [Step])

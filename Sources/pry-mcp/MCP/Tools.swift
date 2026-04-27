@@ -244,6 +244,48 @@ enum PryTools {
         return KeyOutput(ok: true)
     }
 
+    struct OpenFileInput: Codable { var app: String; var path: String }
+    static func openFile(_ input: OpenFileInput) async throws -> KeyOutput {
+        try ElementResolver.requireTrust()
+        _ = try await harnessHello(app: input.app)
+        let pry = try await pryActor(for: input.app)
+        try await pry.openFile(input.path)
+        return KeyOutput(ok: true)
+    }
+
+    struct SaveFileInput: Codable { var app: String; var path: String }
+    static func saveFile(_ input: SaveFileInput) async throws -> KeyOutput {
+        try ElementResolver.requireTrust()
+        _ = try await harnessHello(app: input.app)
+        let pry = try await pryActor(for: input.app)
+        try await pry.saveFile(input.path)
+        return KeyOutput(ok: true)
+    }
+
+    struct PanelAcceptInput: Codable { var app: String; var button: String? }
+    static func panelAccept(_ input: PanelAcceptInput) async throws -> KeyOutput {
+        try ElementResolver.requireTrust()
+        _ = try await harnessHello(app: input.app)
+        let pry = try await pryActor(for: input.app)
+        try await pry.acceptPanel(button: input.button)
+        return KeyOutput(ok: true)
+    }
+
+    struct PanelCancelInput: Codable { var app: String }
+    static func panelCancel(_ input: PanelCancelInput) async throws -> KeyOutput {
+        try ElementResolver.requireTrust()
+        _ = try await harnessHello(app: input.app)
+        try EventInjector.key(combo: "esc")
+        return KeyOutput(ok: true)
+    }
+
+    /// Build a transient Pry actor over the existing harness socket. The MCP
+    /// tools today open a fresh client per call (`harnessHello`); for panel
+    /// helpers we want the higher-level Pry surface, so attach quickly.
+    private static func pryActor(for bundleID: String) async throws -> Pry {
+        return try await Pry.attach(to: bundleID)
+    }
+
     struct SelectMenuInput: Codable { var app: String; var path: [String] }
     static func selectMenu(_ input: SelectMenuInput) async throws -> KeyOutput {
         try ElementResolver.requireTrust()

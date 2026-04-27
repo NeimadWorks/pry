@@ -845,6 +845,27 @@ public enum SpecParser {
             }
             throw SpecParseError.invalidArgument("assert_pasteboard needs contains:'...'", line: lineNumber)
 
+        case "open_file":
+            guard let s = mergedYAML?.asString else {
+                throw SpecParseError.invalidArgument("open_file needs an absolute file path string", line: lineNumber)
+            }
+            return .openFile(path: s)
+        case "save_file":
+            guard let s = mergedYAML?.asString else {
+                throw SpecParseError.invalidArgument("save_file needs an absolute file path string", line: lineNumber)
+            }
+            return .saveFile(path: s)
+        case "panel_accept":
+            if case .object(let kvs)? = mergedYAML {
+                var btn: String?
+                for (k, v) in kvs where k == "button" { btn = v.asString }
+                return .panelAccept(button: btn)
+            }
+            if let s = mergedYAML?.asString { return .panelAccept(button: s) }
+            return .panelAccept(button: nil)
+        case "panel_cancel":
+            return .panelCancel
+
         // Wave 2 — control flow
         case "if":
             return try buildIf(rhs: rhs, block: block, line: lineNumber)

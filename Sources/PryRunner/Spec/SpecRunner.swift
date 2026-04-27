@@ -528,6 +528,22 @@ public actor SpecRunner {
                 )
             }
 
+        case .openFile(let path):
+            try ElementResolver.requireTrust()
+            try await openFileInPanel(path: path, stepIndex: stepIndex, source: source)
+
+        case .saveFile(let path):
+            try ElementResolver.requireTrust()
+            try await saveFileInPanel(path: path, stepIndex: stepIndex, source: source)
+
+        case .panelAccept(let button):
+            try ElementResolver.requireTrust()
+            try await acceptOpenOrSavePanel(button: button)
+
+        case .panelCancel:
+            try ElementResolver.requireTrust()
+            try EventInjector.key(combo: "esc")
+
         // Wave 2 control flow
         case .if(let pred, let thenSteps, let elseSteps):
             do {
@@ -617,6 +633,162 @@ public actor SpecRunner {
         }
         walk(node, insideSheet: false)
         return out
+    }
+
+    // MARK: - File panels (Open / Save dialogs)
+
+    /// Drive an open-style NSOpenPanel: cmd+shift+g to surface "Go to folder",
+    /// type the absolute path, accept. Works against either sheet-attached
+    /// panels or modal-window panels.
+    private func openFileInPanel(path: String, stepIndex: Int, source: String) async throws {
+        guard let h = launchHandle else {
+            throw StepError(kind: "not_launched", message: "no running app")
+        }
+        try await waitForPanelReady(pid: h.pid, timeout: 2)
+        // "Go to folder" sheet inside the panel.
+        try EventInjector.key(combo: "shift+cmd+g")
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        try EventInjector.type(text: path)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        try EventInjector.key(combo: "return")             // accept Go-to-folder
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        // Either Return again accepts Open, or we click the default button explicitly.
+        try await acceptOpenOrSavePanel(button: nil)
+    }
+
+    /// Drive a save-style NSSavePanel: navigate to the directory, fill the
+    /// name field, click Save.
+    private func saveFileInPanel(path: String, stepIndex: Int, source: String) async throws {
+        guard let h = launchHandle else {
+            throw StepError(kind: "not_launched", message: "no running app")
+        }
+        try await waitForPanelReady(pid: h.pid, timeout: 2)
+        let url = URL(fileURLWithPath: path)
+        let dir = url.deletingLastPathComponent().path
+        let name = url.lastPathComponent
+
+        // Navigate to target directory via Cmd+Shift+G.
+        try EventInjector.key(combo: "shift+cmd+g")
+        try? await Task.sleep(nanoseconds: 250_000_000)
+        try EventInjector.type(text: dir)
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        try EventInjector.key(combo: "return")
+        try? await Task.sleep(nanoseconds: 300_000_000)
+
+        // Focus the name field. NSSavePanel's name field has its title set to
+        // "Save As:" — focus by clicking it. Fallback: assume it's already focused.
+        if let nameField = findSavePanelNameField(in: AXTreeWalker.snapshot(pid: h.pid)),
+           let f = nameField.frame, f.count == 4 {
+            try EventInjector.click(at: CGPoint(x: f[0] + f[2] / 2, y: f[1] + f[3] / 2))
+            try? await Task.sleep(nanoseconds: 80_000_000)
+        }
+        // Select-all + delete clears any previous filename.
+        try EventInjector.key(combo: "cmd+a")
+        try EventInjector.key(combo: "delete")
+        try EventInjector.type(text: name)
+        try? await Task.sleep(nanoseconds: 150_000_000)
+        try await acceptOpenOrSavePanel(button: nil)
+    }
+
+    /// Click the default accept button on whatever panel is open.
+    /// Recognizes AXSheet (sheet-attached) and AXWindow with subrole AXDialog
+    /// (separate-window panel). Falls back to pressing Return if no button is
+    /// found — many panels accept Return as the default action anyway.
+    private func acceptOpenOrSavePanel(button: String?) async throws {
+        guard let h = launchHandle else {
+            throw StepError(kind: "not_launched", message: "no running app")
+        }
+        let tree = AXTreeWalker.snapshot(pid: h.pid)
+        let candidates = collectPanelButtons(in: tree)
+        if candidates.isEmpty {
+            // Cleanest fallback for an Open/Save panel — Return is the default action.
+            try EventInjector.key(combo: "return")
+            return
+        }
+        let want = button?.lowercased()
+        let pick: AXNode
+        if let want {
+            guard let m = candidates.first(where: { $0.label?.lowercased() == want }) else {
+                throw StepFailure(
+                    expected: "panel button labelled '\(button!)'",
+                    observed: "available: \(candidates.compactMap(\.label).joined(separator: ", "))",
+                    suggestion: nil
+                )
+            }
+            pick = m
+        } else {
+            let preferred = ["open", "save", "choose", "ok", "done", "import", "export"]
+            pick = candidates.first(where: { n in
+                guard let l = n.label?.lowercased() else { return false }
+                return preferred.contains(l)
+            }) ?? candidates[0]
+        }
+        guard let f = pick.frame, f.count == 4 else {
+            try EventInjector.key(combo: "return")
+            return
+        }
+        try EventInjector.click(at: CGPoint(x: f[0] + f[2] / 2, y: f[1] + f[3] / 2))
+    }
+
+    /// Wait until a sheet OR a dialog-subrole window appears under the target.
+    private func waitForPanelReady(pid: pid_t, timeout: TimeInterval) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            let tree = AXTreeWalker.snapshot(pid: pid)
+            if Self.treeContainsPanel(tree) { return }
+            try? await Task.sleep(nanoseconds: 80_000_000)
+        }
+        // Don't fail hard — sometimes the panel was already up before the step.
+        // The follow-up keystrokes are the actual test.
+    }
+
+    nonisolated private static func treeContainsPanel(_ node: AXNode) -> Bool {
+        if node.role == "AXSheet" { return true }
+        if node.role == "AXWindow", let l = node.label,
+           l.lowercased().contains("open") || l.lowercased().contains("save") || l.lowercased().contains("choose") || l.lowercased().contains("import") || l.lowercased().contains("export") {
+            return true
+        }
+        for c in node.children {
+            if Self.treeContainsPanel(c) { return true }
+        }
+        return false
+    }
+
+    /// Collect candidate buttons inside any panel (sheet, dialog window).
+    private func collectPanelButtons(in node: AXNode) -> [AXNode] {
+        var out: [AXNode] = []
+        func walk(_ n: AXNode, insidePanel: Bool) {
+            let here = insidePanel
+                || n.role == "AXSheet"
+                || (n.role == "AXWindow" && (n.label?.lowercased().contains("open") == true
+                                              || n.label?.lowercased().contains("save") == true
+                                              || n.label?.lowercased().contains("choose") == true
+                                              || n.label?.lowercased().contains("import") == true
+                                              || n.label?.lowercased().contains("export") == true))
+            if here, n.role == "AXButton" { out.append(n) }
+            for c in n.children { walk(c, insidePanel: here) }
+        }
+        walk(node, insidePanel: false)
+        return out
+    }
+
+    /// Find the "Save As:" name field in an NSSavePanel.
+    private func findSavePanelNameField(in node: AXNode) -> AXNode? {
+        if node.role == "AXTextField",
+           let v = node.value, // generally empty unless user already typed
+           v.isEmpty || v.contains(".") { return node }
+        // Heuristic: any AXTextField inside a panel-shaped subtree.
+        if node.role == "AXSheet" || node.role == "AXWindow" {
+            // Prefer the first AXTextField at this level.
+            for c in node.children {
+                if c.role == "AXTextField" { return c }
+                if let found = findSavePanelNameField(in: c) { return found }
+            }
+        }
+        for c in node.children {
+            if let found = findSavePanelNameField(in: c) { return found }
+        }
+        return nil
     }
 
     private func selectMenuPath(_ path: [String], stepIndex: Int, source: String) async throws {
@@ -1320,6 +1492,10 @@ public actor SpecRunner {
         case .waitForIdle(let t): return "wait_for_idle \(t.seconds)s"
         case .writePasteboard(let s): return "write_pasteboard \"\(s)\""
         case .assertPasteboard(let s): return "assert_pasteboard contains \"\(s)\""
+        case .openFile(let p): return "open_file \"\(p)\""
+        case .saveFile(let p): return "save_file \"\(p)\""
+        case .panelAccept(let b): return "panel_accept\(b.map { " \"\($0)\"" } ?? "")"
+        case .panelCancel: return "panel_cancel"
 
         // Wave 2
         case .if(let p, _, _): return "if \(renderPredicate(p))"

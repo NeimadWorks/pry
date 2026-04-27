@@ -233,6 +233,19 @@ actor MCPServer {
             let input = try decoder.decode(PryTools.SelectMenuInput.self, from: arguments)
             return try jsonString(try await PryTools.selectMenu(input))
 
+        case "pry_open_file":
+            let input = try decoder.decode(PryTools.OpenFileInput.self, from: arguments)
+            return try jsonString(try await PryTools.openFile(input))
+        case "pry_save_file":
+            let input = try decoder.decode(PryTools.SaveFileInput.self, from: arguments)
+            return try jsonString(try await PryTools.saveFile(input))
+        case "pry_panel_accept":
+            let input = try decoder.decode(PryTools.PanelAcceptInput.self, from: arguments)
+            return try jsonString(try await PryTools.panelAccept(input))
+        case "pry_panel_cancel":
+            let input = try decoder.decode(PryTools.PanelCancelInput.self, from: arguments)
+            return try jsonString(try await PryTools.panelCancel(input))
+
         default:
             throw PryTools.ToolError.kinded(kind: "method_not_found", message: "no such tool: \(tool)")
         }

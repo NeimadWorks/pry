@@ -246,11 +246,27 @@ See [`PryHarness.md`](../api/PryHarness.md#pryclock) for adoption.
 
 | Command | Notes |
 |---|---|
-| `accept_sheet: "Save"` | clicks the named button; without arg, picks default among OK/Save/Done/Continue/Allow/Yes |
+| `accept_sheet: "Save"` | clicks the named button on a sheet attached to a window; without arg, picks default among OK/Save/Done/Continue/Allow/Yes |
 | `dismiss_alert` | sends Escape |
 | `select_menu: "File > Open Recent > foo.pgn"` | walks the menu path via AX `Press` |
 | `copy` / `paste` | `cmd+c` / `cmd+v` shorthand |
 | `write_pasteboard: "..."` | seed system pasteboard via the harness |
+
+### File panels (NSOpenPanel / NSSavePanel)
+
+| Command | Notes |
+|---|---|
+| `open_file: "/abs/path/to/file"` | drives an open-style panel: Cmd+Shift+G → type path → accept |
+| `save_file: "/abs/path/to/file"` | drives a save panel: navigate to dir → fill name field → accept |
+| `panel_accept: "Open"?` | clicks the default button; recognizes both sheet-attached and dialog-window panels |
+| `panel_cancel` | sends Escape |
+
+`open_file` / `save_file` assume the panel is already open (typically after a
+`select_menu: "File > Open"` or a click that triggers `NSOpenPanel.begin`).
+The helpers wait up to 2 s for the panel to surface in the AX tree before
+driving keystrokes. Real macOS canonicalizes paths through symlinks
+(`/etc` → `/private/etc`, `/tmp` → `/private/tmp`) — assert with
+`matches: ".*/foo$"` rather than `equals: "/foo"`.
 
 ### Control flow (Wave 2)
 
