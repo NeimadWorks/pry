@@ -421,3 +421,90 @@ Pry take a SwiftSyntax dep (breaks zero-dep) or ship a templated emitter?
 and exercise `wait_for_focus` / `assert_stable` / `expect_total` on its
 move-input screens. Track remaining flakiness as Pry bugs per ROADMAP
 principle 8.
+
+## Session 2026-04-29 — Jig + Carnet field-feedback wave
+
+**Worked on:** Two more dogfooding bilans (Jig + Carnet) converged on
+the same first-run blockers. Implemented 8 P0/P1 items, verified 40
+unit tests pass + 9/9 DemoApp specs pass.
+
+**Landed (rows 39–46 in [`docs/ROADMAP.md`](docs/ROADMAP.md)):**
+
+- **P0 — `NSRunningApplication.activate()` after every launch path** in
+  `AppDriver` (`launchByPath`, `launchByBundleID`, `attach`). Clicks
+  no longer go to whatever was foreground when `pry-mcp` ran. Both
+  bilans flagged this as the most expensive bug.
+- **P0 — `.app` bundle routing through `NSWorkspace.openApplication`**.
+  `launchByPath` now async; detects `.app` bundle paths and routes them
+  through LaunchServices so provisioning profile + entitlements load.
+  Direct `Process.run()` reserved for raw-executable SwiftPM fixtures
+  (DemoApp). Solves Jig F1 (HCI entitlement refused under execve).
+- **P0 — `pry_right_click` MCP tool + `pry-mcp right-click` CLI**. The
+  `right_click:` step was already in the grammar; the surface gap was
+  external (no MCP tool, no CLI subcommand).
+- **P0 — AXPress fast path on `click:`**. When the resolved role is
+  `AXButton` and no modifiers are requested, `AXUIElementPerformAction(
+  kAXPressAction)` runs first; CGEvent is the fallback. Wired in both
+  `Tools.click` (with `via: auto|ax_press|cgevent` override) and
+  `SpecRunner.injectClick`. Bypasses geometric hit-test — fixes
+  SwiftUI `Button(.plain)` without `.contentShape(...)`, sub-pixel
+  padding, and frontmost-app races.
+- **P1 — `activate:` step + `pry_activate` MCP tool + `pry-mcp activate`
+  CLI**. Mid-flow focus recovery for sheet dismissals returning focus
+  to the parent app, parallel agents, OS dialogs.
+- **P1 — `available_paths` / `registered` lists surfaced inline** in
+  `path_not_found` and `viewmodel_not_registered` error messages. The
+  harness already attached the data; the MCP boundary was dropping it.
+  No more silent `selectedBP` vs `selectedBlueprint` typo (Jig M4 /
+  Carnet "did you mean").
+- **P2 — `expect_state_change:` flag on `pry_click`**. Snapshots the
+  named view-model before+after; fails with `state_unchanged` if the
+  action handler never ran. Catches Jig F7 ("click resolved AXButton
+  ✓ — but action never fired") and Carnet `keyboardShortcut(.return)`
+  routing bugs.
+- **P2 — `summary.json` always written to verdicts dir** by `run-suite`.
+  Sibling exports (`junit:`/`tap:`/`summary_md:`) remain opt-in.
+
+**Decisions:**
+
+- AXPress fast path is **automatic for AXButton + no modifiers**, not
+  opt-in. Risk-free: AXPress returning non-success falls through to
+  CGEvent, so any disabled/refused button still produces the
+  deterministic "click did nothing" failure mode. The MCP tool keeps
+  `via: cgevent` as an escape hatch for spec authors who need to test
+  the literal hit-test path (rare).
+- `expect_state_change:` is a **fail-fast canary**, not a replacement
+  for `wait_for` / `assert_state`. It runs immediately after the click
+  with a 60ms dwell — long enough to catch "nothing fired" but not long
+  enough to wait out async work. Real assertions still belong in
+  follow-up steps.
+- Skipped Jig F4 (multi-line `for:` arrays) — the Canopy-wave
+  `normalizeIndentedBlocksToInline` already handles this; verified by
+  the existing parser tests. If it surfaces again the bug is
+  `quoteScalarIfNeeded`, not the normalizer.
+- Skipped Jig F3 (`wait_for: { target: ... }`) — `wait_for: { id: "..." }`
+  already works via the parser's `.contains` fallback. The Jig run
+  used `target:` as the wrapping key, which isn't a documented form;
+  the existing bare-target syntax handles the use case.
+- Skipped Carnet "dry-run mode" (resolve all `id:` upfront) — that's a
+  v0.3 lint-side feature, not a v0.2.x patch.
+
+**Tests / smoke:**
+- `swift test` — 40/40 pass.
+- `pry-mcp run-suite --dir Fixtures/DemoApp/flows` — 9/9 PASS in 19s,
+  including the `.app`-bundle / AXPress paths (DemoApp uses raw
+  executable so the AXPress fast path is the regression-relevant
+  change).
+- `summary.json` written, structurally valid (jq-parseable).
+
+**Open questions discovered:** None. Inspector scaffolding ADR
+(SwiftSyntax dep vs templated emitter) still pending from the Canopy
+wave.
+
+**Blocked on:** nothing.
+
+**Next single action:** Continue Phase 5 dogfooding. Either (a) re-run
+Jig with the new toolset and confirm F1/F6/M1 are unblocked, or (b)
+tag `v0.2.1` and start the next field-app integration. The eight
+items above represent the consolidated v0.2.x DX bar — anything new
+from a fresh field run goes into a v0.3 pass.

@@ -196,6 +196,14 @@ timeout, etc).
 | `launch_with: { args: [...], env: {...} }` | launch with custom argv / env |
 | `terminate` | SIGTERM, wait, SIGKILL if needed |
 | `relaunch` | terminate + launch |
+| `activate` | force the target app to the foreground (`NSRunningApplication.activate()`). Recovery hook for mid-flow focus theft (sheet dismissals, parallel agents, OS dialogs). After `launch`, Pry already activates — use this only when something stole focus afterwards. |
+
+> **Launch routing.** When `executable_path:` (or `.pry/config.yaml`) points
+> at a `.app` bundle, Pry launches via `NSWorkspace.openApplication` so
+> LaunchServices loads the provisioning profile + entitlements. When it
+> points at a raw executable (e.g. a SwiftPM-built fixture), Pry uses
+> `Process.run()`. Either way, the launched app is brought to the
+> foreground before the first event is injected.
 
 ### Waits
 
@@ -210,9 +218,9 @@ timeout, etc).
 
 | Command | Notes |
 |---|---|
-| `click: TARGET` | inject mouse down + up at target center |
-| `double_click: TARGET` | two clicks within system double-click interval |
-| `right_click: TARGET` | secondary button |
+| `click: TARGET` | invokes the AX press action when the target is an `AXButton` and no modifier keys are requested; otherwise injects a CGEvent mouse down + up at the frame center. The AXPress fast path bypasses geometric hit-test, so it works for SwiftUI `Button(.plain)` without `.contentShape(...)` and survives sub-pixel padding. |
+| `double_click: TARGET` | two CGEvent clicks within the system double-click interval (no AXPress fast path — there is no AX action for double-click). |
+| `right_click: TARGET` | secondary button. Use this for context menus that only attach to right-button events; left-clicks won't open them. |
 | `hover: TARGET` | move only |
 | `hover: { id: "x", dwell_ms: 800 }` | move + dwell (for tooltips) |
 | `long_press: { id: "x", dwell_ms: 800 }` | down, hold, up |

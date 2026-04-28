@@ -112,12 +112,29 @@ Bumps the suite to 40 unit tests + 9 specs PASS.
 | 37 | `auto_build: true` in `.pry/config.yaml` — runs `swift build` before launch | [spec-format §9](design/spec-format.md#9-project-config-pryconfigyaml) |
 | 38 | `View.pryRegister(_:)` SwiftUI modifier — auto-(un)register `@StateObject` VMs | [PryHarness](api/PryHarness.md#auto-registration-with-pryregister) |
 
+### Jig + Carnet field-feedback wave (on `main`, 2026-04-29)
+
+Two more dogfooding sessions converged on the same first-run blockers
+("CGEvents go to the wrong app", "right-click missing", "click passes but
+nothing happens"). Eight items, all P0/P1 in the source bilans.
+
+| # | Improvement | Where |
+|---|---|---|
+| 39 | `NSRunningApplication.activate()` after `launchByPath`, `launchByBundleID`, and `attach` — the launched app is now guaranteed frontmost before the first event is injected. Solves "clicks go to Claude Code / Terminal". | [Driver/AppDriver.swift](../Sources/PryRunner/Driver/AppDriver.swift) |
+| 40 | `.app` bundle paths in `executable_path:` route through `NSWorkspace.openApplication` (loads provisioning profile + entitlements). Direct `Process.run()` is reserved for raw-executable SwiftPM fixtures. | [AppDriver.launchByPath](../Sources/PryRunner/Driver/AppDriver.swift) |
+| 41 | `right_click:` step was already in the grammar; now also exposed as `pry_right_click` MCP tool and `pry-mcp right-click --app X --id Y` CLI subcommand. | [pry-mcp-tools](api/pry-mcp-tools.md#pry_right_click) |
+| 42 | `activate:` step + `pry_activate` MCP tool + `pry-mcp activate --app X` CLI — recovery hook for mid-flow focus theft. | [spec-format §3](design/spec-format.md#lifecycle), [pry-mcp-tools](api/pry-mcp-tools.md#pry_activate) |
+| 43 | AXPress fast-path on `click:` — when the resolved target is an `AXButton` and no modifier keys are requested, `AXUIElementPerformAction(kAXPressAction)` runs first; CGEvent is the fallback. Bypasses geometric hit-test (SwiftUI `Button(.plain)` without `.contentShape`, sub-pixel padding, frontmost-app races). | [SpecRunner.injectClick](../Sources/PryRunner/Spec/SpecRunner.swift), [Tools.click](../Sources/pry-mcp/MCP/Tools.swift) |
+| 44 | `expect_state_change:` flag on `pry_click` — snapshots the named view-model before+after and fails with `state_unchanged` if the action handler never ran. Catches `keyboardShortcut(.return)` routing bugs and "AXPress succeeds but nothing fires" silently. | [pry-mcp-tools](api/pry-mcp-tools.md#pry_click) |
+| 45 | `path_not_found` and `viewmodel_not_registered` errors now surface the `available_paths` / `registered` lists inline in the message — no more silent `selectedBP` vs `selectedBlueprint` typo. | [Tools.translate](../Sources/pry-mcp/MCP/Tools.swift) |
+| 46 | `summary.json` is always written to the verdicts directory after `run-suite` (alongside opt-in `junit:` / `tap:` / `summary_md:`). Stable consumption point for CI / dashboards. | [Tools.runSuite](../Sources/pry-mcp/MCP/Tools.swift) |
+
 ---
 
 ## Now
 
 Nothing in flight. The previous "Next" bucket has been delivered (rows
-11–38 in the table above). Next field run will produce the next priority
+11–46 in the table above). Next field run will produce the next priority
 signal.
 
 ---

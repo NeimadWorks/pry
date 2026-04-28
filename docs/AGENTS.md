@@ -115,7 +115,7 @@ Triggers: `sheet:"Replace.*"`, `state:VM.path`, `window:"Compose.*"`.
 
 ### Step commands
 
-**Lifecycle** — `launch`, `launch_with: { args, env }`, `terminate`, `relaunch`
+**Lifecycle** — `launch`, `launch_with: { args, env }`, `terminate`, `relaunch`, `activate` (recover frontmost when something stole focus)
 
 **Control flow (Wave 2)** — `if: PRED then: [...] else: [...]`, `for: { var, in: [...] }`, `repeat: N`, `call: name` (with `args:`)
 

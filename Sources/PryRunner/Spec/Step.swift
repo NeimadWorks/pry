@@ -7,6 +7,12 @@ public enum Step: Sendable {
     case launch(args: [String], env: [String: String])
     case terminate
     case relaunch
+    /// Force the target app to the foreground. Recovery hook for cases where
+    /// another process steals focus mid-flow (sheet dismissal returns focus
+    /// to the parent app, another agent activates a different window, etc.).
+    /// Without an active target, CGEvents land in the wrong process — both
+    /// Carnet and Jig dogfooding hit this.
+    case activate
 
     case waitFor(predicate: Predicate, timeout: Duration)
     case sleep(Duration)

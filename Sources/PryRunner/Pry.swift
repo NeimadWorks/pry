@@ -56,7 +56,7 @@ public actor Pry {
     ) async throws -> Pry {
         let handle: AppDriver.Handle
         if let executablePath {
-            handle = try AppDriver.launchByPath(
+            handle = try await AppDriver.launchByPath(
                 executablePath: executablePath, bundleID: bundleID,
                 args: args, env: env, socketTimeout: socketTimeout)
         } else {

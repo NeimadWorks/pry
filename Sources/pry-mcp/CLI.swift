@@ -24,7 +24,7 @@ enum CLI {
 
         // Fail-fast AX permission check for subcommands that need it. Gives a
         // clean error before we waste time launching the target app.
-        let needsAX = ["click", "type", "key", "tree", "find", "snapshot", "run", "run-suite"]
+        let needsAX = ["click", "right-click", "type", "key", "tree", "find", "snapshot", "run", "run-suite"]
         if needsAX.contains(sub) {
             if !AXIsProcessTrusted() {
                 FileHandle.standardError.write(Data("""
@@ -74,7 +74,30 @@ enum CLI {
 
             case "click":
                 let target = try parseTargetArgs(rest)
-                let out = try await PryTools.click(.init(app: required(rest, "--app"), target: target))
+                let via = optional(rest, "--via")
+                let expectVM = optional(rest, "--expect-state-change-vm")
+                var expect: PryTools.ExpectStateChangeOpt?
+                if let vm = expectVM {
+                    expect = try? JSONDecoder().decode(
+                        PryTools.ExpectStateChangeOpt.self,
+                        from: Data(#"{"viewmodel":"\#(vm)"}"#.utf8)
+                    )
+                }
+                let out = try await PryTools.click(.init(
+                    app: required(rest, "--app"), target: target,
+                    modifiers: nil, via: via, expect_state_change: expect
+                ))
+                print(try jsonPretty(out))
+
+            case "right-click":
+                let target = try parseTargetArgs(rest)
+                let out = try await PryTools.rightClick(.init(
+                    app: required(rest, "--app"), target: target, modifiers: nil
+                ))
+                print(try jsonPretty(out))
+
+            case "activate":
+                let out = try await PryTools.activate(.init(app: required(rest, "--app")))
                 print(try jsonPretty(out))
 
             case "type":

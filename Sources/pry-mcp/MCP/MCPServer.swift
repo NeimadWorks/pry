@@ -149,6 +149,14 @@ actor MCPServer {
             let out = try await PryTools.click(input)
             return try jsonString(out)
 
+        case "pry_right_click":
+            let input = try decoder.decode(PryTools.RightClickInput.self, from: arguments)
+            return try jsonString(try await PryTools.rightClick(input))
+
+        case "pry_activate":
+            let input = try decoder.decode(PryTools.ActivateInput.self, from: arguments)
+            return try jsonString(try await PryTools.activate(input))
+
         case "pry_type":
             let input = try decoder.decode(PryTools.TypeInput.self, from: arguments)
             let out = try await PryTools.typeText(input)
@@ -348,10 +356,29 @@ enum ToolCatalog {
         ],
         [
             "name": "pry_click",
-            "description": "Resolve a target AX element and inject a left-click at its center.",
+            "description": "Resolve a target AX element and click it. Default strategy `via: auto` performs an AXPress on AXButton targets (bypasses geometric hit-test, robust against SwiftUI Button(.plain) padding traps), otherwise injects a CGEvent left-click at the frame center. Override with `via: cgevent` to force the event path or `via: ax_press` to require it.",
             "inputSchema": objectSchema(required: ["app", "target"], properties: [
                 "app": ["type": "string"],
                 "target": targetSchema,
+                "modifiers": ["type": "array", "items": ["type": "string", "enum": ["cmd", "shift", "opt", "ctrl", "fn"]]],
+                "via": ["type": "string", "enum": ["auto", "ax_press", "cgevent"], "description": "Click strategy. Default `auto`."],
+                "expect_state_change": ["type": ["object", "boolean"], "description": "If set, snapshot the named view-model before+after and fail with `state_unchanged` if nothing mutated. Catches SwiftUI shortcut/keyboardShortcut routing bugs that pass an AX click but never run the action handler. Provide `{ viewmodel: NAME }`."],
+            ]),
+        ],
+        [
+            "name": "pry_right_click",
+            "description": "Resolve a target AX element and inject a right-click (mouseDown.right + mouseUp.right) at its center. Use this for context menus that only attach to right-button events; left-clicks won't open them.",
+            "inputSchema": objectSchema(required: ["app", "target"], properties: [
+                "app": ["type": "string"],
+                "target": targetSchema,
+                "modifiers": ["type": "array", "items": ["type": "string"]],
+            ]),
+        ],
+        [
+            "name": "pry_activate",
+            "description": "Bring the target app to the foreground (NSRunningApplication.activate). Recovery hook for when another process steals focus mid-run — without an active app, CGEvents are dispatched to whatever is frontmost, not your target.",
+            "inputSchema": objectSchema(required: ["app"], properties: [
+                "app": ["type": "string"],
             ]),
         ],
         [

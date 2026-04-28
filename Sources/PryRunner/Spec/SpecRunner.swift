@@ -469,6 +469,12 @@ public actor SpecRunner {
             harness = nil
             try await doLaunch(args: [], env: [:])
 
+        case .activate:
+            AppDriver.activate(bundleID: spec.app)
+            // Tiny dwell so AppKit's run loop finishes the activation
+            // transition before subsequent CGEvents are dispatched.
+            try? await Task.sleep(nanoseconds: 80_000_000)
+
         case .waitFor(let pred, let timeout):
             try await waitForPredicate(pred, timeout: timeout, stepIndex: stepIndex, source: source)
 
@@ -1252,7 +1258,7 @@ public actor SpecRunner {
                 projectConfig?.resolveExecutablePath(for: spec.app)
             }()
             if let path = resolvedExec {
-                handle = try AppDriver.launchByPath(
+                handle = try await AppDriver.launchByPath(
                     executablePath: path, bundleID: spec.app, args: args, env: env)
             } else {
                 handle = try await AppDriver.launchByBundleID(spec.app, args: args, env: env)
@@ -1292,6 +1298,22 @@ public actor SpecRunner {
                              stepIndex: Int, source: String) async throws {
         try ElementResolver.requireTrust()
         let r = try resolveTarget(target, stepSource: source, stepIndex: stepIndex)
+        // Fast path: for plain (no-modifier) single-clicks on AXButton, prefer
+        // AXPress. It bypasses geometric hit-test, which fixes
+        //   - SwiftUI Button(.plain) without `.contentShape(...)` (clicks on
+        //     padding miss the hit-test even though AX reports the full frame)
+        //   - sub-pixel rounding when the frame center lands on a divider
+        //   - frontmost-app races where another window overlapped the target
+        // We never use AXPress for double/right clicks (no AX action mirrors
+        // those) or when modifier keys are requested (cmd+click on a button
+        // is a different gesture).
+        if kind == .single && modifiers.isEmpty && r.role == "AXButton" {
+            let err = AXUIElementPerformAction(r.element.element, kAXPressAction as CFString)
+            if err == .success { return }
+            // Otherwise fall through to CGEvent — AXPress can refuse for
+            // disabled buttons, custom actions, etc., and CGEvent gives the
+            // deterministic "click did nothing" failure.
+        }
         guard let f = r.frame else {
             throw StepFailure(expected: "target resolves to an element with a frame",
                               observed: "\(r.role) has no frame",
@@ -1925,6 +1947,7 @@ public actor SpecRunner {
             return args.isEmpty && env.isEmpty ? "launch" : "launch_with"
         case .terminate: return "terminate"
         case .relaunch: return "relaunch"
+        case .activate: return "activate"
         case .waitFor(let p, let t): return "wait_for (timeout \(t.seconds)s): \(renderPredicate(p))"
         case .sleep(let d): return "sleep \(d.seconds)s"
         case .click(let t, let m): return "click \(renderTarget(t))\(modSuffix(m))"

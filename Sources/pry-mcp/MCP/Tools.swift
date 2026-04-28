@@ -48,7 +48,7 @@ enum PryTools {
         let handle: AppDriver.Handle
         do {
             if let path = input.executable_path {
-                handle = try AppDriver.launchByPath(
+                handle = try await AppDriver.launchByPath(
                     executablePath: path,
                     bundleID: input.app,
                     args: input.args ?? [],
@@ -168,9 +168,44 @@ enum PryTools {
         var app: String
         var target: TargetSpec
         var modifiers: [String]?
+        /// `auto` (default), `ax_press`, or `cgevent`. `auto` tries AXPress first
+        /// when the resolved role is `AXButton` and no modifier keys are
+        /// requested — this bypasses geometric hit-test so it works for
+        /// SwiftUI `Button(.plain)` without `.contentShape(...)` and for
+        /// targets behind sub-pixel padding (Jig feedback F6).
+        var via: String?
+        /// Capture the named VM snapshot before/after the click; if no key
+        /// changes value, fail with `state_unchanged` instead of returning
+        /// a green "click happened" verdict (Jig F7 / Carnet #3). Either a
+        /// bare `true` (uses the next reachable VM via `viewmodel:`) or a
+        /// dict { viewmodel: NAME } can be supplied.
+        var expect_state_change: ExpectStateChangeOpt?
+    }
+    /// Decoded form of `expect_state_change:` — either a Bool or an object
+    /// with a `viewmodel` key. Bool semantics need a paired `viewmodel:`
+    /// field on the click step itself or get rejected with `invalid_params`.
+    struct ExpectStateChangeOpt: Codable {
+        var viewmodel: String?
+        var enabled: Bool?
+        init(from decoder: Decoder) throws {
+            if let b = try? decoder.singleValueContainer().decode(Bool.self) {
+                self.enabled = b; self.viewmodel = nil; return
+            }
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            self.viewmodel = try c.decodeIfPresent(String.self, forKey: .viewmodel)
+            self.enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
+        }
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encodeIfPresent(viewmodel, forKey: .viewmodel)
+            try c.encodeIfPresent(enabled, forKey: .enabled)
+        }
+        enum CodingKeys: String, CodingKey { case viewmodel, enabled }
     }
     struct ClickOutput: Codable {
         var resolved: ResolvedOutput
+        /// Which path was taken. `ax_press` means we never injected a CGEvent.
+        var via: String
     }
     struct ResolvedOutput: Codable {
         var role: String
@@ -188,18 +223,123 @@ enum PryTools {
         } catch let e as ResolveError {
             throw Self.translate(e)
         }
+        // Optional pre-snapshot for expect_state_change support.
+        let preSnap = try await preStateSnapshot(input.app, opt: input.expect_state_change)
+
+        let modsList = input.modifiers ?? []
+        let mods = EventInjector.parseModifiers(modsList)
+        let strategy = ClickStrategy(rawValue: input.via ?? "auto") ?? .auto
+        let pickAXPress: Bool = {
+            switch strategy {
+            case .axPress: return true
+            case .cgevent: return false
+            case .auto: return modsList.isEmpty && resolved.role == "AXButton"
+            }
+        }()
+
+        var via = "cgevent"
+        var pressed = false
+        if pickAXPress {
+            // AXPress traverses straight to the action handler regardless of
+            // hit-test. Returns errSuccess on success — fall back to CGEvent
+            // for any non-success code so disabled buttons / refusals still
+            // show the deterministic "click did nothing" failure mode.
+            let err = AXUIElementPerformAction(resolved.element.element, kAXPressAction as CFString)
+            if err == .success {
+                via = "ax_press"
+                pressed = true
+            }
+        }
+        if !pressed {
+            guard let frame = resolved.frame else {
+                throw ToolError.kinded(kind: "resolution_empty",
+                                       message: "resolved element has no frame")
+            }
+            try EventInjector.click(at: CGPoint(x: frame.midX, y: frame.midY), modifiers: mods)
+        }
+
+        try await assertStateChanged(app: input.app, opt: input.expect_state_change, before: preSnap)
+
+        return ClickOutput(resolved: ResolvedOutput(
+            role: resolved.role,
+            label: resolved.label,
+            id: resolved.identifier,
+            frame: resolved.frame.map { [$0.origin.x, $0.origin.y, $0.width, $0.height] }
+        ), via: via)
+    }
+
+    enum ClickStrategy: String { case auto, axPress = "ax_press", cgevent }
+
+    /// Capture VM snapshot before a click when `expect_state_change` is set.
+    private static func preStateSnapshot(_ app: String, opt: ExpectStateChangeOpt?) async throws -> [String: PryWire.AnyCodable]? {
+        guard let opt, opt.enabled ?? true, let vm = opt.viewmodel else { return nil }
+        let client = try await harnessConnection(for: app)
+        let result = try await client.readState(viewmodel: vm, path: nil)
+        return result.keys
+    }
+    private static func assertStateChanged(app: String, opt: ExpectStateChangeOpt?, before: [String: PryWire.AnyCodable]?) async throws {
+        guard let opt, opt.enabled ?? true, let vm = opt.viewmodel, let before else { return }
+        // Tiny delay so the action handler has a chance to mutate state on
+        // the main actor before we read it again. Real assertions still
+        // belong in `wait_for` / `assert_state` — this is a fail-fast canary.
+        try? await Task.sleep(nanoseconds: 60_000_000)
+        let client = try await harnessConnection(for: app)
+        let after = try await client.readState(viewmodel: vm, path: nil).keys ?? [:]
+        let snap = before
+        if equalSnapshots(snap, after) {
+            throw ToolError.kinded(
+                kind: "state_unchanged",
+                message: "click on target completed but \(vm) snapshot is byte-identical before/after — action handler likely never ran",
+                fix: "Common causes: (1) target resolved to a label/container instead of the button; (2) keyboardShortcut without a modifier; (3) provisioning profile not loaded (entitled app launched via execve instead of NSWorkspace)."
+            )
+        }
+    }
+    private static func equalSnapshots(_ a: [String: PryWire.AnyCodable], _ b: [String: PryWire.AnyCodable]) -> Bool {
+        guard a.keys == b.keys else { return false }
+        for k in a.keys {
+            if String(describing: a[k]?.value) != String(describing: b[k]?.value) { return false }
+        }
+        return true
+    }
+
+    // MARK: - Right-click (separate tool — different button event sequence
+    // than `pry_click`, and many menus only attach to mouseDown.right)
+
+    struct RightClickInput: Codable {
+        var app: String
+        var target: TargetSpec
+        var modifiers: [String]?
+    }
+    static func rightClick(_ input: RightClickInput) async throws -> ClickOutput {
+        let target = try parseTarget(input.target)
+        let pid = try await harnessHello(app: input.app).pid
+        let resolved: Resolved
+        do {
+            resolved = try ElementResolver.resolve(target: target, in: pid)
+        } catch let e as ResolveError {
+            throw Self.translate(e)
+        }
         guard let frame = resolved.frame else {
             throw ToolError.kinded(kind: "resolution_empty",
                                    message: "resolved element has no frame")
         }
         let mods = EventInjector.parseModifiers(input.modifiers ?? [])
-        try EventInjector.click(at: CGPoint(x: frame.midX, y: frame.midY), modifiers: mods)
+        try EventInjector.rightClick(at: CGPoint(x: frame.midX, y: frame.midY), modifiers: mods)
         return ClickOutput(resolved: ResolvedOutput(
             role: resolved.role,
             label: resolved.label,
             id: resolved.identifier,
             frame: [frame.origin.x, frame.origin.y, frame.width, frame.height]
-        ))
+        ), via: "cgevent")
+    }
+
+    // MARK: - Activate (force frontmost — recovery when focus is stolen)
+
+    struct ActivateInput: Codable { var app: String }
+    struct ActivateOutput: Codable { var ok: Bool }
+    static func activate(_ input: ActivateInput) async throws -> ActivateOutput {
+        AppDriver.activate(bundleID: input.app)
+        return ActivateOutput(ok: true)
     }
 
     struct TypeInput: Codable {
@@ -804,6 +944,32 @@ enum PryTools {
             SuiteEntry(spec: $0.specID, status: $0.status.rawValue,
                        duration: $0.duration, failed_at_step: $0.failedAtStep)
         }
+        // Always drop a `summary.json` next to the verdict directories — CI
+        // and dashboards consume it without re-parsing the markdown. Sibling
+        // exports (junit/tap/summary_md) remain opt-in via flags above.
+        let verdictsDir = URL(fileURLWithPath: input.verdicts_dir ?? "./pry-verdicts")
+        try? FileManager.default.createDirectory(at: verdictsDir, withIntermediateDirectories: true)
+        let summary: [String: Any] = [
+            "total": verdicts.count,
+            "passed": passed,
+            "failed": failed,
+            "errored": errored,
+            "generated_at": ISO8601DateFormatter().string(from: Date()),
+            "verdicts": entries.map { e -> [String: Any] in
+                var d: [String: Any] = [
+                    "spec": e.spec,
+                    "status": e.status,
+                    "duration": e.duration,
+                ]
+                if let s = e.failed_at_step { d["failed_at_step"] = s }
+                return d
+            },
+        ]
+        if let data = try? JSONSerialization.data(withJSONObject: summary,
+                                                  options: [.prettyPrinted, .sortedKeys]) {
+            try? data.write(to: verdictsDir.appendingPathComponent("summary.json"))
+        }
+
         return RunSuiteOutput(total: verdicts.count, passed: passed, failed: failed,
                               errored: errored, verdicts: entries)
     }
@@ -990,7 +1156,27 @@ enum PryTools {
             case PryWire.RPCError.invalidParams: kind = "invalid_params"
             default: kind = "internal"
             }
-            return .kinded(kind: kind, message: err.message)
+            // Surface the harness's diagnostic data inline in the message so
+            // the verdict shows it without needing to decode AnyCodable.
+            // For path_not_found the harness attaches `available_paths`; for
+            // viewmodel_not_registered it attaches `registered`.
+            var msg = err.message
+            if let data = err.data {
+                if kind == "path_not_found",
+                   let pathsAny = data["available_paths"]?.value as? [any Sendable] {
+                    let names = pathsAny.compactMap { $0 as? String }.sorted()
+                    if !names.isEmpty {
+                        msg += "\nAvailable paths on this view-model:\n  - " + names.joined(separator: "\n  - ")
+                    }
+                } else if kind == "viewmodel_not_registered",
+                          let regsAny = data["registered"]?.value as? [any Sendable] {
+                    let names = regsAny.compactMap { $0 as? String }.sorted()
+                    if !names.isEmpty {
+                        msg += "\nRegistered view-models: " + names.joined(separator: ", ")
+                    }
+                }
+            }
+            return .kinded(kind: kind, message: msg)
         default:
             return .kinded(kind: "internal", message: e.description)
         }

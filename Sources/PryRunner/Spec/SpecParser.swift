@@ -721,6 +721,7 @@ public enum SpecParser {
             return .launch(args: args, env: env)
         case "terminate": return .terminate
         case "relaunch": return .relaunch
+        case "activate": return .activate
 
         // Waits
         case "wait_for":
