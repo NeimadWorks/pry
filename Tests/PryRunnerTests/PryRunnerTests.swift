@@ -139,7 +139,7 @@ final class SpecParserTests: XCTestCase {
         """
         let spec = try SpecParser.parse(source: src)
         if case .click(let target, _) = spec.steps[0],
-           case .nth(let base, let i) = target,
+           case .nth(let base, let i, _) = target,
            case .id(let s) = base {
             XCTAssertEqual(s, "row")
             XCTAssertEqual(i, 2)
@@ -270,6 +270,155 @@ final class SpecParserTests: XCTestCase {
             XCTAssertEqual(name, "clip")
             if case .pasteboard = src {} else { XCTFail("not pasteboard source") }
         } else { XCTFail("not copyToVar") }
+    }
+
+    func testParseNotMatches() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        assert_state: { viewmodel: VM, path: p, not_matches: ".*Desktop$" }
+        assert_state: { viewmodel: VM, path: q, not_equals: 0 }
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .assertState(_, _, let e) = spec.steps[0], case .notMatches(let s) = e {
+            XCTAssertEqual(s, ".*Desktop$")
+        } else { XCTFail("not notMatches") }
+        if case .assertState(_, _, let e) = spec.steps[1], case .notEquals = e {} else {
+            XCTFail("not notEquals")
+        }
+    }
+
+    func testParseExpectTotal() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        click: { id: "row", nth: 0, expect_total: 2 }
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .click(let t, _) = spec.steps[0],
+           case .nth(_, _, let total) = t {
+            XCTAssertEqual(total, 2)
+        } else { XCTFail("not nth with total") }
+    }
+
+    func testParseTypeChars() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        type_chars: "saf"
+        type_chars: { text: "abc", interval_ms: 50 }
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .typeChars(let s, let i) = spec.steps[0] {
+            XCTAssertEqual(s, "saf")
+            XCTAssertEqual(i, 30)
+        } else { XCTFail("not typeChars") }
+        if case .typeChars(_, let i) = spec.steps[1] {
+            XCTAssertEqual(i, 50)
+        } else { XCTFail("not typeChars w/ interval") }
+    }
+
+    func testParseSheetPredicate() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        wait_for: { sheet: any }
+        wait_for: { sheet: { title_matches: "Save.*" } }
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .waitFor(let p, _) = spec.steps[0],
+           case .sheetOpen(let tm) = p {
+            XCTAssertNil(tm)
+        } else { XCTFail("not sheet:any") }
+        if case .waitFor(let p, _) = spec.steps[1],
+           case .sheetOpen(let tm) = p {
+            XCTAssertEqual(tm, "Save.*")
+        } else { XCTFail("not sheet titleMatches") }
+    }
+
+    func testParseAssertStable() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        assert_stable: { contains: { id: "x" } }
+          for: 1s
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .assertTree(let p) = spec.steps[0],
+           case .stableFor(_, let s) = p {
+            XCTAssertEqual(s, 1)
+        } else { XCTFail("not stableFor") }
+    }
+
+    func testParseDumpFocusAndWaitForFocus() throws {
+        let src = """
+        ---
+        id: t
+        app: x
+        ---
+
+        ```pry
+        dump_focus: "after-sheet-close"
+        wait_for_focus: { id: "name_field" }
+          timeout: 1s
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        if case .dumpFocus(let n) = spec.steps[0] {
+            XCTAssertEqual(n, "after-sheet-close")
+        } else { XCTFail("not dumpFocus") }
+        if case .waitForFocus(_, let t) = spec.steps[1] {
+            XCTAssertEqual(t.seconds, 1)
+        } else { XCTFail("not waitForFocus") }
+    }
+
+    func testMultiLineWithFsFrontmatter() throws {
+        // The whole point: indented multi-line frontmatter is now parsed
+        // (used to be silently dropped).
+        let src = """
+        ---
+        id: t
+        app: x
+        with_fs:
+          base: ~/.pry-tmp/${spec_id}
+          layout:
+            - file: foo.txt, content: "hi"
+            - dir: assets
+        ---
+
+        ```pry
+        launch
+        ```
+        """
+        let spec = try SpecParser.parse(source: src)
+        guard let fs = spec.withFS else { return XCTFail("with_fs not parsed") }
+        XCTAssertEqual(fs.basePath, "~/.pry-tmp/${spec_id}")
+        XCTAssertEqual(fs.entries.count, 2)
     }
 
     func testParseFrontmatterSlowWarn() throws {

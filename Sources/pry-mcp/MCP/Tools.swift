@@ -141,6 +141,7 @@ enum PryTools {
         var tree_path: String?
         var point: PointSpec?
         var nth: Int?
+        var expect_total: Int?
     }
     struct PointSpec: Codable {
         var x: Double
@@ -159,7 +160,7 @@ enum PryTools {
             throw ToolError.kinded(kind: "invalid_params",
                                    message: "target must specify one of: id, role+label, label, label_matches, tree_path, point")
         }
-        if let n = spec.nth { return .nth(base: base, index: n) }
+        if let n = spec.nth { return .nth(base: base, index: n, expectedTotal: spec.expect_total) }
         return base
     }
 
@@ -403,6 +404,11 @@ enum PryTools {
     struct TreeInput: Codable {
         var app: String
         var window: WindowSpec?
+        /// When true, replace SwiftUI generic-modifier-chain labels (>200 chars,
+        /// the `SwiftUI.ModifiedContent<...>` noise) with `<swiftui-modifier-chain>`
+        /// for readable output. Off by default so consumers that need the
+        /// raw value still get it.
+        var compact: Bool?
     }
     struct WindowSpec: Codable {
         var title: String?
@@ -414,7 +420,135 @@ enum PryTools {
         let hello = try await harnessHello(app: input.app)
         let filter = input.window.map { WindowFilter(title: $0.title, titleMatches: $0.title_matches) }
         let tree = AXTreeWalker.snapshot(pid: hello.pid, window: filter)
-        return TreeOutput(yaml: AXTreeWalker.renderYAML(tree))
+        let yaml = AXTreeWalker.renderYAML(tree)
+        return TreeOutput(yaml: (input.compact ?? false) ? compactSwiftUILabels(yaml) : yaml)
+    }
+
+    /// Strip noisy SwiftUI generic-type label chains in the YAML tree dump.
+    /// Anything over 200 chars in a `label="..."` or `id="..."` block is
+    /// replaced with `<swiftui-modifier-chain>` to keep the dump skimmable.
+    static func compactSwiftUILabels(_ yaml: String) -> String {
+        var out = yaml
+        let pattern = "(label|id)=\"([^\"]{200,})\""
+        if let rx = try? NSRegularExpression(pattern: pattern) {
+            let nsOut = out as NSString
+            let matches = rx.matches(in: out, range: NSRange(location: 0, length: nsOut.length))
+            // Replace from the back so range offsets stay valid.
+            for m in matches.reversed() {
+                let key = nsOut.substring(with: m.range(at: 1))
+                let replacement = "\(key)=\"<swiftui-modifier-chain>\""
+                out = (out as NSString).replacingCharacters(in: m.range, with: replacement)
+            }
+        }
+        return out
+    }
+
+    struct MenuInspectInput: Codable {
+        var app: String
+        var path: [String]?
+    }
+    struct MenuInspectOutput: Codable {
+        var path: [String]
+        var children: [String]   // child titles at the deepest level walked
+    }
+    /// Walk the menu bar to a path and dump the items of the deepest level
+    /// without closing the menu after — the practical workaround for
+    /// "select_menu closes the menu before I can introspect sub-items".
+    /// Path is e.g. ["View", "View Mode"] to see what's under "View Mode".
+    static func menuInspect(_ input: MenuInspectInput) async throws -> MenuInspectOutput {
+        try ElementResolver.requireTrust()
+        let hello = try await harnessHello(app: input.app)
+        let appEl = AXUIElementCreateApplication(hello.pid)
+        var attr: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(appEl, kAXMenuBarAttribute as CFString, &attr) == .success,
+              let menuBarRef = attr else {
+            throw ToolError.kinded(kind: "no_menu_bar", message: "app has no menu bar")
+        }
+        var current: AXUIElement = menuBarRef as! AXUIElement
+        let path = input.path ?? []
+        for (i, segment) in path.enumerated() {
+            var childAttr: CFTypeRef?
+            AXUIElementCopyAttributeValue(current, kAXChildrenAttribute as CFString, &childAttr)
+            guard let kids = childAttr as? [AXUIElement] else {
+                throw ToolError.kinded(kind: "menu_walk_failed",
+                                       message: "no children at '\(path.prefix(i).joined(separator: " > "))'")
+            }
+            guard let next = kids.first(where: { el -> Bool in
+                var t: CFTypeRef?
+                AXUIElementCopyAttributeValue(el, kAXTitleAttribute as CFString, &t)
+                return (t as? String) == segment
+            }) else {
+                let titles = kids.compactMap { (el: AXUIElement) -> String? in
+                    var t: CFTypeRef?
+                    AXUIElementCopyAttributeValue(el, kAXTitleAttribute as CFString, &t)
+                    return t as? String
+                }
+                throw ToolError.kinded(kind: "menu_segment_not_found",
+                                       message: "segment '\(segment)' not in [\(titles.joined(separator: ", "))]")
+            }
+            // Press to open the sub-menu so its children populate. We
+            // intentionally do NOT collapse it back — caller can introspect
+            // visually, then send `key: "esc"` if needed.
+            AXUIElementPerformAction(next, kAXPressAction as CFString)
+            current = next
+            // Walk into the AXMenu child for the next iteration.
+            var c: CFTypeRef?
+            AXUIElementCopyAttributeValue(next, kAXChildrenAttribute as CFString, &c)
+            if let cs = c as? [AXUIElement],
+               let menu = cs.first(where: { el in
+                   var r: CFTypeRef?
+                   AXUIElementCopyAttributeValue(el, kAXRoleAttribute as CFString, &r)
+                   return (r as? String) == "AXMenu"
+               }) {
+                current = menu
+            }
+            // Tiny dwell so the menu has time to render.
+            try? await Task.sleep(nanoseconds: 80_000_000)
+        }
+        // Now dump children of `current`.
+        var c: CFTypeRef?
+        AXUIElementCopyAttributeValue(current, kAXChildrenAttribute as CFString, &c)
+        let children = (c as? [AXUIElement] ?? []).compactMap { (el: AXUIElement) -> String? in
+            var t: CFTypeRef?
+            AXUIElementCopyAttributeValue(el, kAXTitleAttribute as CFString, &t)
+            return t as? String
+        }.filter { !$0.isEmpty }
+        return MenuInspectOutput(path: path, children: children)
+    }
+
+    struct FocusInput: Codable { var app: String }
+    struct FocusOutput: Codable {
+        var role: String?
+        var label: String?
+        var id: String?
+        var frame: [Double]?
+    }
+    /// Report what's currently AX-focused. Quick CLI introspection without
+    /// dumping the full tree; replaces empirical `sleep:` while debugging
+    /// focus drift.
+    static func focusDump(_ input: FocusInput) async throws -> FocusOutput {
+        try ElementResolver.requireTrust()
+        let hello = try await harnessHello(app: input.app)
+        let appEl = AXUIElementCreateApplication(hello.pid)
+        var attr: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(appEl, kAXFocusedUIElementAttribute as CFString, &attr) == .success,
+              let ref = attr else {
+            return FocusOutput(role: nil, label: nil, id: nil, frame: nil)
+        }
+        let el = ref as! AXUIElement
+        var role: CFTypeRef?, title: CFTypeRef?, idAttr: CFTypeRef?
+        AXUIElementCopyAttributeValue(el, kAXRoleAttribute as CFString, &role)
+        AXUIElementCopyAttributeValue(el, kAXTitleAttribute as CFString, &title)
+        AXUIElementCopyAttributeValue(el, "AXIdentifier" as CFString, &idAttr)
+        let frame = ElementResolver.axFrame(el).map {
+            [Double($0.origin.x), Double($0.origin.y), Double($0.width), Double($0.height)]
+        }
+        return FocusOutput(
+            role: role as? String,
+            label: title as? String,
+            id: idAttr as? String,
+            frame: frame
+        )
     }
 
     struct FindInput: Codable {
@@ -443,7 +577,7 @@ enum PryTools {
         // For find purposes, an `nth(base, _)` target is treated as its base —
         // we want to expose all matches; the caller can index from there.
         let effective: Target
-        if case .nth(let base, _) = target { effective = base } else { effective = target }
+        if case .nth(let base, _, _) = target { effective = base } else { effective = target }
         let hit: Bool
         switch effective {
         case .id(let s): hit = node.identifier == s

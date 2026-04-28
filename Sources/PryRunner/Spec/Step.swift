@@ -17,6 +17,12 @@ public enum Step: Sendable {
     case hover(target: TargetRef, dwellMs: Int?)
     case longPress(target: TargetRef, dwellMs: Int)
     case type(text: String, delayMs: Int?)
+    /// Per-character typing — emits one CGEvent per character with a small
+    /// inter-character gap. Use this when the target field filters on
+    /// `key.count == 1` (typical SwiftUI .onKeyPress, IME-aware fields,
+    /// search-as-you-type filters). Bulk `type:` would land as a single
+    /// multi-char Unicode event that those handlers ignore silently.
+    case typeChars(text: String, intervalMs: Int)
     case key(combo: String, repeatCount: Int)
     case scroll(target: TargetRef, direction: ScrollDirection, amount: Int)
     case drag(from: TargetRef, to: TargetRef, steps: Int, modifiers: [String])
@@ -37,6 +43,13 @@ public enum Step: Sendable {
     case snapshot(name: String)
     case dumpTree(name: String)
     case dumpState(name: String)
+    /// Append a "currently focused element" line to the verdict's diagnostic
+    /// section. Replaces the empirical-`sleep:` workaround when chasing focus
+    /// drift after sheet dismissal.
+    case dumpFocus(name: String)
+    /// Block until the named target acquires AX focus. Pair with `assert_focus`
+    /// for definitive checks; this is the wait-form, more robust than `sleep:`.
+    case waitForFocus(target: TargetRef, timeout: Duration)
 
     // Wave 1
     case clockAdvance(seconds: Double)
@@ -82,7 +95,9 @@ public enum CaptureSource: Sendable {
 
 public enum StateExpectation: Sendable {
     case equals(YAMLValue)
+    case notEquals(YAMLValue)
     case matches(String)
+    case notMatches(String)
     case anyOf([YAMLValue])
     // Numeric comparators
     case gt(Double)
@@ -117,7 +132,11 @@ public indirect enum TargetRef: Sendable {
     /// Disambiguator: when the same target form would match multiple
     /// elements (e.g. SwiftUI propagates a container's `accessibilityIdentifier`
     /// to every descendant), `nth:` picks the n-th match in tree order.
-    case nth(base: TargetRef, index: Int)
+    /// `expectedTotal` makes the selection self-checking — if the actual
+    /// match count diverges from the expectation, the resolver fails loudly
+    /// instead of silently picking a different element after an unrelated
+    /// layout change.
+    case nth(base: TargetRef, index: Int, expectedTotal: Int?)
 }
 
 public struct PointSpec: Sendable {
@@ -143,6 +162,14 @@ public indirect enum Predicate: Sendable {
     /// Panel-shaped UI: NSOpenPanel/NSSavePanel can be sheets OR modal windows;
     /// this matches both forms.
     case panelOpen(titleMatches: String?)
+    /// Sheet-shaped UI specifically (AXSheet child of any AXWindow).
+    /// Distinct from `panelOpen` — file panels surface as either a sheet OR a
+    /// modal window depending on `.begin` vs `.beginSheet`; many SwiftUI
+    /// `.sheet(...)` modifiers always produce AXSheet.
+    case sheetOpen(titleMatches: String?)
+    /// Predicate must hold continuously for `seconds` (anti-flicker).
+    /// Used by `assert_stable: PRED for: 1s`.
+    case stableFor(Predicate, seconds: Double)
 }
 
 /// Integer comparison shared by tree counts and (later) other numeric predicates.

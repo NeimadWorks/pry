@@ -515,6 +515,10 @@ public actor SpecRunner {
                 try EventInjector.type(text: text)
             }
 
+        case .typeChars(let text, let intervalMs):
+            try ElementResolver.requireTrust()
+            try EventInjector.typeWithDelay(text: text, intervalMs: intervalMs)
+
         case .key(let combo, let n):
             try ElementResolver.requireTrust()
             if n > 1 { try EventInjector.keyRepeat(combo: combo, count: n) }
@@ -651,6 +655,41 @@ public actor SpecRunner {
 
         case .dumpState(let name):
             if let att = await dumpStateToFile(name: name) { attachments.append(att) }
+
+        case .dumpFocus(let name):
+            // Cheap inline diagnostic — surfaces the focused element's
+            // identifier (or full describe) without writing an attachment.
+            if let h = launchHandle {
+                let id = focusedElementIdentifier(pid: h.pid)
+                let summary = id.map { "AXIdentifier=\"\($0)\"" } ?? "(no AX-focused element)"
+                FileHandle.standardError.write(Data("[\(name)] focus: \(summary)\n".utf8))
+            }
+
+        case .waitForFocus(let target, let timeout):
+            try ElementResolver.requireTrust()
+            guard let h = launchHandle else {
+                throw StepError(kind: "not_launched", message: "no running app")
+            }
+            let deadline = Date().addingTimeInterval(timeout.seconds)
+            // Cache the resolved AXIdentifier upfront — we compare focus
+            // against this rather than re-resolving every poll.
+            let want: String
+            do {
+                let r = try ElementResolver.resolve(target: convert(target), in: h.pid)
+                want = r.identifier ?? ""
+            } catch {
+                throw StepFailure(expected: "target resolves",
+                                  observed: "\(error)", suggestion: nil)
+            }
+            while Date() < deadline {
+                if focusedElementIdentifier(pid: h.pid) == want { return }
+                try? await Task.sleep(nanoseconds: 80_000_000)
+            }
+            throw StepFailure(
+                expected: "target focused within \(timeout.seconds)s",
+                observed: "focused = \(focusedElementIdentifier(pid: h.pid) ?? "(none)")",
+                suggestion: "If the target uses .focused() async, it might never get focus — verify the binding."
+            )
 
         // Wave 1
         case .clockAdvance(let seconds):
@@ -1130,6 +1169,7 @@ public actor SpecRunner {
         case .hover(let t, let d): return .hover(target: interpolateTarget(t, vars: vars), dwellMs: d)
         case .longPress(let t, let d): return .longPress(target: interpolateTarget(t, vars: vars), dwellMs: d)
         case .type(let s, let d): return .type(text: interpolateString(s, vars: vars), delayMs: d)
+        case .typeChars(let s, let i): return .typeChars(text: interpolateString(s, vars: vars), intervalMs: i)
         case .key(let s, let n): return .key(combo: interpolateString(s, vars: vars), repeatCount: n)
         case .selectMenu(let path):
             return .selectMenu(path: path.map { interpolateString($0, vars: vars) })
@@ -1147,7 +1187,8 @@ public actor SpecRunner {
         case .roleLabel(let r, let l): return .roleLabel(role: r, label: interpolateString(l, vars: vars))
         case .treePath(let s): return .treePath(interpolateString(s, vars: vars))
         case .point: return t
-        case .nth(let base, let i): return .nth(base: interpolateTarget(base, vars: vars), index: i)
+        case .nth(let base, let i, let total):
+            return .nth(base: interpolateTarget(base, vars: vars), index: i, expectedTotal: total)
         }
     }
 
@@ -1187,10 +1228,28 @@ public actor SpecRunner {
             // Swift can't always infer the return type when the closure feeds
             // an `??` whose RHS is an `Optional<String>` — reported as a Pry
             // bug while adopting on Narrow.
+            // Discover the project config once; reused for both
+            // executable_path resolution and the optional `auto_build` step.
+            let projectConfig: PryConfig? = spec.sourcePath.flatMap {
+                PryConfig.discover(from: URL(fileURLWithPath: $0))
+            }
+
+            // Optional pre-launch `swift build` per .pry/config.yaml, so a
+            // freshly-edited target doesn't run against a stale binary.
+            // Failures here surface as a clear StepError — not a silent
+            // launch of yesterday's build.
+            if let cfg = projectConfig, cfg.autoBuild(for: spec.app) {
+                do { try cfg.runSwiftBuild() }
+                catch {
+                    throw StepError(
+                        kind: "auto_build_failed",
+                        message: "auto_build is enabled in .pry/config.yaml but `swift build` failed:\n\(error.localizedDescription)"
+                    )
+                }
+            }
+
             let resolvedExec: String? = spec.executablePath ?? { () -> String? in
-                guard let sourcePath = spec.sourcePath else { return nil }
-                let cfg = PryConfig.discover(from: URL(fileURLWithPath: sourcePath))
-                return cfg?.resolveExecutablePath(for: spec.app)
+                projectConfig?.resolveExecutablePath(for: spec.app)
             }()
             if let path = resolvedExec {
                 handle = try AppDriver.launchByPath(
@@ -1311,7 +1370,8 @@ public actor SpecRunner {
         case .labelMatches(let s): return .labelMatches(s)
         case .treePath(let s): return .treePath(s)
         case .point(let x, let y): return .point(x: CGFloat(x), y: CGFloat(y))
-        case .nth(let base, let i): return .nth(base: convert(base), index: i)
+        case .nth(let base, let i, let total):
+            return .nth(base: convert(base), index: i, expectedTotal: total)
         }
     }
 
@@ -1434,6 +1494,27 @@ public actor SpecRunner {
                 throw PredicateFailure(description: "no open NSOpenPanel/NSSavePanel/AXSheet found")
             }
 
+        case .sheetOpen(let titleMatches):
+            guard let h = launchHandle else { throw PredicateFailure(description: "no running app") }
+            let tree = AXTreeWalker.snapshot(pid: h.pid)
+            let found = Self.treeContainsSheet(tree, titleMatches: titleMatches)
+            if !found {
+                throw PredicateFailure(description: "no AXSheet found")
+            }
+
+        case .stableFor(let inner, let seconds):
+            // Predicate must hold continuously across the window. Polls every
+            // 80 ms and bails on the first miss. Useful for confirming a
+            // toast disappeared and didn't flash back.
+            let deadline = Date().addingTimeInterval(seconds)
+            while Date() < deadline {
+                do { try await evaluatePredicate(inner) }
+                catch let e as PredicateFailure {
+                    throw PredicateFailure(description: "did not hold during stable window: \(e.description)")
+                }
+                try? await Task.sleep(nanoseconds: 80_000_000)
+            }
+
         case .visible(let target):
             let r = try resolveTargetForPredicate(target)
             guard let f = r.frame, f.width > 0, f.height > 0 else {
@@ -1504,7 +1585,7 @@ public actor SpecRunner {
         case .labelMatches(let re):
             guard let label = node.label, let rx = try? NSRegularExpression(pattern: re) else { return false }
             return rx.firstMatch(in: label, range: NSRange(label.startIndex..., in: label)) != nil
-        case .nth(let base, _):
+        case .nth(let base, _, _):
             // Count semantics treat nth as base — we want "how many match the
             // base form", not "is this exactly the nth".
             return nodeMatches(node, base)
@@ -1564,6 +1645,14 @@ public actor SpecRunner {
                     suggestion: nil
                 )
             }
+        case .notEquals(let y):
+            if compareEquals(value, y) {
+                throw StepFailure(
+                    expected: "\(viewmodel).\(path) NOT equal \(renderYAMLValue(y))",
+                    observed: "got \(renderAny(value))",
+                    suggestion: nil
+                )
+            }
         case .matches(let pattern):
             // Auto-coerce numerics to their string form so `matches: "^[0-9]+$"`
             // works against an Int/Double field without forcing the host VM
@@ -1575,6 +1664,17 @@ public actor SpecRunner {
             }
             if rx.firstMatch(in: s, range: NSRange(s.startIndex..., in: s)) == nil {
                 throw StepFailure(expected: "string matching /\(pattern)/",
+                                  observed: "'\(s)'", suggestion: nil)
+            }
+        case .notMatches(let pattern):
+            let str = stringForMatch(value)
+            guard let s = str, let rx = try? NSRegularExpression(pattern: pattern) else {
+                // Non-stringable values can't match a regex, so they pass
+                // not_matches by default. Be lenient.
+                return
+            }
+            if rx.firstMatch(in: s, range: NSRange(s.startIndex..., in: s)) != nil {
+                throw StepFailure(expected: "string NOT matching /\(pattern)/",
                                   observed: "'\(s)'", suggestion: nil)
             }
         case .anyOf(let values):
@@ -1833,6 +1933,7 @@ public actor SpecRunner {
         case .hover(let t, _): return "hover \(renderTarget(t))"
         case .longPress(let t, let d): return "long_press \(renderTarget(t)) (\(d)ms)"
         case .type(let s, _): return "type \"\(s)\""
+        case .typeChars(let s, let i): return "type_chars \"\(s)\" (per-char @ \(i)ms)"
         case .key(let c, let n): return n > 1 ? "key \"\(c)\" ×\(n)" : "key \"\(c)\""
         case .scroll(let t, let d, let n): return "scroll \(renderTarget(t)) \(d.rawValue) \(n)"
         case .drag(let f, let t, _, let m): return "drag from \(renderTarget(f)) to \(renderTarget(t))\(modSuffix(m))"
@@ -1854,6 +1955,8 @@ public actor SpecRunner {
         case .snapshot(let n): return "snapshot \"\(n)\""
         case .dumpTree(let n): return "dump_tree \"\(n)\""
         case .dumpState(let n): return "dump_state \"\(n)\""
+        case .dumpFocus(let n): return "dump_focus \"\(n)\""
+        case .waitForFocus(let t, let d): return "wait_for_focus \(renderTarget(t)) (within \(d.seconds)s)"
 
         // Wave 1
         case .clockAdvance(let s): return "clock.advance \(s)s"
@@ -1900,7 +2003,9 @@ public actor SpecRunner {
     private func renderExpectation(_ e: StateExpectation) -> String {
         switch e {
         case .equals(let v): return "equals \(renderYAMLValue(v))"
+        case .notEquals(let v): return "not_equals \(renderYAMLValue(v))"
         case .matches(let s): return "matches /\(s)/"
+        case .notMatches(let s): return "not_matches /\(s)/"
         case .anyOf(let a): return "any_of [\(a.map(renderYAMLValue).joined(separator: ", "))]"
         case .gt(let n): return "> \(n)"
         case .gte(let n): return ">= \(n)"
@@ -1918,7 +2023,9 @@ public actor SpecRunner {
         case .labelMatches(let s): return "{ label_matches: \"\(s)\" }"
         case .treePath(let s): return "{ tree_path: \"\(s)\" }"
         case .point(let x, let y): return "{ point: { x: \(x), y: \(y) } }"
-        case .nth(let base, let i): return "\(renderTarget(base))[nth=\(i)]"
+        case .nth(let base, let i, let total):
+            let totalSuffix = total.map { ", expect_total=\($0)" } ?? ""
+            return "\(renderTarget(base))[nth=\(i)\(totalSuffix)]"
         }
     }
 
@@ -1940,6 +2047,10 @@ public actor SpecRunner {
         case .not(let p): return "not \(renderPredicate(p))"
         case .panelOpen(let tm):
             return "panel_open\(tm.map { " title_matches=\"\($0)\"" } ?? "")"
+        case .sheetOpen(let tm):
+            return "sheet_open\(tm.map { " title_matches=\"\($0)\"" } ?? "")"
+        case .stableFor(let p, let s):
+            return "stable_for \(s)s: \(renderPredicate(p))"
         }
     }
 

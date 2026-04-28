@@ -318,12 +318,14 @@ public enum SpecParser {
     }
 
     private static func parseFrontmatter(_ yaml: String) throws -> Frontmatter {
-        // Simple line-based frontmatter parser: supports
-        //   key: value
-        //   key: [a, b, c]
-        //   key: "quoted"
+        // Frontmatter accepts both inline YAML-flow values and indented
+        // multi-line blocks for object-valued keys. The line-based pass below
+        // builds a string map for inline values; multi-line blocks are
+        // pre-rewritten to inline form so the rest of the pipeline doesn't
+        // need to know about it.
+        let normalized = normalizeIndentedBlocksToInline(yaml: yaml)
         var map: [String: String] = [:]
-        for raw in yaml.components(separatedBy: "\n") {
+        for raw in normalized.components(separatedBy: "\n") {
             let line = raw.trimmingCharacters(in: .whitespaces)
             if line.isEmpty || line.hasPrefix("#") { continue }
             guard let colon = line.firstIndex(of: ":") else {
@@ -407,6 +409,128 @@ public enum SpecParser {
         }
 
         return fm
+    }
+
+    /// Rewrite indented multi-line blocks within frontmatter into a single
+    /// inline YAML-flow line. The line-based frontmatter parser only handles
+    /// `key: value` on one line; without this pre-pass, a user's multi-line
+    /// `with_fs:` would be silently ignored. Now both forms work and the
+    /// indented form is the recommended one (matches normal YAML expectation).
+    private static func normalizeIndentedBlocksToInline(yaml: String) -> String {
+        let lines = yaml.components(separatedBy: "\n")
+        var output: [String] = []
+        var i = 0
+        while i < lines.count {
+            let line = lines[i]
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            // Detect: top-level `key:` (no leading whitespace, empty value).
+            let leading = line.prefix(while: { $0 == " " || $0 == "\t" }).count
+            if leading == 0, trimmed.hasSuffix(":"),
+               !trimmed.isEmpty, !trimmed.hasPrefix("#") {
+                // Slurp following indented (and blank) lines.
+                var block: [String] = []
+                var j = i + 1
+                while j < lines.count {
+                    let next = lines[j]
+                    let nextTrim = next.trimmingCharacters(in: .whitespaces)
+                    if nextTrim.isEmpty { j += 1; continue }
+                    let nextIndent = next.prefix(while: { $0 == " " || $0 == "\t" }).count
+                    if nextIndent == 0 { break }
+                    block.append(next)
+                    j += 1
+                }
+                if !block.isEmpty {
+                    let inline = indentedBlockToInline(block)
+                    let key = String(trimmed.dropLast())
+                    output.append("\(key): \(inline)")
+                    i = j
+                    continue
+                }
+            }
+            output.append(line)
+            i += 1
+        }
+        return output.joined(separator: "\n")
+    }
+
+    /// Convert an indented YAML block into its inline YAML-flow equivalent.
+    /// Handles maps (`key: val`) and lists (`- item` or `- key: val, key: val`)
+    /// with arbitrary nesting via recursion on indentation. Doesn't aspire to
+    /// be a full YAML parser — covers the patterns we actually use in
+    /// frontmatter (with_fs, with_defaults, vars).
+    private static func indentedBlockToInline(_ lines: [String]) -> String {
+        let nonEmpty = lines.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        guard !nonEmpty.isEmpty else { return "{}" }
+        let minIndent = nonEmpty
+            .map { $0.prefix(while: { $0 == " " || $0 == "\t" }).count }
+            .min() ?? 0
+
+        // Group: lines at minIndent are "header" lines for this level; deeper
+        // lines belong to the previous header as a sub-block.
+        struct Group { var header: String; var sub: [String] }
+        var groups: [Group] = []
+        for line in lines {
+            let trim = line.trimmingCharacters(in: .whitespaces)
+            if trim.isEmpty { continue }
+            let indent = line.prefix(while: { $0 == " " || $0 == "\t" }).count
+            if indent == minIndent {
+                groups.append(Group(header: trim, sub: []))
+            } else {
+                if !groups.isEmpty { groups[groups.count - 1].sub.append(line) }
+            }
+        }
+
+        // Decide list-vs-map based on the first header.
+        let isList = groups.first?.header.hasPrefix("- ") ?? false
+        if isList {
+            var parts: [String] = []
+            for g in groups {
+                let body = String(g.header.dropFirst(2))   // drop "- "
+                if !g.sub.isEmpty {
+                    // Item itself extends with sub-keys. Treat the body
+                    // (which is "key: value") plus the sub-block as one map.
+                    let combined = [String(repeating: " ", count: minIndent) + body] + g.sub
+                    parts.append(indentedBlockToInline(combined))
+                } else if body.contains(":") {
+                    // Inline pseudo-object on the dash line ("- file: x, content: y").
+                    parts.append("{ \(body) }")
+                } else {
+                    parts.append(body)
+                }
+            }
+            return "[ \(parts.joined(separator: ", ")) ]"
+        } else {
+            var parts: [String] = []
+            for g in groups {
+                guard let colon = g.header.firstIndex(of: ":") else { continue }
+                let key = String(g.header[..<colon]).trimmingCharacters(in: .whitespaces)
+                let rhs = String(g.header[g.header.index(after: colon)...])
+                    .trimmingCharacters(in: .whitespaces)
+                if !g.sub.isEmpty {
+                    parts.append("\(key): \(indentedBlockToInline(g.sub))")
+                } else if rhs.isEmpty {
+                    parts.append("\(key): null")
+                } else {
+                    parts.append("\(key): \(quoteScalarIfNeeded(rhs))")
+                }
+            }
+            return "{ \(parts.joined(separator: ", ")) }"
+        }
+    }
+
+    /// YAMLFlow's bare-identifier tokenizer doesn't accept `~`, `$`, `{`, `}`,
+    /// so paths like `~/.pry-tmp/${spec_id}` can't be left bare in the
+    /// reconstructed inline form. Wrap any non-trivial scalar in quotes.
+    private static func quoteScalarIfNeeded(_ raw: String) -> String {
+        // Already-quoted, JSON object/array, number-ish, bool-ish, null →
+        // pass through.
+        if raw.hasPrefix("\"") || raw.hasPrefix("'") { return raw }
+        if raw.hasPrefix("{") || raw.hasPrefix("[") { return raw }
+        if Double(raw) != nil { return raw }
+        if raw == "true" || raw == "false" || raw == "null" { return raw }
+        // Anything else: wrap. Escape any embedded quote.
+        let escaped = raw.replacingOccurrences(of: "\"", with: "\\\"")
+        return "\"\(escaped)\""
     }
 
     private static func parseFsFixture(_ kvs: [(String, YAMLValue)]) -> FilesystemFixture? {
@@ -672,6 +796,24 @@ public enum SpecParser {
                 return .type(text: text, delayMs: delay)
             }
             throw SpecParseError.invalidArgument("type needs a string", line: lineNumber)
+        case "type_chars":
+            // Form A: type_chars: "saf"
+            // Form B: type_chars: { text: "saf", interval_ms: 50 }
+            if let s = mergedYAML?.asString {
+                return .typeChars(text: s, intervalMs: 30)
+            }
+            if case .object(let kvs)? = mergedYAML {
+                var text: String?; var interval = 30
+                for (k, v) in kvs {
+                    if k == "text" { text = v.asString }
+                    if k == "interval_ms" { interval = v.asInt ?? 30 }
+                }
+                guard let text else {
+                    throw SpecParseError.invalidArgument("type_chars needs text", line: lineNumber)
+                }
+                return .typeChars(text: text, intervalMs: interval)
+            }
+            throw SpecParseError.invalidArgument("type_chars needs a string", line: lineNumber)
         case "key":
             // Form A: key: "cmd+s"
             // Form B: key: { combo: "down", repeat: 5 }
@@ -825,6 +967,46 @@ public enum SpecParser {
                 throw SpecParseError.invalidArgument("dump_state needs a name", line: lineNumber)
             }
             return .dumpState(name: s)
+        case "dump_focus":
+            // Optional name; default to the step index in the runner's render.
+            return .dumpFocus(name: mergedYAML?.asString ?? "focus")
+        case "wait_for_focus":
+            // Form A: wait_for_focus: { id: "x" }
+            // Form B (with timeout): wait_for_focus: { id: "x" }
+            //                          timeout: 2s
+            guard let yaml = mergedYAML else {
+                throw SpecParseError.invalidArgument("wait_for_focus needs a target", line: lineNumber)
+            }
+            var timeout = Duration(seconds: 2)
+            var targetYAML: YAMLValue = yaml
+            if case .object(let kvs) = yaml, kvs.contains(where: { $0.0 == "timeout" }) {
+                var kept: [(String, YAMLValue)] = []
+                for (k, v) in kvs {
+                    if k == "timeout" {
+                        if let s = v.asSeconds { timeout = Duration(seconds: s) }
+                    } else { kept.append((k, v)) }
+                }
+                targetYAML = .object(kept)
+            }
+            return .waitForFocus(target: try parseTarget(targetYAML, line: lineNumber), timeout: timeout)
+        case "assert_stable":
+            // assert_stable: PRED + indented `for: 1s`
+            guard let yaml = mergedYAML else {
+                throw SpecParseError.invalidArgument("assert_stable needs a predicate", line: lineNumber)
+            }
+            var seconds: Double = 1
+            var predYAML: YAMLValue = yaml
+            if case .object(let kvs) = yaml, kvs.contains(where: { $0.0 == "for" }) {
+                var kept: [(String, YAMLValue)] = []
+                for (k, v) in kvs {
+                    if k == "for" {
+                        if let s = v.asSeconds { seconds = s }
+                    } else { kept.append((k, v)) }
+                }
+                predYAML = .object(kept)
+            }
+            let pred = try parsePredicate(predYAML, line: lineNumber)
+            return .assertTree(predicate: .stableFor(pred, seconds: seconds))
 
         // Wave 1
         case "clock.advance", "clock_advance":
@@ -1231,8 +1413,11 @@ public enum SpecParser {
             case "viewmodel": vm = v.asString
             case "path": path = v.asString
             case "equals": expect = .equals(v)
+            case "not_equals": expect = .notEquals(v)
             case "matches":
                 if let s = v.asString { expect = .matches(s) }
+            case "not_matches":
+                if let s = v.asString { expect = .notMatches(s) }
             case "any_of":
                 if case .array(let arr) = v { expect = .anyOf(arr) }
             case "gt":
@@ -1321,8 +1506,12 @@ public enum SpecParser {
 
         // Optional disambiguator. `nth: 0` picks the first match; useful when
         // SwiftUI propagates `accessibilityIdentifier` to descendants.
+        // `expect_total: N` makes the selection self-checking — fail if the
+        // actual match count diverges (catches silent regressions when
+        // unrelated layout changes shift identifiers around).
         if let n = map["nth"]?.asInt {
-            return .nth(base: base, index: n)
+            let expected = map["expect_total"]?.asInt
+            return .nth(base: base, index: n, expectedTotal: expected)
         }
         return base
     }
@@ -1360,6 +1549,25 @@ public enum SpecParser {
                 return .panelOpen(titleMatches: tm)
             default:
                 return .panelOpen(titleMatches: nil)
+            }
+        }
+
+        // Sheet-shortcut: matches AXSheet exclusively (SwiftUI .sheet,
+        // NSWindow.beginSheet attached sheets). Distinct from `panel:` which
+        // also matches modal dialog windows.
+        if let sheet = kvs.first(where: { $0.0 == "sheet" }) {
+            switch sheet.1 {
+            case .identifier(let s) where s == "any":
+                return .sheetOpen(titleMatches: nil)
+            case .object(let skvs):
+                var tm: String?
+                for (k, v) in skvs {
+                    if k == "title_matches" { tm = v.asString }
+                    if k == "title", let s = v.asString { tm = "^\(NSRegularExpression.escapedPattern(for: s))$" }
+                }
+                return .sheetOpen(titleMatches: tm)
+            default:
+                return .sheetOpen(titleMatches: nil)
             }
         }
 
@@ -1428,8 +1636,11 @@ public enum SpecParser {
         for (k, v) in kvs {
             switch k {
             case "equals": return .equals(v)
+            case "not_equals": return .notEquals(v)
             case "matches":
                 if let s = v.asString { return .matches(s) }
+            case "not_matches":
+                if let s = v.asString { return .notMatches(s) }
             case "any_of":
                 if case .array(let arr) = v { return .anyOf(arr) }
             case "gt":

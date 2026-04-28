@@ -18,6 +18,16 @@ import Foundation
 public struct PryConfig: Sendable {
     public struct AppConfig: Sendable {
         public var executablePath: String?
+        /// When true, the runner runs `swift build` from the config file's
+        /// directory before launching the target. Cuts the bundle.sh / .app
+        /// repackage cycle; the executable_path can point straight at
+        /// `.build/<arch>/debug/<Product>`.
+        public var autoBuild: Bool
+
+        public init(executablePath: String? = nil, autoBuild: Bool = false) {
+            self.executablePath = executablePath
+            self.autoBuild = autoBuild
+        }
     }
 
     public var configFileURL: URL?
@@ -26,6 +36,33 @@ public struct PryConfig: Sendable {
     public init(configFileURL: URL? = nil, apps: [String: AppConfig] = [:]) {
         self.configFileURL = configFileURL
         self.apps = apps
+    }
+
+    /// Lookup whether `swift build` should run before launching this app.
+    public func autoBuild(for bundleID: String) -> Bool {
+        apps[bundleID]?.autoBuild ?? false
+    }
+
+    /// Run `swift build` from the config file's directory. Used by
+    /// `auto_build: true`. Best-effort — if the build fails, the launch
+    /// will fail with a clearer error message anyway.
+    public func runSwiftBuild() throws {
+        guard let dir = configFileURL?.deletingLastPathComponent() else { return }
+        let p = Process()
+        p.launchPath = "/usr/bin/env"
+        p.arguments = ["swift", "build"]
+        p.currentDirectoryURL = dir
+        let pipe = Pipe()
+        p.standardOutput = pipe
+        p.standardError = pipe
+        try p.run()
+        p.waitUntilExit()
+        if p.terminationStatus != 0 {
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let msg = String(data: data, encoding: .utf8) ?? "swift build failed"
+            throw NSError(domain: "PryConfig", code: Int(p.terminationStatus),
+                          userInfo: [NSLocalizedDescriptionKey: msg])
+        }
     }
 
     /// Lookup the executable path for a given bundle ID, applying env-var
@@ -134,6 +171,11 @@ public struct PryConfig: Sendable {
                     .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
                 if key == "executable_path" {
                     apps[bundle, default: AppConfig()].executablePath = val
+                }
+                if key == "auto_build" {
+                    let lc = val.lowercased()
+                    apps[bundle, default: AppConfig()].autoBuild =
+                        (lc == "true" || lc == "yes" || lc == "on" || lc == "1")
                 }
             }
         }

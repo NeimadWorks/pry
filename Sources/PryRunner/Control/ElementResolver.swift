@@ -13,7 +13,9 @@ public indirect enum Target: Sendable {
     case treePath(String)
     case point(x: CGFloat, y: CGFloat)
     /// nth match of `base`. 0-indexed, in tree pre-order.
-    case nth(base: Target, index: Int)
+    /// When `expectedTotal` is supplied, the resolver fails loudly if the
+    /// actual match count diverges (catches silent regressions).
+    case nth(base: Target, index: Int, expectedTotal: Int?)
 }
 
 public struct Resolved: Sendable {
@@ -62,7 +64,7 @@ public enum ElementResolver {
         let app = AXUIElementCreateApplication(pid)
 
         // nth wrapper: collect all matches of base, return index-th.
-        if case .nth(let base, let idx) = target {
+        if case .nth(let base, let idx, let expectedTotal) = target {
             var candidates: [AXUIElement] = []
             switch base {
             case .point:
@@ -71,6 +73,14 @@ public enum ElementResolver {
                 walk(app) { el in
                     if matches(el, base) { candidates.append(el) }
                 }
+            }
+            // expectedTotal turns nth into a self-checking assertion: if the
+            // count drifts (layout refactor, new sibling), the resolver fails
+            // loudly instead of silently picking a different element.
+            if let expectedTotal, candidates.count != expectedTotal {
+                throw ResolveError.ambiguous(target, candidates: [
+                    "expected_total=\(expectedTotal), actual=\(candidates.count) — layout drift?"
+                ] + candidates.prefix(8).map { describe($0) })
             }
             guard !candidates.isEmpty else { throw ResolveError.noMatch(target) }
             guard idx >= 0 && idx < candidates.count else {
@@ -127,7 +137,7 @@ public enum ElementResolver {
         var n = 0
         switch target {
         case .point: return 0
-        case .nth(let base, _):
+        case .nth(let base, _, _):
             // Count of base, ignore index in count semantics.
             walk(app) { if matches($0, base) { n += 1 } }
         default:

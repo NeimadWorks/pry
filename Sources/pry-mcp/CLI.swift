@@ -92,8 +92,34 @@ enum CLI {
                 print(try jsonPretty(out))
 
             case "tree":
-                let out = try await PryTools.tree(.init(app: required(rest, "--app"), window: nil))
+                let out = try await PryTools.tree(.init(
+                    app: required(rest, "--app"),
+                    window: nil,
+                    compact: rest.contains("--compact") ? true : nil
+                ))
                 print(out.yaml)
+
+            case "menu":
+                // pry-mcp menu --app <app> [--path "View > View Mode"]
+                let pathArg = optional(rest, "--path") ?? ""
+                let path = pathArg.isEmpty ? [] : pathArg.components(separatedBy: ">").map {
+                    $0.trimmingCharacters(in: .whitespaces)
+                }
+                let out = try await PryTools.menuInspect(.init(
+                    app: required(rest, "--app"),
+                    path: path
+                ))
+                if rest.contains("--json") {
+                    print(try jsonPretty(out))
+                } else {
+                    print("Path: \(out.path.joined(separator: " > "))")
+                    print("Children (\(out.children.count)):")
+                    for c in out.children { print("  - \(c)") }
+                }
+
+            case "focus":
+                let out = try await PryTools.focusDump(.init(app: required(rest, "--app")))
+                print(try jsonPretty(out))
 
             case "find":
                 let target = try parseTargetArgs(rest)
