@@ -381,3 +381,43 @@ fan-in suite report, multi-spec coverage).
 (`pry-mcp init` → `.pry/config.yaml`, run-suite with `screenshots_embed:
 true` for shareable verdicts, `lint` in CI). After that, tag `v0.2.0`
 when the field signal validates the additions.
+
+## Session 2026-04-29 — Canopy field-feedback wave + docs refresh
+
+**Worked on:** Implemented 12 DX additions distilled from the Canopy
+(file-manager dogfooding) bilan, then refreshed every public doc to
+match. Also fixed a CI tag-trigger gap and a `swift test --parallel`
+race on `PryRegistry.shared`.
+**Landed:**
+  - Code (commit `deebd0f`): `type_chars`, `wait_for_focus`, `dump_focus`,
+    `assert_stable`, `not_equals` / `not_matches` state expectations,
+    `expect_total:` companion to `nth:`, `sheet:` predicate, multi-line
+    frontmatter blocks via `normalizeIndentedBlocksToInline`, `auto_build:
+    true` in `.pry/config.yaml` (runs `swift build` from config dir before
+    first launch), `View.pryRegister(_:)` SwiftUI sugar in `PryHarness`,
+    `pry_menu_inspect` + `pry_focus` MCP tools, `pry_tree --compact` SwiftUI
+    label stripper. 40 unit tests pass.
+  - CI (commits `6d176c5`, `9bd7f38`): tag-push trigger added; runner pinned
+    to `macos-15` + `setup-xcode latest-stable`; dropped `--parallel` from
+    `swift test`.
+  - Docs: `docs/ROADMAP.md` (Canopy wave table + 3 new backlog items —
+    Inspector scaffolding/SwiftSyntax-ADR, multi-char type warning, verdict
+    warnings layer); `docs/design/spec-format.md`; `docs/api/pry-mcp-tools.md`;
+    `docs/api/PryRunner.md`; `docs/api/PryHarness.md`; `docs/AGENTS.md`;
+    `docs/guides/writing-specs.md` (new "Patterns from the Canopy wave"
+    section); `README.md` status line.
+**Decisions:** Quote-on-conversion for YAMLFlow scalars containing
+`~`, `${`, `{`, `}`, `/` rather than extending the tokenizer (would
+conflict with object-delimiter `{`). Drop `--parallel` instead of
+restructuring the registry singleton — suite is small, runs in <100ms.
+"Ce qui manque vraiment" items from the bilan (Inspector scaffolding via
+SwiftSyntax, multi-line type warning, verdict warnings layer) deferred
+to backlog, not v0.2.x.
+**Spike updates:** none.
+**Open questions discovered:** Inspector scaffolding needs an ADR — does
+Pry take a SwiftSyntax dep (breaks zero-dep) or ship a templated emitter?
+**Blocked on:** nothing.
+**Next single action:** continue Phase 5 dogfooding — pick up Narrow next
+and exercise `wait_for_focus` / `assert_stable` / `expect_total` on its
+move-input screens. Track remaining flakiness as Pry bugs per ROADMAP
+principle 8.

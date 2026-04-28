@@ -369,6 +369,123 @@ Rectangle()
     .accessibilityIdentifier("tap_zone")
 ```
 
+### `.onKeyPress` fields need `type_chars`, not `type`
+
+SwiftUI fields that observe keystrokes via `.onKeyPress` (search, command palette,
+chess move-input, anything with a per-keystroke handler) don't see strings
+delivered as a single Unicode-string event. `type:` posts one event for the whole
+string; `.onKeyPress` only fires for events that carry a key code.
+
+```pry
+# Doesn't fire onKeyPress in the host app:
+type: "e2e4"
+
+# Synthesizes one keyDown/keyUp pair per character — onKeyPress sees each one:
+type_chars: "e2e4"
+```
+
+Use `type:` for ordinary `TextField`/`TextEditor`. Use `type_chars:` whenever the
+host code reads `KeyPress` events directly.
+
+## Patterns from the Canopy wave
+
+These patterns came out of dogfooding Pry on a real file-manager app. They are
+not new grammar — they're combinations of existing primitives that solve
+recurring friction.
+
+### Anti-flicker: `assert_stable`
+
+A predicate can flip true → false → true during animations or async loads.
+`assert_stable` requires the predicate to hold continuously for a duration
+before passing:
+
+```pry
+click: { id: "load_button" }
+# Bad: loading spinner flips visible briefly twice — equals: false fires too early
+# wait_for: { state: { viewmodel: VM, path: "isLoading", equals: false } }
+
+# Good: require the steady state for 500ms
+assert_stable:
+  for: 500ms
+  state: { viewmodel: VM, path: "isLoading", equals: false }
+```
+
+### Replace `sleep` with `wait_for_focus`
+
+After triggering a focus change (Tab key, programmatic focus shift), don't
+sleep — wait for the focused element by AXIdentifier:
+
+```pry
+click: { id: "search_field" }
+# Bad: sleep: 200ms
+wait_for_focus: { id: "search_field", timeout: 1s }
+type_chars: "query"
+```
+
+`dump_focus: "where-is-it"` writes the currently-focused element's id/role/label
+to stderr — handy when you don't yet know what to assert against.
+
+### Guard against silent layout drift with `expect_total`
+
+`nth: N` picks one element from a multi-match. If the layout grows from 5 rows
+to 50, `nth: 0` keeps passing — but you're now testing a different scenario.
+`expect_total:` makes the count an explicit precondition:
+
+```pry
+click: { id: "row", nth: 0, expect_total: 5 }
+# Fails loudly with "expected 5 matches, found 50" if the data set changed.
+```
+
+### Soft assertions for inspection passes
+
+`soft_assert_state` records a failure but lets the spec continue. Useful when
+you want one verdict reporting all field-level mismatches at once instead of
+stopping at the first:
+
+```pry
+soft_assert_state: { viewmodel: FormVM, path: "name",  equals: "Ada" }
+soft_assert_state: { viewmodel: FormVM, path: "email", equals: "ada@example.com" }
+soft_assert_state: { viewmodel: FormVM, path: "age",   equals: 36 }
+# Verdict reports all three; spec fails iff any one did.
+```
+
+Reserve hard `assert_state` for invariants that, once broken, make subsequent
+steps meaningless.
+
+### `auto_build: true` for SwiftPM fixtures
+
+In `.pry/config.yaml`:
+
+```yaml
+apps:
+  fr.neimad.demo:
+    executable_path: ./Fixtures/DemoApp/.build/debug/DemoApp
+    auto_build: true
+```
+
+The runner runs `swift build` from the config directory before the first
+`launch` of that app. Saves the "I edited the fixture, forgot to rebuild,
+spent 10 minutes debugging stale behaviour" loop.
+
+### Multi-line `with_fs` is fine
+
+`with_fs:` accepts either inline-flow or block-style YAML. Use whichever
+reads better:
+
+```yaml
+---
+with_fs:
+  base: ~/.pry-tmp/${spec_id}
+  layout:
+    - file: notes.txt
+      content: |
+        line one
+        line two
+    - dir: archive
+    - file: archive/old.txt, source: ./fixtures/old.txt
+---
+```
+
 ### Disable animations for snapshot determinism
 
 In frontmatter:

@@ -119,13 +119,13 @@ Triggers: `sheet:"Replace.*"`, `state:VM.path`, `window:"Compose.*"`.
 
 **Control flow (Wave 2)** — `if: PRED then: [...] else: [...]`, `for: { var, in: [...] }`, `repeat: N`, `call: name` (with `args:`)
 
-**Waits** — `wait_for: PREDICATE [timeout: 2s]`, `sleep: 100ms`, `wait_for_idle: 2s`
+**Waits** — `wait_for: PREDICATE [timeout: 2s]`, `wait_for_focus: TARGET [timeout: 2s]`, `sleep: 100ms`, `wait_for_idle: 2s`
 
 **Mouse/touch** — `click`, `double_click`, `right_click`, `hover`, `long_press`, `drag: { from, to, steps?, modifiers? }`, `marquee: { from: {x,y}, to: {x,y} }`, `scroll: { target, direction, amount }`, `magnify: { target, delta }`
 
 All click/drag steps accept `modifiers: [shift, cmd, opt, ctrl]`.
 
-**Keyboard** — `type: "..."` or `type: { text, delay_ms }`, `key: "cmd+s"` or `key: { combo, repeat }`
+**Keyboard** — `type: "..."` or `type: { text, delay_ms }`, `type_chars: "..."` (per-keystroke `.onKeyPress` for SwiftUI), `key: "cmd+s"` or `key: { combo, repeat }`
 
 **Time control (Wave 1)** — `clock.advance: 5s`, `clock.set: { iso8601, paused? }`, `set_animations: off|on`
 
@@ -133,7 +133,7 @@ All click/drag steps accept `modifiers: [shift, cmd, opt, ctrl]`.
 
 **File panels (Open/Save dialogs)** — `open_file: "/abs/path"`, `save_file: "/abs/path"`, `panel_accept: "Open"?`, `panel_cancel`. Drive `NSOpenPanel` / `NSSavePanel` via Cmd+Shift+G + type + accept; works for both sheet and dialog-window forms. After `open_file` / `save_file`, assert the resulting URL with `matches:` (macOS canonicalizes `/etc` → `/private/etc`).
 
-**Assertions** — `assert_tree: PREDICATE`, `assert_state: { viewmodel, path, equals|matches|any_of|gt|gte|lt|lte|between }`, `soft_assert_state` (accumulating), `assert_focus: TARGET`, `assert_eventually: PRED [timeout: 1s]`, `expect_change: { action: { click: ... }, in: { viewmodel, path }, to: VALUE, timeout? }`
+**Assertions** — `assert_tree: PREDICATE`, `assert_state: { viewmodel, path, equals|not_equals|matches|not_matches|any_of|gt|gte|lt|lte|between }`, `soft_assert_state` (accumulating), `assert_focus: TARGET`, `assert_eventually: PRED [timeout: 1s]`, `assert_stable: { PRED, for: 500ms }` (anti-flicker — predicate must hold continuously), `expect_change: { action: { click: ... }, in: { viewmodel, path }, to: VALUE, timeout? }`
 
 **Selection** — `select_range: { from, to }` (shift-click), `multi_select: [TARGET, ...]` (cmd-click chain)
 
@@ -141,7 +141,7 @@ All click/drag steps accept `modifiers: [shift, cmd, opt, ctrl]`.
 
 **Resilience** — `with_retry: N` + indented body retries the body on failure
 
-**Debug** — `snapshot: name`, `dump_tree: name`, `dump_state: name`
+**Debug** — `snapshot: name`, `dump_tree: name`, `dump_state: name`, `dump_focus: name` (writes focused element identifier+role+label to stderr)
 
 ### Targets
 
@@ -156,6 +156,8 @@ All click/drag steps accept `modifiers: [shift, cmd, opt, ctrl]`.
 # Any of the above can carry: modifiers: [shift, cmd]
 # And: nth: N to disambiguate multi-match (SwiftUI propagation gotcha)
 { id: "container", nth: 0 }
+# Companion: expect_total: N — fails loudly if the actual count diverges
+{ id: "row", nth: 0, expect_total: 5 }
 ```
 
 ### Predicates
@@ -171,6 +173,8 @@ state: { viewmodel: "VM", path: "x", equals|matches|any_of|gt|gte|lt|lte|between
 window: { title_matches: "Compose.*" }    # window-shortcut
 panel: any                                # NSOpenPanel/NSSavePanel/AXSheet
 panel: { title_matches: "Save.*" }
+sheet: any                                # AXSheet only (modal sheet attached to a window)
+sheet: { title_matches: "Replace.*" }
 all_of: [PRED, PRED]
 any_of: [PRED, PRED]
 not: PRED
@@ -249,11 +253,9 @@ struct MyApp: App {
     }
     var body: some Scene {
         WindowGroup {
-            ContentView().environmentObject(vm).task {
-                #if DEBUG
-                PryRegistry.shared.register(vm)
-                #endif
-            }
+            ContentView()
+                .environmentObject(vm)
+                .pryRegister(vm)        // <-- SwiftUI sugar (no #if DEBUG needed; no-op in RELEASE)
         }
     }
 }

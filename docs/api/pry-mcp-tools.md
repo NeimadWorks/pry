@@ -97,6 +97,31 @@ Walks an AX menu path by issuing `Press` actions on each level.
 { "app": "...", "path": ["File", "Open Recent", "foo.pgn"] }   →   { "ok": true }
 ```
 
+### `pry_menu_inspect`
+
+Like `pry_select_menu` but stops at the deepest path segment, leaves the
+menu open, and returns the children of that level. The introspection
+counterpart — useful when you need to discover which sub-menu items
+exist before writing a `select_menu:` step.
+
+```json
+{ "app": "...", "path": ["View", "View Mode"]? }
+→ { "path": ["View", "View Mode"], "children": ["Icons", "List", "Grid"] }
+```
+
+Empty `path` (or omitted) returns the menu bar's top-level titles. Use
+`pry_key combo: "esc"` to dismiss the menu after inspection.
+
+### `pry_focus`
+
+Report what's currently AX-focused. JSON dump of role, label, id, frame.
+
+```json
+{ "app": "..." }   →   { "role": "AXTextField", "label": null, "id": "name_field", "frame": [120, 340, 260, 22] }
+```
+
+Same data exposed in-spec via `dump_focus:` and `wait_for_focus:`.
+
 ### `pry_open_file`
 
 Drive an `NSOpenPanel` to select a specific path. Sends Cmd+Shift+G,
@@ -154,9 +179,18 @@ Errors: `viewmodel_not_registered` (with `data.registered: [...]`),
 ### `pry_tree`
 
 ```json
-{ "app": "...", "window": { "title": "..."?, "title_matches": "..."? }? }
+{
+  "app": "...",
+  "window": { "title": "..."?, "title_matches": "..."? }?,
+  "compact": true?    // strip `SwiftUI.ModifiedContent<...>` chains over 200 chars
+}
 → { "yaml": "<full AX tree as YAML>" }
 ```
+
+`compact: true` replaces label / id values longer than 200 characters
+with `<swiftui-modifier-chain>`. Real SwiftUI apps generate huge
+generic-type label strings; the compact form keeps the dump
+grep-friendly.
 
 ### `pry_find`
 
@@ -363,6 +397,22 @@ propagation gotcha (a container's identifier appears on every descendant
 `Text`, `Image`, etc, so `{ id: "container" }` would otherwise match
 multiple elements). See [`writing-specs.md` § SwiftUI gotchas](../guides/writing-specs.md#swiftui-gotchas).
 
+### `expect_total: N` companion
+
+Pair `nth:` with `expect_total: N` to make the choice self-checking. The
+resolver fails loudly if the actual match count diverges from the
+expectation — catches silent regressions when an unrelated layout change
+shifts which element occupies index N.
+
+```json
+{ "role": "AXButton", "label": "Documents", "nth": 0, "expect_total": 2 }
+```
+
+Without `expect_total`, the day a sibling appears or disappears your
+spec quietly clicks the wrong element. With it, the run errors with
+`expected_total=2, actual=3 — layout drift?` and the candidate
+descriptors.
+
 ---
 
 ## Error contract
@@ -408,7 +458,10 @@ pry-mcp state     --app fr.neimad.x --viewmodel DocVM [--path documents.count]
 pry-mcp click     --app fr.neimad.x --id new_doc_button
 pry-mcp type      --app fr.neimad.x --text "hello"
 pry-mcp key       --app fr.neimad.x --combo cmd+s
-pry-mcp tree      --app fr.neimad.x
+pry-mcp tree      --app fr.neimad.x [--compact]      # AX tree as YAML
+pry-mcp menu      --app fr.neimad.x [--path "View > View Mode"]
+                                                      # walk menu, dump children, leave open
+pry-mcp focus     --app fr.neimad.x                   # currently focused element as JSON
 pry-mcp find      --app fr.neimad.x --label Save
 pry-mcp snapshot  --app fr.neimad.x --out /tmp/x.png
 pry-mcp drag      --app fr.neimad.x --from-id a --to-id b

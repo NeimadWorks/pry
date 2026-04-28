@@ -80,6 +80,9 @@ type: "Hello ${user}"
 
 ### `with_fs`
 
+Both forms are supported. Indented YAML (recommended, matches the rest of
+your editor's YAML expectations):
+
 ```yaml
 with_fs:
   base: ~/.pry-tmp/${spec_id}
@@ -88,6 +91,16 @@ with_fs:
     - dir: assets
     - file: assets/logo.png, source: ./test-data/logo.png
 ```
+
+Or inline YAML-flow on a single line:
+
+```yaml
+with_fs: { base: "~/.pry-tmp/${spec_id}", layout: [{ file: report.txt, content: "Hello" }] }
+```
+
+The parser pre-rewrites the indented form to inline before parsing, so
+both produce identical results. Prior to v0.2 the indented form was
+silently dropped — fixed.
 
 The base directory is created before launch and removed after teardown.
 Entries:
@@ -191,6 +204,7 @@ timeout, etc).
 | `wait_for: PREDICATE` (+ optional `timeout: 5s`) | block until predicate holds |
 | `sleep: 200ms` | discouraged; prefer `wait_for` or `clock.advance` |
 | `wait_for_idle: 2s` | wait until AX tree is stable |
+| `wait_for_focus: TARGET` (+ optional `timeout: 1s`) | block until target acquires AX focus. Replaces empirical `sleep:` after sheet dismiss / panel accept. |
 
 ### Mouse / touch
 
@@ -213,8 +227,10 @@ All click/drag commands accept `modifiers: [shift, cmd, opt, ctrl]`.
 
 | Command | Notes |
 |---|---|
-| `type: "text"` | unicode typing into focused element |
-| `type: { text: "...", delay_ms: 30 }` | per-char delay (type-to-select) |
+| `type: "text"` | bulk Unicode CGEvent — fast but a single multi-char event. Some fields (SwiftUI `.onKeyPress`, IME-aware, search-as-you-type) filter on `key.count == 1` and silently drop bulk events. Use `type_chars:` for those. |
+| `type: { text: "...", delay_ms: 30 }` | per-char with explicit delay |
+| `type_chars: "saf"` | per-character typing (30 ms default gap). Right default for fields that filter on single-character keypresses. |
+| `type_chars: { text: "...", interval_ms: 50 }` | per-character with explicit gap |
 | `key: "cmd+s"` | one keystroke; combos with `+` |
 | `key: { combo: "down", repeat: 5 }` | repeat the combo N times |
 
@@ -228,10 +244,11 @@ mapped per US keyboard.
 | Command | Notes |
 |---|---|
 | `assert_tree: PREDICATE` | fail if AX tree doesn't satisfy |
-| `assert_state: { viewmodel, path, equals \| matches \| any_of \| gt \| gte \| lt \| lte \| between }` | fail if VM state mismatches |
+| `assert_state: { viewmodel, path, equals \| not_equals \| matches \| not_matches \| any_of \| gt \| gte \| lt \| lte \| between }` | fail if VM state mismatches |
 | `soft_assert_state: { ... }` | same shape as `assert_state`, but accumulates failures across the spec instead of bailing; all surfaced at the end if anything failed |
 | `assert_focus: <target>` | fail unless `target` is the AX-focused element |
 | `assert_eventually: PREDICATE` (+ `timeout: 1s`) | like `wait_for` but on failure the verdict frames it as an assertion (expected/observed) rather than a wait timeout |
+| `assert_stable: PREDICATE for: 1s` | predicate must hold continuously across the window. Polls every 80 ms. Anti-flicker checks ("the toast disappeared and didn't flash back"). |
 | `expect_change: { action: { click: TARGET }, in: { viewmodel, path }, to: VALUE, timeout?: 2s }` | atomic do-then-observe |
 | `assert_pasteboard: "substring"` | NSPasteboard contains substring |
 
@@ -311,6 +328,7 @@ that the same string lands somewhere else later."
 | `snapshot: NAME` | window PNG; respects `screenshots` policy |
 | `dump_tree: NAME` | full AX tree as YAML attachment |
 | `dump_state: NAME` | all registered VM states |
+| `dump_focus: NAME` | log "currently AX-focused element" (id, role, label) to stderr — quick inline diagnostic without writing an attachment |
 
 ---
 
@@ -344,6 +362,15 @@ This is the standard escape hatch for the SwiftUI propagation gotcha:
 `{ id: "container" }` matches multiple elements. See the SwiftUI gotchas in
 [`writing-specs.md`](../guides/writing-specs.md#swiftui-gotchas).
 
+`nth:` alone is fragile: the day a layout refactor adds or removes a
+sibling, your spec silently picks a different element. Pair `nth:` with
+`expect_total: N` to make the choice self-checking — the resolver fails
+loudly when the actual match count diverges:
+
+```yaml
+{ role: AXButton, label: "Documents", nth: 0, expect_total: 2 }
+```
+
 ### Modifier keys on click/drag
 
 Any target object can carry a `modifiers: [shift, cmd]` array, used by
@@ -365,7 +392,9 @@ state:
   viewmodel: <name>
   path: <keypath>
   equals: <value>                  # — or —
+  not_equals: <value>              # negated equals
   matches: <regex>                 # auto-coerces Int/Double to string
+  not_matches: <regex>             # negated matches
   any_of: [<v>, <v>, ...]
   gt:  <n>                         # numeric > n
   gte: <n>                         # numeric >= n
@@ -376,6 +405,8 @@ state:
 window: { title_matches: "..." }   # window-existence shortcut
 panel: any                         # any open NSOpenPanel/NSSavePanel/AXSheet
 panel: { title_matches: "Save.*" } # panel filtered by title regex
+sheet: any                         # AXSheet only (SwiftUI .sheet, NSWindow.beginSheet)
+sheet: { title_matches: "..." }    # sheet filtered by title regex
 ```
 
 `matches:` auto-coerces numeric values to their string representation, so
@@ -432,9 +463,15 @@ from the spec's directory, looking for `.pry/config.yaml` (max 8 levels).
 apps:
   fr.neimad.works.narrow:
     executable_path: ./.build/arm64-apple-macosx/debug/Narrow
+    auto_build: true               # run `swift build` from the config's directory before launch
   fr.neimad.proof:
     executable_path: ~/Apps/Proof.app/Contents/MacOS/Proof
 ```
+
+`auto_build: true` runs `swift build` (no args) from the config file's
+directory before each launch of that bundle. Build failure surfaces as
+a clean `auto_build_failed` step error — no silent stale-binary launch.
+Cuts the local "edit Swift → bundle.sh → run Pry" cycle.
 
 Path resolution rules:
 

@@ -118,6 +118,34 @@ public final class PryRegistry {
 }
 ```
 
+### SwiftUI sugar: `View.pryRegister(_:)`
+
+For SwiftUI view trees the manual `.task` / `.onDisappear` pair gets repetitive. Use the
+`pryRegister` modifier — it registers on first appearance and unregisters when the view
+leaves the hierarchy:
+
+```swift
+public extension View {
+    /// Registers `instance` with `PryRegistry.shared` while this view is alive.
+    /// No-op in RELEASE builds (the modifier compiles to identity).
+    func pryRegister<T: PryInspectable>(_ instance: T) -> some View
+}
+```
+
+```swift
+struct DocumentListScreen: View {
+    @StateObject private var vm = DocumentListVM()
+
+    var body: some View {
+        List(vm.documents) { /* ... */ }
+            .pryRegister(vm)        // <-- one line, debug-only
+    }
+}
+```
+
+The modifier is a thin convenience over `register` / `unregister(name:)` and obeys the same
+zero-RELEASE-linkage rule as the rest of `PryHarness`.
+
 ### `PryStateBroadcaster` (push notifications, ADR-008)
 
 Optional conformance for VMs that want real-time push of state changes

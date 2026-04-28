@@ -91,12 +91,33 @@ all opt-in. Pre-v0.2 tag.
 | 25 | CI: tag-trigger release + Homebrew tap auto-bump (gated on secrets) | [.github/workflows/ci.yml](../.github/workflows/ci.yml) |
 | 26 | CI: `pry-mcp lint` runs against `Fixtures/DemoApp/flows` on every PR | [.github/workflows/ci.yml](../.github/workflows/ci.yml) |
 
+### Canopy field-feedback wave (on `main`, 2026-04-28)
+
+Triggered by a real run on Canopy (file manager, AppState + sheet-heavy UI).
+Twelve concrete frictions and one parser bug. All backward-compatible.
+Bumps the suite to 40 unit tests + 9 specs PASS.
+
+| # | Improvement | Where |
+|---|---|---|
+| 27 | Multi-line indented frontmatter for object-valued keys (`with_fs`, `with_defaults`, `vars`). Previously silently dropped. | [spec-format §2](design/spec-format.md#2-frontmatter) |
+| 28 | `not_matches:` and `not_equals:` state expectations | [spec-format §6](design/spec-format.md#6-predicates) |
+| 29 | `sheet: any` / `sheet: { title_matches }` predicate (distinct from `panel:`) | [spec-format §6](design/spec-format.md#6-predicates) |
+| 30 | `expect_total: N` companion to `nth:` — fails if match-count drifts | [spec-format §5](design/spec-format.md#5-targets) |
+| 31 | `assert_stable: PRED for: 1s` — anti-flicker continuous predicate | [spec-format](design/spec-format.md#assertions) |
+| 32 | `type_chars: "saf"` (per-char typing for `key.count == 1` filters) | [spec-format](design/spec-format.md#keyboard) |
+| 33 | `dump_focus: "name"` step + `pry-mcp focus --app X` CLI | [spec-format](design/spec-format.md#debug-aids) |
+| 34 | `wait_for_focus: <target>` step — replaces empirical `sleep:` | [spec-format](design/spec-format.md#waits) |
+| 35 | `pry-mcp menu --app X --path "View > View Mode"` — open menu and dump children without closing | [pry-mcp-tools](api/pry-mcp-tools.md#pry_menu_inspect) |
+| 36 | `pry-mcp tree --compact` — strip SwiftUI generic-modifier-chain labels >200 chars | [pry-mcp-tools](api/pry-mcp-tools.md#pry_tree) |
+| 37 | `auto_build: true` in `.pry/config.yaml` — runs `swift build` before launch | [spec-format §9](design/spec-format.md#9-project-config-pryconfigyaml) |
+| 38 | `View.pryRegister(_:)` SwiftUI modifier — auto-(un)register `@StateObject` VMs | [PryHarness](api/PryHarness.md#auto-registration-with-pryregister) |
+
 ---
 
 ## Now
 
 Nothing in flight. The previous "Next" bucket has been delivered (rows
-11–26 in the table above). Next field run will produce the next priority
+11–38 in the table above). Next field run will produce the next priority
 signal.
 
 ---
@@ -266,6 +287,46 @@ custom recognizers. Real 2-finger HID pinch via private
 
 **Effort:** moderate. **Risk:** private API, App Review concerns even
 for pry-mcp itself (though pry-mcp isn't App Store anyway).
+
+### Inspector scaffolding (`pry-mcp scaffold-inspector`)
+
+Generate a `PrySupport.swift` boilerplate from a Swift source file by
+parsing `@Published` properties. Writing 10 inspectors by hand for an
+app with 10 sheets / drawers / dialogs is tedious — this is the
+multiplier from the Canopy report.
+
+**Effort:** moderate. Swift source parsing via SwiftSyntax (which we'd
+have to depend on) or via heuristic regex (fragile but no dep). The
+clean implementation requires SwiftSyntax which violates Pry's
+zero-dep policy — **needs an ADR** that either carves out an exception
+("dev-only tool, not shipped in the binary") or chooses regex.
+
+### Multi-char `type:` warning detection
+
+Detect when a bulk `type:` step lands while the focused field rejects
+multi-char Unicode events (legitimate SwiftUI `.onKeyPress` /
+IME-aware filter). Approach: monitor a related VM key for change after
+`type:` and emit a verdict warning if nothing moved. Heuristic, easy
+to false-positive.
+
+**Effort:** light. **Risk:** false-positive rate on fields whose
+mutation isn't reflected in a registered VM. Documented workaround
+(`type_chars:`) ships in v0.2-track row #32. Land this only if the
+Narrow / Canopy / Carnet runs report the gotcha re-occurs despite
+the doc note.
+
+### Verdict warnings layer ("30% diagnostic time")
+
+Emit verdict-time warnings for suspicious patterns:
+
+  - `type:` after click on TextField but VM didn't mutate
+  - `with_fs:` declared but no fixture file reads observed
+  - Multi-step delta where a registered VM key never moves
+  - Step that depends on focus but no preceding `wait_for_focus`
+
+**Effort:** moderate. **Prerequisite:** stable VM access trace from the
+runner. **Risk:** noise. The right form is opt-in `--strict` flag, not
+a default.
 
 ### Phase 5 dogfooding
 

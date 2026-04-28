@@ -206,6 +206,8 @@ public enum Predicate: Sendable {
     case not(Predicate)
     case window(title: String?, titleMatches: String?)
     case panelOpen(titleMatches: String?)      // matches AXSheet OR modal AXWindow
+    case sheetOpen(titleMatches: String?)      // AXSheet only — distinct from panelOpen
+    case stableFor(Predicate, seconds: Double) // anti-flicker: must hold continuously
 }
 
 public indirect enum TargetRef: Sendable {
@@ -215,12 +217,16 @@ public indirect enum TargetRef: Sendable {
     case labelMatches(String)
     case treePath(String)
     case point(x: Double, y: Double)
-    case nth(base: TargetRef, index: Int)      // disambiguator
+    /// `nth(base, index, expectedTotal)` — `expectedTotal` makes the selection
+    /// self-checking; the resolver fails if the match count diverges.
+    case nth(base: TargetRef, index: Int, expectedTotal: Int?)
 }
 
 public enum StateExpectation: Sendable {
     case equals(YAMLValue)
+    case notEquals(YAMLValue)
     case matches(String)                       // auto-coerces Int/Double to string
+    case notMatches(String)
     case anyOf([YAMLValue])
     case gt(Double)
     case gte(Double)
@@ -251,7 +257,10 @@ public enum SpecParseError: Error { /* missingFrontmatter, unknownCommand(line),
 /// `executable_path:` from their frontmatter — particularly useful for
 /// SwiftPM-built apps whose path varies per machine.
 public struct PryConfig: Sendable {
-    public struct AppConfig: Sendable { public var executablePath: String? }
+    public struct AppConfig: Sendable {
+        public var executablePath: String?
+        public var autoBuild: Bool        // run `swift build` before launch
+    }
     public var configFileURL: URL?
     public var apps: [String: AppConfig]
 
@@ -259,6 +268,15 @@ public struct PryConfig: Sendable {
     /// `PRY_EXEC_<UPPERCASED_BUNDLE_ID>` (`.` and `-` → `_`), then config
     /// file, then nil.
     public func resolveExecutablePath(for bundleID: String) -> String?
+
+    /// `auto_build: true` lookup. Driven from `apps[<bundle-id>].auto_build`
+    /// in the config file. False by default.
+    public func autoBuild(for bundleID: String) -> Bool
+
+    /// Run `swift build` (no args) from the config file's directory.
+    /// Throws on non-zero exit with the captured stderr in the message.
+    public func runSwiftBuild() throws
+
     public static func discover(from start: URL) -> PryConfig?
     public static func load(from url: URL) throws -> PryConfig
 }
